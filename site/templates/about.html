@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <a href="/"><h1>NZ Politician Scorecards</h1></a>
+    <p>This project aims to provide a fun, data-driven way to assess the performance of New Zealand politicians.</p>
+    <p>The scores are intended to reflect various aspects of their political behaviour, helping the public make more informed decisions.</p>
+
+    <h2>Motivation</h2>
+
+    <p>It bugs me that politicians can get away with saying whatever they want, and there's no way to hold them accountable for their promises, predictions, lies, ... This project is my attempt to change that.</p>
+
+    <h2>Attributes</h2>
+    <p>The following attributes are currently being scored:</p>
+    <ul>
+        <li>Evasiveness: Measures how often the politician directly answers the question asked, rather than dodging or changing the subject.</li>
+        <li>Strength: Indicates the politician's ability to translate their public rhetoric and promises into concrete policies and see them through to implementation.</li>
+        <li>Integrity</li>
+        <li>Alignment</li>
+        <li>Prophecy</li>
+        <li>Influence</li>
+    </ul>
+
+    <p>These attributes were chosen as they allow for a broad assessment of a politician's performance and accountability, while being politically neutral.</p>
+    <p>While we could extract data about other attributes related to the ... I wan to keep this apolitical. </p>
+
+
+    <h2>Methodology</h2>
+    <p>The scores are calculated based on the analysis of public statements.</p>
+    <p>Our data scources are; Hansard, media reports, press releases.</p> 
+
+    <p>We use LLMs to extract the relevant information from the text, and then apply a set of rules to determine the score for each attribute.</p>
+    <p>For example, 
+        
+    </p>
+
+    <div class="back-link">
+        <a href="/">Back to Main Page</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,208 @@
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    background-color: #f8f9fa; /* Light grey background */
+    color: #333;
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4 {
+    color: #007bff; /* Primary blue color */
+}
+
+a {
+    color: #007bff;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+.top-right-link {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+}
+
+.top-right-link a {
+    background-color: #fff;
+    color: #007bff;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 1em;
+    border: 1px solid #ccc;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.top-right-link a:hover {
+    background-color: #e9ecef;
+    text-decoration: none;
+}
+
+h1 {
+    text-align: center;
+    margin-top: 60px;
+    margin-bottom: 30px;
+    font-size: 2.5em;
+}
+
+.politician-list-container {
+    overflow-x: auto;
+    padding: 30px;
+    background-color: #f0f0f0; /* Slightly darker grey container */
+    margin: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.politician-card {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    margin-right: 15px;
+    width: 300px; /* Adjust card width as needed */
+    display: inline-block; /* Make cards sit side by side */
+    vertical-align: top;
+    background-image: url('/static/beehive.jpeg'); /* Add background image */
+    background-size: cover; /* Cover the entire card */
+    background-position: center; /* Center the image */
+    color: #333; /* Adjust text color for better readability */
+    background-color: rgba(255, 255, 255, 0.75); /* Set semi-transparent background */
+    background-blend-mode: overlay; /* Blend the image with the background color */
+}
+
+.politician-card:hover {
+    transform: translateY(-5px) scale(1.05);
+}
+
+.politician-card h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.8em;
+    color: #28a745; /* A nice green for names */
+}
+
+.politician-card p {
+    margin-bottom: 8px;
+    color: #555;
+}
+
+.politician-card h4 {
+    margin-top: 15px;
+    margin-bottom: 8px;
+    font-size: 1.2em;
+    color: #6c757d; /* A softer grey for headings */
+}
+
+.score {
+    font-weight: bold;
+    color: #007bff; /* Highlighted score color */
+}
+
+.view-details {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.view-details a {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 1em;
+    transition: background-color 0.3s ease;
+}
+
+.view-details a:hover {
+    background-color: #0056b3;
+    text-decoration: none;
+}
+
+
+/* ... (Your existing CSS) ... */
+
+.attribute-detail-container {
+    max-width: 800px; /* Limit the width for better readability */
+    margin: 50px auto; /* Center the container with top and bottom margin */
+    padding: 30px;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ddd;
+}
+
+.attribute-detail-container h2 {
+    color: #28a745; /* Green for politician name */
+    font-size: 2.2em;
+    margin-bottom: 10px;
+}
+
+.attribute-detail-container p {
+    color: #555;
+    margin-bottom: 15px;
+    line-height: 1.7;
+}
+
+.attribute-detail-container h3 {
+    color: #007bff; /* Blue for attribute info */
+    font-size: 1.6em;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.attribute-detail-container h3 span {
+    font-weight: bold;
+    color: #dc3545; /* Red for the score value */
+}
+
+.attribute-detail-container p.description {
+    font-style: italic;
+    color: #777;
+}
+
+.attribute-detail-container p.example {
+    margin-left: 20px;
+    border-left: 3px solid #007bff;
+    padding-left: 15px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.back-link {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.back-link a {
+    background-color: #6c757d;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.back-link a:hover {
+    background-color: #545b62;
+}
+
+/* Adjust main heading to be more consistent */
+h1 {
+    text-align: center;
+    margin-top: 40px; /* Reduced top margin */
+    margin-bottom: 30px;
+    font-size: 2.5em;
+    color: #333; /* Darker heading color */
+}
+
+/* Adjust top right link position slightly */
+.top-right-link {
+    position: absolute;
+    top: 15px;
+    right: 30px;
+}

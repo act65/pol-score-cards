@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NZ Politician Scorecards</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <a href="/"><h1>NZ Politician Scorecards</h1></a>
+    <div class="top-right-link">
+        <a href="/about">About</a>
+    </div>
+    <div class="attribute-detail-container">
+        <h2>{{ politician.name }}</h2>
+        <p>Party: {{ politician.party }}</p>
+        <h3>{{ attribute_info.name }} Score: {{ score }}</h3>
+        <p>Description: {{ attribute_info.description }}</p>
+        {% for example in examples %}
+        <p>Example: {{ example.text }} <a href="{{ example.source }}" target="_blank" rel="noopener noreferrer">Source</a></p>
+        {% endfor %}
+    </div>
+    <div class="back-link">
+        <a href="/">Back to Main Page</a>
+    </div>
+</body>
+</html>
