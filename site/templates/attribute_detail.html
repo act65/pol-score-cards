@@ -17,7 +17,7 @@
         <h3>{{ attribute_info.name }} Score: {{ score }}</h3>
         <p>Description: {{ attribute_info.description }}</p>
         {% for example in examples %}
-        <p>Example: {{ example.text }} <a href="{{ example.source }}" target="_blank" rel="noopener noreferrer">Source</a></p>
+        <p>- {{ example.text }} <a href="{{ example.source_url }}" target="_blank" rel="noopener noreferrer">Source</a></p>
         {% endfor %}
     </div>
     <div class="back-link">

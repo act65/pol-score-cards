@@ -17,12 +17,12 @@
             <h3>{{ item.politician.name }}</h3>
             <p>Party: {{ item.politician.party }}</p>
             <h4>Scores:</h4>
-            <p>Evasiveness: <a href="/politician/{{ item.politician.id }}/evasiveness" class="score-link">{{ item.scores.evasiveness }}</a></p>
-            <p>Strength: <a href="/politician/{{ item.politician.id }}/strength" class="score-link">{{ item.scores.strength }}</a></p>
-            <p>Integrity: <a href="/politician/{{ item.politician.id }}/integrity" class="score-link">{{ item.scores.integrity }}</a></p>
-            <p>Alignment: <a href="/politician/{{ item.politician.id }}/alignment" class="score-link">{{ item.scores.alignment }}</a></p>
-            <p>Prophecy: <a href="/politician/{{ item.politician.id }}/prophecy" class="score-link">{{ item.scores.prophecy }}</a></p>
-            <p>Influence: <a href="/politician/{{ item.politician.id }}/influence" class="score-link">{{ item.scores.influence }}</a></p>
+            <p>Evasiveness: <a href="/attribute/{{ item.politician.id }}/evasiveness" class="score-link">{{ item.scores.evasiveness }}</a></p>
+            <p>Strength: <a href="/attribute/{{ item.politician.id }}/strength" class="score-link">{{ item.scores.strength }}</a></p>
+            <p>Integrity: <a href="/attribute/{{ item.politician.id }}/integrity" class="score-link">{{ item.scores.integrity }}</a></p>
+            <p>Alignment: <a href="/attribute/{{ item.politician.id }}/alignment" class="score-link">{{ item.scores.alignment }}</a></p>
+            <p>Prophecy: <a href="/attribute/{{ item.politician.id }}/prophecy" class="score-link">{{ item.scores.prophecy }}</a></p>
+            <p>Influence: <a href="/attribute/{{ item.politician.id }}/influence" class="score-link">{{ item.scores.influence }}</a></p>
         </div>
         {% endfor %}
     </div>

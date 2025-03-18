@@ -1,0 +1,6 @@
+{"id": "evasion", "name": "Evasion", "description": "Measures how often the politician directly answers the question asked, rather than dodging or changing the subject."}
+{"id": "strength", "name": "Strength", "description": "Indicates the politician's ability to translate their public rhetoric and promises into concrete policies and see them through to implementation."}
+{"id": "honour", "name": "Honour", "description": "Assesses how often the politician has been observed to spout demonstrably false information or mislead the public with inaccurate claims."}
+{"id": "devotion", "name": "Devotion", "description": "Evaluates the consistency between the politician's public statements and their actions, such as voting and speeches, within the parliamentary setting."}
+{"id": "divination", "name": "Divination", "description": "Tracks how often the politician's predictions about future events (economic, social, etc.) have proven to be accurate."}
+{"id": "charisma", "name": "Charisma", "description": "Measures the politician's ability to persuade colleagues, build consensus, and effectively get legislation passed or achieve their political goals."}
