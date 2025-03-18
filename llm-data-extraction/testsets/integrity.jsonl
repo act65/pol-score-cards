@@ -1,0 +1,15 @@
+{"raw_text": "Prime Minister Ardern announced that the unemployment rate has fallen to 3.2%.", "label": {"contains_claim": true, "politician": "Jacinda Ardern"}}
+{"raw_text": "The Leader of the Opposition, Mr. Luxon, criticized the government's spending.", "label": {"contains_claim": false, "politician": "Christopher Luxon"}}
+{"raw_text": "According to Finance Minister Robertson, inflation is expected to peak in the next quarter.", "label": {"contains_claim": true, "politician": "Grant Robertson"}}
+{"raw_text": "Dr. Seymour argued that the current regulations are stifling business growth.", "label": {"contains_claim": true, "politician": "David Seymour"}}
+{"raw_text": "The Green Party co-leader, Ms. Swarbrick, expressed concerns about climate change.", "label": {"contains_claim": false, "politician": "Chloe Swarbrick"}}
+{"raw_text": "Winston Peters stated that New Zealand First will always put New Zealanders first.", "label": {"contains_claim": false, "politician": "Winston Peters"}}
+{"raw_text": "The latest figures from the Ministry of Health show a decrease in Covid-19 cases.", "label": {"contains_claim": false, "politician": null}}
+{"raw_text": "During the debate, the Prime Minister said that their government has built 10,000 new state houses.", "label": {"contains_claim": true, "politician": "Jacinda Ardern"}}
+{"raw_text": "Christopher Luxon believes that National has a clear plan to grow the economy.", "label": {"contains_claim": false, "politician": "Christopher Luxon"}}
+{"raw_text": "David Seymour pointed out that ACT's proposed tax cuts would benefit all New Zealanders.", "label": {"contains_claim": true, "politician": "David Seymour"}}
+{"raw_text": "Chloe Swarbrick highlighted the importance of investing in public transport.", "label": {"contains_claim": false, "politician": "Chloe Swarbrick"}}
+{"raw_text": "Winston Peters claimed that immigration levels under the current government are too high.", "label": {"contains_claim": true, "politician": "Winston Peters"}}
+{"raw_text": "The Minister of Education announced a new funding package for schools.", "label": {"contains_claim": false, "politician": null}}
+{"raw_text": "In a recent speech, Jacinda Ardern mentioned that child poverty has reduced significantly under her leadership.", "label": {"contains_claim": true, "politician": "Jacinda Ardern"}}
+{"raw_text": "Christopher Luxon questioned the government's ability to manage the national debt.", "label": {"contains_claim": false, "politician": "Christopher Luxon"}}
