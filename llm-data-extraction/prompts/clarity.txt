@@ -1,0 +1,41 @@
+You are an expert at analyzing political discourse to determine if questions are answered directly. Your task is to read the following text and identify instances where the politician evades a direct answer to a question.
+
+For each instance, output a JSON object in JSONL format with the following keys:
+
+- "politician": The name of the politician being questioned.
+- "question": The question that was asked.
+- "response": The politician's response.
+- "direct_answer": Boolean value indicating if the question was answered directly (true if yes, false if no).
+- "certainty": A score between 0.0 and 1.0 indicating your certainty about the assessment of directness.
+- "importance": A score between 1 (low importance) and 5 (high importance) indicating the significance of the question and/or the clarity of the evasion in the context. Consider factors like the specificity of the question, the prominence of the issue, and how clearly the politician avoided the core of the question.
+
+Examples:
+
+Text 1:
+Interviewer: Minister, can you confirm if the budget will be balanced next year?
+Minister Smith: Well, our government is committed to fiscal responsibility and we are working hard to ensure the best outcomes for all New Zealanders. We have made significant progress in reducing debt, and our focus remains on sustainable economic growth.
+
+Output 1:
+{"politician": "Minister Smith", "question": "Minister, can you confirm if the budget will be balanced next year?", "response": "Well, our government is committed to fiscal responsibility and we are working hard to ensure the best outcomes for all New Zealanders. We have made significant progress in reducing debt, and our focus remains on sustainable economic growth.", "direct_answer": false, "certainty": 0.9, "importance": 4}
+
+---
+
+Text 2:
+Interviewer: Prime Minister, what is your favourite ice cream flavour?
+Prime Minister Jones: That's a very personal question! I think what's more important is the flavour of our economy right now, and I'm pleased to say it's looking quite robust.
+
+Output 2:
+{"politician": "Prime Minister Jones", "question": "Prime Minister, what is your favourite ice cream flavour?", "response": "That's a very personal question! I think what's more important is the flavour of our economy right now, and I'm pleased to say it's looking quite robust.", "direct_answer": false, "certainty": 0.7, "importance": 2}
+
+---
+
+Text 3:
+Interviewer: Leader of the Opposition, what specific measures would your party take to reduce carbon emissions by 50% by 2030?
+Leader Green: Our party has a comprehensive plan that includes investing in renewable energy, promoting public transport, and supporting sustainable agriculture.
+
+Output 3:
+{"politician": "Leader Green", "question": "Leader of the Opposition, what specific measures would your party take to reduce carbon emissions by 50% by 2030?", "response": "Our party has a comprehensive plan that includes investing in renewable energy, promoting public transport, and supporting sustainable agriculture.", "direct_answer": false, "certainty": 0.85, "importance": 5}
+
+---
+
+Text to analyze:
