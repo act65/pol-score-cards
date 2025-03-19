@@ -14,6 +14,7 @@ Data sources
     - [United Future](https://www.unitedfuture.org.nz/)
     - [Mana](https://mana.net.nz/)
     - [Conservative](https://www.conservativeparty.org.nz/)
+    - [TOP](https://www.top.org.nz/)
 - Government Agency Websites
     - [Ministry of Health](https://www.health.govt.nz/)
     - [Ministry of Education](https://www.education.govt.nz/)
