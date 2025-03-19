@@ -1,0 +1,38 @@
+Data sources
+
+- [Hansard](https://www.parliament.nz/en/pb/hansard-debates/rhr/)
+- Media releases from 
+    - [Parliament](https://www.parliament.nz/en/get-involved/information-for-the-press/media-releases/)
+    - [Beehive](https://www.beehive.govt.nz/)
+- Official party websites
+    - [National](https://www.national.org.nz/)
+    - [Labour](https://www.labour.org.nz/)
+    - [Green](https://www.greens.org.nz/)
+    - [NZ First](https://www.nzfirst.nz/)
+    - [ACT](https://www.act.org.nz/)
+    - [Maori Party](https://www.maoriparty.org/)
+    - [United Future](https://www.unitedfuture.org.nz/)
+    - [Mana](https://mana.net.nz/)
+    - [Conservative](https://www.conservativeparty.org.nz/)
+- Government Agency Websites
+    - [Ministry of Health](https://www.health.govt.nz/)
+    - [Ministry of Education](https://www.education.govt.nz/)
+    - [Ministry of Social Development](https://www.msd.govt.nz/)
+    - [Ministry of Justice](https://www.justice.govt.nz/)
+    - [Ministry of Business, Innovation and Employment](https://www.mbie.govt.nz/)
+    - [Ministry of Primary Industries](https://www.mpi.govt.nz/)
+    - [Ministry of Foreign Affairs and Trade](https://www.mfat.govt.nz/)
+    - [Ministry of Defence](https://www.defence.govt.nz/)
+    - [Ministry of Transport](https://www.transport.govt.nz/)
+    - [Ministry of Housing and Urban Development](https://www.hud.govt.nz/)
+- Media
+    - [Stuff](https://www.stuff.co.nz/)
+    - [NZ Herald](https://www.nzherald.co.nz/)
+    - [Newsroom](https://www.newsroom.co.nz/)
+    - [RNZ](https://www.rnz.co.nz/)
+    - [Newshub](https://www.newshub.co.nz/)
+    - [Scoop](https://www.scoop.co.nz/)
+    - [The Spinoff](https://thespinoff.co.nz/)
+    - [Interest](https://www.interest.co.nz/)
+    - [NBR](https://www.nbr.co.nz/)
+    - [The Conversation](https://theconversation.com/nz)

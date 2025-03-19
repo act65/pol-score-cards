@@ -1,0 +1,38 @@
+You are an expert at identifying predictions made by politicians about future events. Your task is to read the following text and extract all statements that forecast or predict what will happen in the future.
+
+For each prediction, output a JSON object in JSONL format with the following keys:
+
+- "politician": The name of the politician making the prediction.
+- "prediction": The text of the prediction.
+- "date_made": The date the prediction was made (DD-MM-YYYY format if available, otherwise infer as best as possible or leave as null).
+- "resolution_date": The date or timeframe when the prediction is expected to be resolved or the predicted event is expected to occur (DD-MM-YYYY format). If the date is not explicit / uncertain, pick a resonable upper bound (e.g., end of the year, end of the term).
+- "importance_weighting": A score between 1 (low importance) and 5 (high importance) indicating the perceived significance or impact of the prediction. Consider factors like the scope of the prediction (local, national, international), the number of people it might affect, and the potential consequences if the prediction comes true.
+- "certainty": A score between 0.0 and 1.0 indicating your certainty that this statement is intended as a prediction about the future.
+
+Examples:
+
+Text:
+Speaking at a rally on January 15, 2024, Prime Minister Smith said, "Our government's policies will lead to unemployment falling below 4% by the end of this year."
+
+Output:
+{"politician": "Prime Minister Smith", "prediction": "Our government's policies will lead to unemployment falling below 4% by the end of this year.", "date_made": "15-01-2024", "resolution_date": "31-12-2024", "importance_weighting": 4, "certainty": 0.95}
+
+---
+
+Text:
+In an interview aired on March 1, 2023, Opposition Leader Jones warned, "If the current government continues on its path, we will see a significant increase in poverty within the next two years."
+
+Output:
+{"politician": "Opposition Leader Jones", "prediction": "If the current government continues on its path, we will see a significant increase in poverty within the next two years.", "date_made": "01-03-2023", "resolution_date": "01-03-2025", "importance_weighting": 5, "certainty": 0.9}
+
+---
+
+Text:
+During a press conference today, October 20, 2025, Finance Minister Brown stated, "I anticipate that inflation will peak in the first quarter of next year."
+
+Output:
+{"politician": "Finance Minister Brown", "prediction": "I anticipate that inflation will peak in the first quarter of next year.", "date_made": "20-10-2025", "resolution_date": "01-04-2026", "importance_weighting": 3, "certainty": 0.88}
+
+---
+
+Text to analyze:

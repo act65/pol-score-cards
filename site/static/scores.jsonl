@@ -1,5 +1,7 @@
-{"politician_id": "ardern", "evasion": 65, "strength": 78, "integrity": 23, "alignment": 88, "prophecy": 45, "influence": 92, "intelligence": 80, "charisma": 95, "resilience": 70, "diplomacy": 85, "accountability": 60, "transparency": 75}
-{"politician_id": "luxon", "evasion": 72, "strength": 60, "integrity": 35, "alignment": 75, "prophecy": 55, "influence": 85, "intelligence": 75, "charisma": 80, "resilience": 82, "diplomacy": 70, "accountability": 55, "transparency": 68}
-{"politician_id": "seymour", "evasion": 58, "strength": 85, "integrity": 40, "alignment": 90, "prophecy": 60, "influence": 78, "intelligence": 88, "charisma": 70, "resilience": 75, "diplomacy": 65, "accountability": 72, "transparency": 80}
-{"politician_id": "peters", "evasion": 80, "strength": 70, "integrity": 50, "alignment": 65, "prophecy": 35, "influence": 90, "intelligence": 70, "charisma": 88, "resilience": 92, "diplomacy": 95, "accountability": 45, "transparency": 50}
-{"politician_id": "swarbrick", "evasion": 60, "strength": 75, "integrity": 15, "alignment": 95, "prophecy": 70, "influence": 65, "intelligence": 90, "charisma": 85, "resilience": 80, "diplomacy": 78, "accountability": 88, "transparency": 92}
+{"politician_id": "ardern", "evasion": 65, "strength": 78, "honour": 23, "devotion": 88, "divination": 45, "charisma": 92}
+{"politician_id": "luxon", "evasion": 72, "strength": 60, "honour": 80, "devotion": 65, "divination": 60, "charisma": 85}
+{"politician_id": "collins", "evasion": 85, "strength": 70, "honour": 40, "devotion": 75, "divination": 55, "charisma": 78}
+{"politician_id": "davidson", "evasion": 50, "strength": 85, "honour": 90, "devotion": 60, "divination": 70, "charisma": 80}
+{"politician_id": "seymour", "evasion": 58, "strength": 85, "honour": 40, "devotion": 90, "divination": 60, "charisma": 70}
+{"politician_id": "peters", "evasion": 80, "strength": 70, "honour": 50, "devotion": 65, "divination": 35, "charisma": 88}
+{"politician_id": "swarbrick", "evasion": 60, "strength": 75, "honour": 15, "devotion": 95, "divination": 70, "charisma": 85}

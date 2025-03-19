@@ -8,7 +8,6 @@ app = Flask(__name__)
 
 politicians = data_access_jsonl.get_all_politicians()
 attribute_descriptions = data_access_jsonl.get_all_attributes()
-scores = data_access_jsonl.get_all_scores()
 
 @app.route('/')
 def index():
@@ -26,7 +25,6 @@ def attribute_detail(politician_id, attribute):
 
     if politician:
         examples = data_access_jsonl.get_examples(politician_id, attribute)
-        print(examples)
         return render_template('attribute_detail.html', politician=politician, attribute_info=attribute_info, examples=examples, score=score)
     else:
         return "Politician not found", 404
