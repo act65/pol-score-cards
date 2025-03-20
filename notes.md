@@ -1,7 +1,2 @@
-Attributes
-
-- would be good to add a few more?
-    - shit slinging. comments that only insult and are not productive
-    - appeals to logical fallicies. confirmation bias, survivorship, ad homenim, slippery slope, ...
-    - hyperbole
-    - vagueness vs specificity. how much said actually means something?
+The data is going to be quite skewed on some politicians?
+Some politicians are much more vocal than others.

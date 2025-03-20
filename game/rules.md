@@ -16,9 +16,9 @@ Core Traits
 
 Offense-Focused Traits
 
-    Rigorousness
+    Rigor
     - Metric: Avoids logical fallacies, uses evidence.
-    - Mechanic: Attack += Rolld10 x Rigorousness / 10
+    - Mechanic: Attack += Rolld10 x Rigor / 10
 
     Specificity
     - Metric: Concrete, non-vague proposals.

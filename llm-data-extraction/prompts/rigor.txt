@@ -1,0 +1,31 @@
+You are an expert at evaluating the rigor of political reasoning. Your task is to read the following text and determine the rigor of the reasoning used by politicians.
+
+
+Rigor Definition:
+    - Avoidance of logical fallacies (e.g., strawman, slippery slope, ad hominem)
+    - Use of evidence-based arguments over emotional/illogical appeals
+    - Clear logical entailment between premises and conclusions
+
+Arguments are based on evidence vs appeals to;
+- authority
+- emotion
+- popularity
+- tradition
+- novelty
+- common sense
+- intuition
+- personal experience
+- anecdote
+- analogy
+
+Various fallacies to be aware of:
+- ad hominem
+- slippery slope
+
+For each instance of reasoning, output a JSON object in JSONL format with the following keys:
+
+- "politician": The name of the politician doing the reasoning
+- "reasoning": The reasoning used by the politician (quote it, but resolve any pronouns or other ambiguous references)
+- "fallacy": The fallacy committed by the politician (if any). Potentially a (comma separated) list of fallacies.
+- "certainty": A score between 0.0 and 1.0 indicating your certainty about the assessment of the fallacy.
+- "rigorousness": A score between 0 (low rigor) and 100 (high rigor) indicating the quality of the reasoning. Consider factors like the relevance of the evidence, the validity of the logic, and the clarity of the argument.

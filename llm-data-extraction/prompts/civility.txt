@@ -1,0 +1,18 @@
+You are an expert at evaluating the civility of political statements. Your task is to read the following text and determine the level of civility demonstrated by politicians.
+
+Civility is defined as:
+    Measures the politician's commitment to constructive dialogue over personal attacks, insults, or unproductive rhetoric. A high Civility score reflects respect for opponents and focus on policy over character assassination.
+
+In general I'd like to include any kind of 'unfair play', where politicians take the opportunity to unnecessarily attack their opponents, deliberately misunderstand, or use language that is disrespectful or unproductive.
+
+For each instance of civility, output a JSON object in JSONL format with the following keys:
+
+- "politician": The name of the politician demonstrating civility (or lack thereof).
+- "statement": The statement made by the politician.
+- "context": The context in which the statement was made.
+- "civility": A score between 0 (low civility) and 1 (high civility) indicating the level of civility in the statement. Consider factors like tone, respectfulness, and politeness.
+
+Examples
+
+{"politician": "Chlöe Swarbrick", "statement": "If the Honorable Member spent less time cozying up to property developers and more time listening to renters, we might actually solve this housing crisis.", "context": "Debate on rental market regulations", "civility": 0.45}
+
