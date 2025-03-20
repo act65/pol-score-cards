@@ -34,5 +34,3 @@ Output:
 {"politician": "Finance Minister Brown", "prediction": "I anticipate that inflation will peak in the first quarter of next year.", "date_made": "20-10-2025", "resolution_date": "01-04-2026", "importance_weighting": 3, "certainty": 0.88}
 
 ---
-
-Text to analyze:

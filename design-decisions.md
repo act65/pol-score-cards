@@ -10,3 +10,7 @@
 How do we convert data gathered on predictions (about the future) or claims into a score?
 Gather all positive and negative examples and calculate the ratio of S=100*positive / (positive + negative) examples.
 This allows us to answer, of the times X said something would happen, it turned out to be true S% of the time.
+
+## LLM extraction
+
+extract attributes seperately or together?
