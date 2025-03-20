@@ -1,24 +1,45 @@
 Core Concept: Players will play cards representing politicians, who will battle against each other using their political attributes as strengths in combat.
 
-Card Attributes and Mechanics:
+Core Traits
 
-- Strength: This attribute acts as a multiplier for a card's attack damage or defense.
-- Clarity: A card with high Clarity has a chance to critically hit when attacking. The chance of a critical hit is determined by the Clarity score.
-- Divination: This attribute determines the order in which cards can attack. Cards with higher Divination scores will act earlier in a turn or round. (The specific turn structure needs further definition).
-- Charisma: This attribute limits the number of cards a player can have in play on the table at any given time. A higher Charisma score allows the player to have more cards in play simultaneously.
-- Honour: Subtract the defending card's Honour score from the attack damage dealt. If the damage is reduced to zero or less, the attack is blocked.
-- Devotion: This attribute affects the reliability of a card:
-    - Low Devotion: When attacking, roll a six-sided die (d6) and multiply the result by the card's Strength to determine the damage.
-    - Medium Devotion (50+): When attacking, roll a four-sided die (d4) and multiply the result by the card's Strength to determine the damage.
-    - High Devotion (80+): When attacking, no die is rolled. The card deals a fixed amount of damage equal to its Strength.
+    Strength
+    - Metric: Ability to implement policies.
+    - Mechanic: Multiplies damage/defense (e.g., Base attack = Strength, Base defense = Strength).
 
-Basic Gameplay Loop
+    Divination
+    - Metric: Accuracy of predictions.
+    - Mechanic: Determines turn order (higher Divination acts first). 
 
-- Play Phase: Players place cards from their hand onto the table.
-    - Card Limit: Players must adhere to the maximum number of cards they can have in play based on their total Charisma.
-- Divination Phase: Based on their Divination scores, players determine the order in which their cards will act.
-- Action Phase: Players take turns attacking (following the Divination order).
-- Attack Action: A card can attack an opponent's card.
-    - Determine damage based on the attacking card's Strength and Clarity. Attack = Strength x Roll + Clarity. (where Roll is a die roll based on the card's Devotion score).
-    - Determine the armour of the defending card based on its Strength and Honour. Defence = Strength x Roll + Honour. (where Roll is a die roll based on the card's Devotion score).
-    - If the attack > defence, the defending card takes damage.
+    Charisma
+    - Metric: Persuasion and coalition-building.
+    - Mechanic: Limits number of cards in play (higher Charisma = more slots). Every player can play 2 cards + 1 card for every 100 Charisma.
+
+Offense-Focused Traits
+
+    Rigorousness
+    - Metric: Avoids logical fallacies, uses evidence.
+    - Mechanic: Attack += Rolld10 x Rigorousness / 10
+
+    Specificity
+    - Metric: Concrete, non-vague proposals.
+    - Mechanic: Attack Floor: Set minimum attack die roll = Specificity / 10 (e.g., 60 Specificity = d10 rolls <6 become 6).
+
+    Civility
+    - Metric: Avoids personal attacks, focuses on policy.
+    - Mechanic: Civility gives attack accuracy. When a card attacks, roll a d10. If roll > Civility/10 then attack hits, with prob 50%.
+    (say Civility = 80, then 80/10 = 8, p(roll>8)/2 = 10%)
+
+Defense-Focused Traits
+
+    Veracity
+    - Metric: Truthfulness, avoids misinformation.
+    - Mechanic: Defense += Rolld10 x Veracity / 10
+
+    Authenticity
+    - Metric: Consistency between words/actions.
+    - Mechanic: Defense Floor: Set minimum defense die roll = Devotion / 10 (e.g., 60 Devotion = d10 rolls <6 become 6).
+
+    Forthrightness
+    - Metric: Directly answers questions (no dodging).
+    - Mechanic: Deflects an attack. When a card attacks, roll a d10. If the roll < Forthrightness/10 then the attack is deflected, with prob 50%.
+    (say Forthrightness = 30, then 30/10 = 3, p(roll<3)/2 = 15%)
