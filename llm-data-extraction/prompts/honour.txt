@@ -1,13 +1,20 @@
-You are an expert at identifying factual claims made by politicians. Your task is to read the following text and extract all statements that present themselves as facts about the world, events, or data.
+You are an expert at identifying factual claims made by politicians. Your task is to read the following text and extract all statements that present themselves as facts about the world, events, or data. We are not interested in vague statements, conjecture, value statements, or opinions.
 
 For each factual claim, output a JSON object in JSONL format with the following keys:
 
-- "politician": The name of the politician making the claim.
-- "claim": The text of the factual claim.
+- "politician": The name of the politician making the claim. (note. We make the assumption that the articles are trustworthy when quoting politicians)
+- "claim": The text of the factual claim. (You are allowed to rephrase the claim to make it more clear and concise and to resolve any ambiguities like 'this' or 'that'.)
 - "certainty": A score between 0.0 and 1.0 indicating your certainty that this statement is intended as a factual claim.
-- "importance_weighting": A score between 1 (low importance) and 5 (high importance) indicating the perceived importance or significance of the claim. Consider factors such as the scope of the claim, its potential impact, and how prominently it is presented in the text.
+- "importance_weighting": A score between 1 (low importance) and 5 (high importance) indicating the perceived importance or significance of the claim. Consider factors such as the scope of the claim, its potential impact.
 
-Example 1:
+A few notes:
+
+- quotes can be facts, it's a fact that X said Y. In that case, write the claim as; "X said Y".
+- claims that are not intended as factual statements should not be included (maybe they are jokes, rhetorical questions, etc.)
+- claims that are not verifiable or falsifiable are not facts (we will be attempting to verify the claims)
+- if multiple claims are made by the same politician in one phrase, output one object per claim. 
+
+Positive Example 1:
 
 Text:
 Prime Minister Ardern stated today that unemployment has fallen to 3.2%.
@@ -15,7 +22,9 @@ Prime Minister Ardern stated today that unemployment has fallen to 3.2%.
 Output:
 {"politician": "Jacinda Ardern", "claim": "unemployment has fallen to 3.2%", "certainty": 0.98, "importance_weighting": 4}
 
-Example 2:
+(note: this claim is specific, verifiable, and has a clear meaning)
+
+Positive Example 2:
 
 Text:
 During a local meeting, MP Smith mentioned that the council will be repairing the potholes on Elm Street next month.
@@ -23,15 +32,25 @@ During a local meeting, MP Smith mentioned that the council will be repairing th
 Output:
 {"politician": "MP Smith", "claim": "the council will be repairing the potholes on Elm Street next month", "certainty": 0.95, "importance_weighting": 2}
 
-Example 3:
+Positive Example 3:
 
 Text:
-The Finance Minister [from extended context we know it's Nicola Willis] explained that the government's new budget includes an increase of $50 million for healthcare spending. She also noted that this investment will lead to better patient outcomes.
+The Finance Minister Nicola Willis explained that the government's new budget includes an increase of $50 million for healthcare spending. She also noted that this investment will lead to better patient outcomes.
 
 Output:
 {"politician": "Nicola Willis", "claim": "the government's new budget includes an increase of $50 million for healthcare spending", "certainty": 0.97, "importance_weighting": 5}
 {"politician": "Nicola Willis", "claim": "$50 million for healthcare spending will lead to better patient outcomes", "certainty": 0.90, "importance_weighting": 4}
 
----
+Negative Example 1:
 
-Text to analyze:
+Text:
+"Our health system is falling victim to a slow death by a thousand cuts,” says Green Party Health spokesperson Hūhana Lyndon.
+"All New Zealanders deserve a strong, robust public health system that is funded to spec, and able to provide high-quality, timely health services to all who need it."
+
+Output:
+{"politician": "Hūhana Lyndon", "claim": "Our health system is falling victim to a slow death by a thousand cuts", "certainty": 0.75, "importance_weighting": 3}
+{"politician": "Hūhana Lyndon", "claim": "All New Zealanders deserve a strong, robust public health system", "certainty": 0.75, "importance_weighting": 3}
+
+(note: these claims are not factual. The former is too vague and metaphorical, the latter is an opinion or value statement)
+
+---

@@ -37,5 +37,3 @@ Output 3:
 {"politician": "Leader Green", "question": "Leader of the Opposition, what specific measures would your party take to reduce carbon emissions by 50% by 2030?", "response": "Our party has a comprehensive plan that includes investing in renewable energy, promoting public transport, and supporting sustainable agriculture.", "direct_answer": false, "certainty": 0.85, "importance": 5}
 
 ---
-
-Text to analyze:
