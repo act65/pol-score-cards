@@ -13,7 +13,8 @@ A few notes:
 - quotes can be facts, it's a fact that X said Y. In that case, write the claim as; "X said Y".
 - claims that are not intended as factual statements should not be included (maybe they are jokes, rhetorical questions, etc.)
 - claims that are not verifiable or falsifiable are not facts (we will be attempting to verify the claims)
-- if multiple claims are made by the same politician in one phrase, output one object per claim. 
+- if multiple claims are made by the same politician in one phrase, output one object per claim.
+- Hyperbole and exaggeration are misleading and should be considered as false claims.
 
 Positive Example 1:
 
