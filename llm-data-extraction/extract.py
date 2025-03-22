@@ -46,36 +46,43 @@ def main(fname, attribute, api_key, save_to):
     responses = []
     bad_responses = []
 
-    for i, article in enumerate(articles):
-        print(f"\rAnalyzing article {i}: {article['headline']}...", end=" ", flush=True)
-        query = build_query(prompt, article)
-
-        completion = client.chat.completions.create(
-            # model="gpt-4o-mini",
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": query},
-            ],
-        )
-
-        # response should be formatted as a list of json objects
-        try:
-            examples = [json.loads(eg) for eg in completion.choices[0].message.content.split("\n") if eg]
-        except Exception as e:
-            print(f"Error processing response for article {article['headline']}: {e}")
-            bad_responses.append({
-                "source": article['url'],
-                "response": completion.choices[0].message.content
-            })
-            continue
-
-        responses.append({
-            "examples": examples,
-            "source": article['url']
-        })
-
     with open(save_to, "w") as f:
-        json.dump(responses, f, indent=4)
+
+        for i, article in enumerate(articles):
+            print(f"\rAnalyzing article {i}: {article['headline']}...", end=" ", flush=True)
+            query = build_query(prompt, article)
+
+            completion = client.chat.completions.create(
+                # model="gpt-4o-mini",
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": query},
+                ],
+            )
+
+            # response should be formatted as a list of json objects
+            try:
+                examples = [json.loads(eg) for eg in completion.choices[0].message.content.split("\n") if eg]
+            except Exception as e:
+                print(f"Error processing response for article {article['headline']}: {e}")
+                bad_responses.append({
+                    "source": article['url'],
+                    "response": completion.choices[0].message.content
+                })
+                continue
+
+            record = {
+                "examples": examples,
+                "source": article['url']
+            }
+
+            json.dump(record, f, indent=4)
+            f.write("\n")
+
+            # responses.append()
+
+    # with open(save_to, "w") as f:
+    #     json.dump(responses, f, indent=4)
 
     
     if bad_responses:

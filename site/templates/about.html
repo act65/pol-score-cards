@@ -18,16 +18,17 @@
     <h2>Attributes</h2>
     <p>The following attributes are currently being scored:</p>
     <ul>
-        <li>Evasiveness: Measures how often the politician directly answers the question asked, rather than dodging or changing the subject.</li>
-        <li>Strength: Indicates the politician's ability to translate their public rhetoric and promises into concrete policies and see them through to implementation.</li>
-        <li>Integrity</li>
-        <li>Alignment</li>
-        <li>Prophecy</li>
-        <li>Influence</li>
+        {% for attribute in attributes %}
+            <li>{{ attribute.name }}: {{ attribute.definition }}</li>
+        {% endfor %}
     </ul>
 
+    <p>Together, these attributes answer the question:
+        when politician X talks, should I listen?
+    </p>
+
     <p>These attributes were chosen as they allow for a broad assessment of a politician's performance and accountability, while being politically neutral.</p>
-    <p>While we could extract data about other attributes related to the ... I wan to keep this apolitical. </p>
+    <p>While we could extract data about other attributes related to the ... I want to keep this apolitical. </p>
 
 
     <h2>Methodology</h2>

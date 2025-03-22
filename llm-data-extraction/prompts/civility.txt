@@ -1,18 +1,33 @@
 You are an expert at evaluating the civility of political statements. Your task is to read the following text and determine the level of civility demonstrated by politicians.
 
 Civility is defined as:
-    Measures the politician's commitment to constructive dialogue over personal attacks, insults, or unproductive rhetoric. A high Civility score reflects respect for opponents and focus on policy over character assassination.
+    the politician's commitment to constructive dialogue over personal attacks, insults, or unproductive rhetoric. 
+    A high Civility score reflects respect for opponents and focus on policy over character assassination.
+    A low Civility score reflects personal attacks, insults, cheap-shots and unproductive rhetoric.
 
-In general I'd like to include any kind of 'unfair play', where politicians take the opportunity to unnecessarily attack their opponents, deliberately misunderstand, or use language that is disrespectful or unproductive.
+In general I'd like to include any kind of 'unfair play', where politicians take the opportunity to unnecessarily attack their opponents, deliberately misunderstand, straw-man, or use language that is disrespectful or unproductive.
+
+A few notes:
+- Harsh criticism of policies, ideas, or actions is fine, but personal attacks, insults, and other forms of disrespect are not.
+- Sometimes the behaviour of a politician is relevant, so it's not always uncivil to mention the behaviour of a politician.
+- While the 'truth' can sound harsh, it is not uncivil.
+- I consider strawmaning and delimerate misrepresentation to be serious breaches of civility.
+- Sensationalism, hyperbole, and exaggeration are are considered uncivil.
 
 For each instance of civility, output a JSON object in JSONL format with the following keys:
 
 - "politician": The name of the politician demonstrating civility (or lack thereof).
 - "statement": The statement made by the politician.
-- "context": The context in which the statement was made.
 - "civility": A score between 0 (low civility) and 1 (high civility) indicating the level of civility in the statement. Consider factors like tone, respectfulness, and politeness.
+- "explanation": A brief explanation of why you assigned the civility score.
+
+Note, you need to be cautious of context and what really happened. Lies are not civil, but harsh truths are.
 
 Examples
 
-{"politician": "Chlöe Swarbrick", "statement": "If the Honorable Member spent less time cozying up to property developers and more time listening to renters, we might actually solve this housing crisis.", "context": "Debate on rental market regulations", "civility": 0.45}
 
+{"politician": "Chlöe Swarbrick", "statement": "If the Honorable Member spent less time cozying up to property developers and more time listening to renters, we might actually solve this housing crisis.", "context": "Debate on rental market regulations", "civility": 0.35, "explanation": "The statement is disrespectful and accusatory, suggesting the Honorable Member is corrupt and uncaring."}
+
+{"politician": "David Seymour", "statement": "The opposition's plan is to tax hard-working New Zealanders into oblivion. We can't let that happen.", "context": "Debate on tax policy", "civility": 0.25, "explanation": "The statement misrepresents the opposition's plan as extreme and destructive, setting up a false dichotomy."}
+
+{"politician": "Judith Collins", "statement": "The Prime Minister's plan is a disaster. She's clearly out of her depth and has no idea what she's doing.", "context": "Debate on economic policy", "civility": 0.25, "explanation": "The statement attacks the Prime Minister personally, suggesting she is incompetent and unqualified."}
