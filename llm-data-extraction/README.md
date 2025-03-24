@@ -15,3 +15,10 @@ Some of the attributes cannot be trusted to the knowledge of a LLM.
 - Divination requires us to verify predictions
 - Authenticity requires us to align public statements with parliamentary and council / committee records
 - Veracity requires us to verify claims
+
+
+## Usage
+
+```
+python extract.py ../data/data/greens_media_releases.json specificity $OPENAI_API_KEY green-specificity.json
+```

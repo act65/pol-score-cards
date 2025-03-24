@@ -4,6 +4,29 @@ import datetime
 import pytz
 import re
 import time
+import json
+
+def parse_greens_byline(text):
+    """
+    Parses the Green Party media release byline to extract author and date.
+
+    Args:
+        byline (str): The byline string.
+
+    Returns:
+        dict: A dictionary containing 'author' and 'date' (as a datetime object),
+              or None for either if parsing fails.
+    """
+    text = text.split("\n")
+    author = " and ".join(text[1:-1])
+    nz_timezone = pytz.timezone('Pacific/Auckland')
+    date = datetime.datetime.strptime(text[-1], "%B %d, %Y %I:%M %p")
+    article_date = nz_timezone.localize(date)
+    today_nz = datetime.datetime.now(nz_timezone).date()
+    article_date = nz_timezone.localize(datetime.datetime.combine(today_nz, date.time()))
+
+    return " and ".join(text[1:-1]), article_date
+    
 
 def format_raw(text):
     text = text.strip()
@@ -37,9 +60,12 @@ def scrape_media_release(url):
         content_element = soup.find('div', class_='content')
         content = format_raw(content_element.text) if content_element else None
 
+        author, article_date = parse_greens_byline(byline)
+
         return {
             'headline': headline,
-            'byline': byline,
+            'author': author,
+            'date': article_date.isoformat(),
             'content': content,
             'url': url,
         }
@@ -95,7 +121,6 @@ if __name__ == "__main__":
     print(f"\nFound {len(all_media_releases)} media releases in the last year.")
 
     # Or save the data to a file (e.g., JSON or CSV)
-    import json
     with open("greens_media_releases.json", "w", encoding="utf-8") as f:
         json.dump(all_media_releases, f, indent=4, default=str)
 
