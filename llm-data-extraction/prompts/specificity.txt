@@ -10,6 +10,7 @@ For each instance of specificity, output a JSON object in JSONL format with the 
 - "politician": The name of the politician demonstrating specificity (or lack thereof).
 - "statement": The statement made by the politician.
 - "specificity": A score between 0 (low specificity) and 1 (high specificity) indicating the level of specificity in the statement. Consider factors like clarity, detail, and precision.
+- "explain": A brief explanation of why you assigned the specificity score to the statement.
 
 Here we need to be cautious not to misquote / ignore context.
 Sometimes a statement can appear vague, but is actually quite specific given the context.
