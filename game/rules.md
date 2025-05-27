@@ -4,7 +4,7 @@ Core Traits
 
     Strength
     - Metric: Ability to implement policies.
-    - Mechanic: Multiplies damage/defense (e.g., Base attack = Strength, Base defense = Strength).
+    - Mechanic: Multiplies base hp (max_hp = MAZ_HP x strength) and sets base damage/defense (e.g., Base attack = Strength, Base defense = Strength).
 
     Divination
     - Metric: Accuracy of predictions.
@@ -12,34 +12,43 @@ Core Traits
 
     Charisma
     - Metric: Persuasion and coalition-building.
-    - Mechanic: Limits number of cards in play (higher Charisma = more slots). Every player can play 2 cards + 1 card for every 100 Charisma.
+    - Mechanic: Limits number of cards in play (higher Charisma = more slots). Every player can play n cards + 1 card for every X Charisma.
 
 Offense-Focused Traits
 
     Rigor
     - Metric: Avoids logical fallacies, uses evidence.
-    - Mechanic: Attack += Rolld10 x Rigor / 10
+    - Mechanic: Attack damage multiplier.
 
     Specificity
-    - Metric: Concrete, non-vague proposals.
-    - Mechanic: Attack Floor: Set minimum attack die roll = Specificity / 10 (e.g., 60 Specificity = d10 rolls <6 become 6).
+    - Metric: Concrete, non-vague answers / statements / proposals.
+    - Mechanic: True strike (with 100 specificity). Otherwise you have a miss chance.
 
     Civility
     - Metric: Avoids personal attacks, focuses on policy.
-    - Mechanic: Civility gives attack accuracy. When a card attacks, roll a d10. If roll > Civility/10 then attack hits, with prob 50%.
-    (say Civility = 80, then 80/10 = 8, p(roll>8)/2 = 10%)
+    - Mechanic: Attacks pierce through cards and deal extra civility/X damage to player.
+
+    Authenticity
+    - Metric: Consistency between words/actions.
+    - Mechanic: Chance to randomly attack a different card than intended.
 
 Defense-Focused Traits
 
     Veracity
-    - Metric: Truthfulness, avoids misinformation.
-    - Mechanic: Defense += Rolld10 x Veracity / 10
-
-    Authenticity
-    - Metric: Consistency between words/actions.
-    - Mechanic: Defense Floor: Set minimum defense die roll = Devotion / 10 (e.g., 60 Devotion = d10 rolls <6 become 6).
+    - Metric: Truthfulness, avoids misinformation, misleading statements.
+    - Mechanic: Defense multiplier.
 
     Forthrightness
-    - Metric: Directly answers questions (no dodging).
-    - Mechanic: Deflects an attack. When a card attacks, roll a d10. If the roll < Forthrightness/10 then the attack is deflected, with prob 50%.
-    (say Forthrightness = 30, then 30/10 = 3, p(roll<3)/2 = 15%)
+    - Metric: Opposite of dodges questions.
+    - Mechanic: Chance to block attack.
+
+
+<!-- 
+
+other potential mechanics?
+
+- debufs?
+- critical strikes?
+- positions matter?
+- 
+ -->

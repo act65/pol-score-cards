@@ -1,4 +1,118 @@
-# --- 4. Mock Data Generation ---
+
+# Example Usage (Illustrative - you'll need to create card data)
+if __name__ == '__main__':
+    # Sample Card Data (replace with your actual card definitions)
+    def load_politicians_from_json(filepath="politicians.json") -> List[PoliticianCard]:
+        # Create a dummy politicians.json if it doesn't exist for testing
+        if not os.path.exists(filepath):
+            dummy_data = [
+                {"id": "pol001", "name": "Senator Strong", "party": "Alpha", "attributes": {"strength": 3, "divination": 5, "charisma": 10, "rigor": 2, "specificity": 80, "civility": 50, "authenticity": 90, "veracity": 2, "forthrightness": 60}},
+                {"id": "pol002", "name": "Governor Quickwit", "party": "Beta", "attributes": {"strength": 2, "divination": 8, "charisma": 20, "rigor": 1, "specificity": 90, "civility": 70, "authenticity": 70, "veracity": 1, "forthrightness": 40}},
+                {"id": "pol003", "name": "Mayor Steadfast", "party": "Alpha", "attributes": {"strength": 4, "divination": 3, "charisma": 5, "rigor": 3, "specificity": 70, "civility": 30, "authenticity": 95, "veracity": 3, "forthrightness": 80}},
+                {"id": "pol004", "name": "Chancellor Cunning", "party": "Beta", "attributes": {"strength": 1, "divination": 9, "charisma": 15, "rigor": 1, "specificity": 95, "civility": 80, "authenticity": 60, "veracity": 1, "forthrightness": 30}},
+            ]
+            # Add more cards to make decks larger
+            for i in range(5, 16):
+                 dummy_data.append({"id": f"pol{i:03d}", "name": f"Rep Generic {i-4}", "party": "Independent", "attributes": {"strength": random.randint(1,3), "divination": random.randint(1,10), "charisma": random.randint(5,25), "rigor": random.randint(1,3), "specificity": random.randint(50,100), "civility": random.randint(20,100), "authenticity": random.randint(50,100), "veracity": random.randint(1,3), "forthrightness": random.randint(20,100)}})
+
+            with open(filepath, 'w') as f:
+                json.dump(dummy_data, f, indent=2)
+
+        with open(filepath, 'r') as f:
+            data = json.load(f)
+        cards = []
+        for card_data in data:
+            attrs = Attributes(**card_data['attributes'])
+            cards.append(PoliticianCard(card_id=card_data['id'], name=card_data['name'], party=card_data['party'], attributes=attrs))
+        return cards
+
+    all_cards = load_politicians_from_json()
+    if len(all_cards) < 10: # Need enough for two decks of 5 for initial draw
+        print("Not enough cards to run example. Need at least 10.")
+        exit()
+
+    random.shuffle(all_cards)
+    deck1_cards = all_cards[:len(all_cards)//2]
+    deck2_cards = all_cards[len(all_cards)//2:]
+
+    config = GameConfig()
+    game_engine = GameEngine(config, deck1_cards, deck2_cards)
+    game_state = game_engine.initialize_game_state()
+
+    print("\nInitial State:")
+    print(game_state.players["P1"])
+    print(game_state.players["P2"])
+
+    # --- Example Round 1 ---
+    if game_state.game_phase == "ONGOING":
+        p1_actions_round1 = []
+        p2_actions_round1 = []
+
+        # P1 plays a card (if hand is not empty)
+        if game_state.players["P1"].hand:
+            card_to_play_p1 = game_state.players["P1"].hand[0]
+            p1_actions_round1.append(PlayCardAction(player_id="P1", card_instance_id=card_to_play_p1.instance_id))
+        
+        # P2 plays a card (if hand is not empty)
+        if game_state.players["P2"].hand:
+            card_to_play_p2 = game_state.players["P2"].hand[0]
+            p2_actions_round1.append(PlayCardAction(player_id="P2", card_instance_id=card_to_play_p2.instance_id))
+
+        round1_player_actions = RoundActions(
+            player1_actions=PlayerTurnActions(player_id="P1", actions=p1_actions_round1),
+            player2_actions=PlayerTurnActions(player_id="P2", actions=p2_actions_round1)
+        )
+        game_state = game_engine.process_round(game_state, round1_player_actions)
+        
+        print("\nState after Round 1 Card Plays:")
+        print(game_state.players["P1"])
+        print(game_state.players["P2"])
+
+    # --- Example Round 2 (with attacks) ---
+    if game_state.game_phase == "ONGOING":
+        p1_actions_round2 = []
+        p2_actions_round2 = []
+
+        # P1 plays another card
+        if len(game_state.players["P1"].hand) > 0:
+             p1_actions_round2.append(PlayCardAction(player_id="P1", card_instance_id=game_state.players["P1"].hand[0].instance_id))
+
+        # P2 plays another card
+        if len(game_state.players["P2"].hand) > 0:
+             p2_actions_round2.append(PlayCardAction(player_id="P2", card_instance_id=game_state.players["P2"].hand[0].instance_id))
+
+
+        # P1 attacks with first card on field, P2's first card on field (if they exist)
+        if game_state.players["P1"].field and game_state.players["P2"].field:
+            p1_attacker = game_state.players["P1"].field[0]
+            p2_target = game_state.players["P2"].field[0]
+            p1_actions_round2.append(AttackAction(player_id="P1", attacker_instance_id=p1_attacker.instance_id, target_instance_id=p2_target.instance_id))
+
+        # P2 attacks with first card on field, P1's first card on field (if they exist)
+        if game_state.players["P2"].field and game_state.players["P1"].field:
+            # Ensure P1 still has a card if P1 played one and it's the only one
+            if game_state.players["P1"].field: # Check if P1 has any card on field
+                p2_attacker = game_state.players["P2"].field[0]
+                p1_target = game_state.players["P1"].field[0]
+                p2_actions_round2.append(AttackAction(player_id="P2", attacker_instance_id=p2_attacker.instance_id, target_instance_id=p1_target.instance_id))
+
+
+        round2_player_actions = RoundActions(
+            player1_actions=PlayerTurnActions(player_id="P1", actions=p1_actions_round2),
+            player2_actions=PlayerTurnActions(player_id="P2", actions=p2_actions_round2)
+        )
+        game_state = game_engine.process_round(game_state, round2_player_actions)
+
+        print("\nState after Round 2:")
+        print(game_state.players["P1"])
+        print(game_state.players["P2"])
+        if game_state.winner:
+            print(f"\nGAME OVER! Winner: {game_state.winner}")
+        
+    print("\nFull Action Log:")
+    for entry in game_state.action_log:
+        print(entry)
+
 def create_mock_politician_card(card_id_num: int, owner_id: str, config: GameConfig) -> PoliticianCard:
     card_id = f"mock_pol_{card_id_num}"
     name = f"Mock Politician {card_id_num}"
@@ -24,21 +138,14 @@ def generate_mock_deck(player_id: str, num_cards: int, config: GameConfig) -> Li
     return deck
 
 
-
-# --- 6. Random AI Player ---
 class RandomPlayerAI:
     def __init__(self, player_id: str, config: GameConfig):
         self.player_id = player_id
         self.config = config
 
-    def choose_action(self, game_state: GameState) -> Optional[PlayerAction]:
-        if game_state.current_player_id != self.player_id or game_state.winner:
-            return None # Not my turn or game is over
-
+    def choose_action(self, game_state: GameState) -> PlayerAction:
         player = game_state.get_player(self.player_id)
         opponent = game_state.get_opponent(self.player_id)
-        if not player or not opponent: return None
-
 
         # --- PLAY PHASE ---
         if game_state.game_phase == f"{self.player_id}_PLAY":
