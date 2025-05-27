@@ -64,7 +64,7 @@ def scrape_media_release(url):
         print(f"Error processing URL {url}: {e}")
         return None
 
-def scrape_media_release_page(url, last_year_date, all_releases):
+def scrape_media_release_page(url, N):
     counter = 0
     for i in range(10): # Limited to 10 pages for this example
         page_url = url + f'?page={i}'
@@ -76,19 +76,13 @@ def scrape_media_release_page(url, last_year_date, all_releases):
 
             soup = BeautifulSoup(response.content, 'html.parser')
 
-            article_list = soup.find_all('h3', class_='page-excerpt--heading')
-            stop_scraping = False
+        article_list = soup.find_all('h3', class_='page-excerpt--heading')
 
-            for article_heading in article_list:
-                link_element = article_heading.find('a')
-                if link_element and 'href' in link_element.attrs:
-                    article_url = get_full_url(link_element['href'])
-                    release_data = scrape_media_release(article_url)
-                    print(release_data)
-                    # raise SystemExit
-
-                    all_releases.append(release_data)
-                    counter += 1
+        for article_heading in article_list:
+            link_element = article_heading.find('a')
+            if link_element and 'href' in link_element.attrs:
+                yield get_full_url(link_element['href'])
+                counter += 1
 
                     if counter > 100: # Limiting to 100 articles for this example
                         stop_scraping = True
