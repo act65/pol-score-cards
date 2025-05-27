@@ -17,12 +17,13 @@
             <h3>{{ item.politician.name }}</h3>
             <p>Party: {{ item.politician.party }}</p>
             <h4>Scores:</h4>
-            <p>Evasion: <a href="/attribute/{{ item.politician.id }}/evasion" class="score-link">{{ item.scores.evasion }}</a></p>
-            <p>Strength: <a href="/attribute/{{ item.politician.id }}/strength" class="score-link">{{ item.scores.strength }}</a></p>
-            <p>Honour: <a href="/attribute/{{ item.politician.id }}/honour" class="score-link">{{ item.scores.honour }}</a></p>
-            <p>Devotion: <a href="/attribute/{{ item.politician.id }}/devotion" class="score-link">{{ item.scores.devotion }}</a></p>
-            <p>Divination: <a href="/attribute/{{ item.politician.id }}/prophecy" class="score-link">{{ item.scores.divination }}</a></p>
-            <p>Charisma: <a href="/attribute/{{ item.politician.id }}/charisma" class="score-link">{{ item.scores.charisma }}</a></p>
+            {% for attribute in all_attributes %}
+                {% if attribute.id in item.scores %}
+                    <p>{{ attribute.name }}: <a href="{{ url_for('attribute_detail', politician_id=item.politician.id, attribute=attribute.id) }}" class="score-link">{{ item.scores[attribute.id] }}</a></p>
+                {% else %}
+                    <p>{{ attribute.name }}: N/A</p>
+                {% endif %}
+            {% endfor %}
         </div>
         {% endfor %}
     </div>

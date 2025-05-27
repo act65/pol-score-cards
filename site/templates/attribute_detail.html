@@ -15,10 +15,22 @@
         <h2>{{ politician.name }}</h2>
         <p>Party: {{ politician.party }}</p>
         <h3>{{ attribute_info.name }} Score: {{ score }}</h3>
-        <p>Description: {{ attribute_info.description }}</p>
-        {% for example in examples %}
-        <p>- {{ example.text }} <a href="{{ example.source_url }}" target="_blank" rel="noopener noreferrer">Source</a></p>
-        {% endfor %}
+        <p>Description: {{ attribute_info.definition }}</p>
+        {% if examples %}
+            <h4>Examples:</h4>
+            <ul>
+            {% for example in examples %}
+                <li>
+                    {{ example.text }}
+                    {% if example.source_url and example.source_url|trim != '' %}
+                        <a href="{{ example.source_url }}" target="_blank" rel="noopener noreferrer">(Source)</a>
+                    {% endif %}
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>No specific examples available for this attribute for this politician.</p>
+        {% endif %}
     </div>
     <div class="back-link">
         <a href="/">Back to Main Page</a>

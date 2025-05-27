@@ -1,64 +1,53 @@
-import requests
 from bs4 import BeautifulSoup
 import datetime
 import pytz
 import re
-import time
-import json
-
-def format_raw(text):
-    text = text.strip()
-    """Removes excessive sequences of newlines and spaces from text."""
-
-    # Replace combinations of newlines and spaces with a single newline
-    text = re.sub(r'(\n\s+){2,}', '\n', text)
-    # Replace multiple spaces with a single space
-    text = re.sub(r' {3,}', ' ', text)
-    # Replace multiple newlines with a single newline
-    text = re.sub(r'\n{2,}', '\n', text)
-    return text
+from .utils import format_text, make_request, save_to_json
 
 def get_full_url(base_url, relative_url):
     return f"{base_url}{relative_url}"
 
 def scrape_national_media_release(url):
     try:
-        time.sleep(1)  # Be nice to the server
+        response = make_request(url, delay_seconds=1)
+        if not response:
+            return None # make_request already prints an error
 
-        response = requests.get(url)
-        response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
 
         headline_element = soup.find('h1', class_='mb-2 text-5xl font-extrabold')
-        headline = format_raw(headline_element.text) if headline_element else None
+        headline = format_text(headline_element.text) if headline_element else None
 
         author_element = soup.find('p', class_='text-lg font-bold uppercase my-2 flex group-hover:underline')
-        author = format_raw(author_element.text) if author_element else None
+        author = format_text(author_element.text) if author_element else None
 
         date_element = soup.find('p', class_='text-lg font-bold uppercase')
-        date_str = format_raw(date_element.text) if date_element else None
+        # Apply format_text to date_str before parsing
+        date_str_raw = date_element.text if date_element else None
+        date_str_formatted = format_text(date_str_raw) if date_str_raw else None
+        
         date_published = None
-        if date_str:
+        if date_str_formatted:
             try:
-                date_published = datetime.datetime.strptime(date_str, '%d %B %Y').replace(tzinfo=pytz.timezone('Pacific/Auckland'))
+                # The National Party website date format is like "20 February 2024"
+                date_published = datetime.datetime.strptime(date_str_formatted, '%d %B %Y').replace(tzinfo=pytz.timezone('Pacific/Auckland'))
             except ValueError as e:
-                print(f"Error parsing date '{date_str}' from URL {url}: {e}")
+                print(f"Error parsing date '{date_str_formatted}' (raw: '{date_str_raw}') from URL {url}: {e}")
 
         content_element = soup.find('div', class_='space-y-3')
-        content = format_raw(content_element.text) if content_element else None
+        content = format_text(content_element.text) if content_element else None
 
         return {
             'headline': headline,
+            # The key in the original dict was 'date', not 'date_published'. Keep 'date'.
             'date': date_published.isoformat() if date_published else None,
             'author': author,
             'content': content,
             'url': url,
         }
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching URL {url}: {e}")
-        return None
+    # requests.exceptions.RequestException is handled by make_request
     except Exception as e:
-        print(f"Error processing URL {url}: {e}")
+        print(f"Error processing URL {url}: {e}") # Catch other parsing errors
         return None
 
 def scrape_national_media_release_page(base_url, page, last_year_date, all_releases):
@@ -67,15 +56,16 @@ def scrape_national_media_release_page(base_url, page, last_year_date, all_relea
     stop_scraping = False
 
     while not stop_scraping and counter < 100:  # Limit to 100 for now, can adjust
-        page_url = base_url + f"/{page}" + f'?page={page_num}'
+        page_url = f"{base_url}/{page}?page={page_num}" # Corrected URL construction
         print(f"Fetching page: {page_url}")
+        
+        response = make_request(page_url, delay_seconds=1)
+        if not response:
+            print(f"Failed to fetch page {page_url}, stopping pagination for this section.")
+            break # If page request fails, stop for this section
+
         try:
-            response = requests.get(page_url)
-            response.raise_for_status()
             soup = BeautifulSoup(response.content, 'html.parser')
-
-
-            # article_links = soup.find_all('a', href=re.compile(r'/news/\d{8}-'))
             article_links = soup.find_all('a', href=re.compile(r'/press/'))
 
             if not article_links:
@@ -84,7 +74,12 @@ def scrape_national_media_release_page(base_url, page, last_year_date, all_relea
 
             for link_element in article_links:
                 relative_url = link_element['href']
-                article_url = get_full_url(base_url, relative_url)
+                # Ensure get_full_url is used correctly; National's base URL might not need to be passed if relative_url is full path
+                # Assuming get_full_url prepends base_url only if needed.
+                # Original get_full_url: return f"{base_url}{relative_url}" - this might lead to double base_url if relative_url is like /press/..
+                # Let's assume relative_url starts with / and base_url does not end with /
+                article_url = get_full_url(base_url.rstrip('/'), relative_url)
+
 
                 # Basic check to avoid duplicates if the same link appears multiple times
                 if any(release['url'] == article_url for release in all_releases):
@@ -92,19 +87,23 @@ def scrape_national_media_release_page(base_url, page, last_year_date, all_relea
 
                 release_data = scrape_national_media_release(article_url)
                 if release_data:
-                    if release_data['date_published']:
-                        release_date = datetime.datetime.fromisoformat(release_data['date_published'])
-                        if release_date >= last_year_date:
-                            all_releases.append(release_data)
-                            counter += 1
-                            print(release_data['headline'])  # Print headline as progress
-                        else:
-                            print(f"Skipping older article: {release_data['headline']} published on {release_date.strftime('%Y-%m-%d')}")
-                            stop_scraping = True # Stop if we hit articles older than the target date
-                            break
+                    # Ensure the key used here matches what scrape_national_media_release returns ('date')
+                    if release_data.get('date'): 
+                        try:
+                            release_date = datetime.datetime.fromisoformat(release_data['date'])
+                            if release_date >= last_year_date:
+                                all_releases.append(release_data)
+                                counter += 1
+                                print(release_data['headline'])  # Print headline as progress
+                            else:
+                                print(f"Skipping older article: {release_data['headline']} published on {release_date.strftime('%Y-%m-%d')}")
+                                stop_scraping = True # Stop if we hit articles older than the target date
+                                break
+                        except ValueError: # Handles if date is None or not valid ISO format
+                             print(f"Could not parse date for {article_url} from '{release_data.get('date')}'")
                     else:
-                        print(f"Could not determine publish date for {article_url}")
-                if counter >= 100:
+                        print(f"Could not determine publish date for {article_url}, data: {release_data}")
+                if counter >= 100: # overall limit
                     stop_scraping = True
                     break
 
@@ -112,14 +111,11 @@ def scrape_national_media_release_page(base_url, page, last_year_date, all_relea
                 break
 
             page_num += 1
-            time.sleep(1) # Be nice
-
-        except requests.exceptions.RequestException as e:
-            print(f"Error fetching media release page {page_url}: {e}")
-            break
+            # time.sleep(1) is removed as make_request handles delay
+        # requests.exceptions.RequestException is handled by make_request
         except Exception as e:
             print(f"Error processing media release page {page_url}: {e}")
-            break
+            break # Stop for this section if processing fails
 
 if __name__ == "__main__":
     national_base_url = "https://www.national.org.nz"
@@ -134,9 +130,6 @@ if __name__ == "__main__":
 
     print(f"\nFound {len(all_national_releases)} National Party media releases in the last year.")
 
-    # Save the data to a JSON file
     output_filename = f"national_media_releases_{page}.json"
-    with open(output_filename, "w", encoding="utf-8") as f:
-        json.dump(all_national_releases, f, indent=4, default=str, ensure_ascii=False)
-
-    print(f"\nScraped data saved to {output_filename}")
+    save_to_json(all_national_releases, output_filename)
+    # The print statement "Data successfully saved to..." is now part of save_to_json
