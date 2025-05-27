@@ -1,0 +1,3 @@
+Core Concept: Players will play cards representing politicians, who will battle against each other using their political attributes as strengths in combat.
+
+The game is inspired by D&D / Hearthstone / Yhugio / ...
