@@ -3,7 +3,8 @@ import math
 import json
 import os
 import copy
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from dataclasses import field as abs_field
 from typing import Optional, List, Dict, Callable, Tuple, Any, Union
 import logging
 
@@ -17,6 +18,9 @@ class GameConfig:
     PLAYER_IDS: Tuple[str, str] = ("P1", "P2")
     STARTING_HEALTH_POINTS: int = 1000
     CIVILITY_PIERCE_DIVISOR: int = 10
+
+# use global config
+config = GameConfig()
 
 @dataclass
 class Attributes:
@@ -37,17 +41,17 @@ class PoliticianCard:
     party: str
     attributes: Attributes
     owner_id: Optional[str] = None
-    instance_id: str = field(init=False)
-    max_hp: int = field(init=False)
-    current_hp: int = field(init=False)
-    attack_damage_base: int = field(init=False)
-    defense_base: int = field(init=False)
+    instance_id: str = abs_field(init=False)
+    max_hp: int = abs_field(init=False)
+    current_hp: int = abs_field(init=False)
+    attack_damage_base: int = abs_field(init=False)
+    defense_base: int = abs_field(init=False)
 
     def __post_init__(self):
         self.instance_id = f"{self.id}_{random.randint(10000, 99999)}"
         
         # Strength mechanic: Multiplies base hp and sets base damage/defense
-        self.max_hp = GameConfig().MAX_HP_CARD * self.attributes.strength
+        self.max_hp = config.MAX_HP_CARD * self.attributes.strength
         self.current_hp = self.max_hp
         
         # Base attack = Strength, Base defense = Strength
@@ -71,16 +75,15 @@ class PoliticianCard:
 @dataclass
 class PlayerState:
     id: str
-    config: GameConfig
-    deck: List[PoliticianCard] = field(default_factory=list)
-    hand: List[PoliticianCard] = field(default_factory=list)
-    field: List[PoliticianCard] = field(default_factory=list)
-    graveyard: List[PoliticianCard] = field(default_factory=list)
-    max_cards_on_field: int = field(init=False)
-    health_points: int = field(init=False)
+    deck: List[PoliticianCard] = abs_field(default_factory=list)
+    hand: List[PoliticianCard] = abs_field(default_factory=list)
+    field: List[PoliticianCard] = abs_field(default_factory=list)
+    graveyard: List[PoliticianCard] = abs_field(default_factory=list)
+    max_cards_on_field: int = abs_field(init=False)
+    health_points: int = abs_field(init=False)
 
     def __post_init__(self):
-        self.health_points = self.config.STARTING_HEALTH_POINTS
+        self.health_points = config.STARTING_HEALTH_POINTS
         self.update_max_field_cards() # Initial calculation
 
     def __str__(self):
@@ -95,7 +98,7 @@ class PlayerState:
     def update_max_field_cards(self):
         # Charisma mechanic: Limits number of cards in play
         total_charisma_on_field = sum(c.attributes.charisma for c in self.field)
-        self.max_cards_on_field = self.config.BASE_FIELD_SLOTS + math.floor(total_charisma_on_field / self.config.CHARISMA_PER_EXTRA_SLOT)
+        self.max_cards_on_field = config.BASE_FIELD_SLOTS + math.floor(total_charisma_on_field / config.CHARISMA_PER_EXTRA_SLOT)
 
     def draw_cards(self, num: int = 1) -> List[PoliticianCard]:
         drawn_cards = []
@@ -120,7 +123,6 @@ class PlayerState:
             # else: self.logger.warning(f"{self.id} cannot play {card_to_play.name}, field is full.")
         # else: self.logger.warning(f"{self.id} tried to play card {card_instance_id} not in hand.")
         return False
-
 
     def remove_card_from_field(self, card_instance_id: str, to_graveyard: bool = True):
         card_to_remove = next((c for c in self.field if c.instance_id == card_instance_id), None)
@@ -151,7 +153,7 @@ class GameState:
     round_number: int = 0
     game_phase: str = "INITIALIZING" # e.g., INITIALIZING, ONGOING, GAME_OVER
     winner: Optional[str] = None
-    action_log: List[str] = field(default_factory=list) # For game events
+    action_log: List[str] = abs_field(default_factory=list) # For game events
 
     def log_event(self, message: str):
         self.action_log.append(f"R{self.round_number}: {message}")
@@ -204,14 +206,13 @@ class RoundActions:
     player2_actions: PlayerTurnActions
 
 class GameEngine:
-    def __init__(self, config: GameConfig, player1_deck: List[PoliticianCard], player2_deck: List[PoliticianCard]):
-        self.config = config
+    def __init__(self, player1_deck: List[PoliticianCard], player2_deck: List[PoliticianCard]):
         
         # Initialize players with their decks and config
         # Deepcopy decks to prevent modification of original deck lists if they are reused
-        p1_id, p2_id = self.config.PLAYER_IDS
-        self.player1_state = PlayerState(id=p1_id, config=self.config, deck=copy.deepcopy(player1_deck))
-        self.player2_state = PlayerState(id=p2_id, config=self.config, deck=copy.deepcopy(player2_deck))
+        p1_id, p2_id = config.PLAYER_IDS
+        self.player1_state = PlayerState(id=p1_id, deck=copy.deepcopy(player1_deck))
+        self.player2_state = PlayerState(id=p2_id, deck=copy.deepcopy(player2_deck))
 
         # Configure logging
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -230,7 +231,7 @@ class GameEngine:
 
         # Initial draw for both players
         for p_id in initial_state.players:
-            drawn_count = len(initial_state.players[p_id].draw_cards(self.config.INITIAL_HAND_SIZE))
+            drawn_count = len(initial_state.players[p_id].draw_cards(config.INITIAL_HAND_SIZE))
             initial_state.log_event(f"{p_id} drew {drawn_count} cards.")
         
         initial_state.game_phase = "ONGOING"
@@ -238,8 +239,8 @@ class GameEngine:
         return initial_state
 
     def _check_game_over(self, state: GameState) -> Optional[str]:
-        p1 = state.players[self.config.PLAYER_IDS[0]]
-        p2 = state.players[self.config.PLAYER_IDS[1]]
+        p1 = state.players[config.PLAYER_IDS[0]]
+        p2 = state.players[config.PLAYER_IDS[1]]
 
         p1_lost = p1.health_points <= 0
         p2_lost = p2.health_points <= 0
@@ -264,7 +265,7 @@ class GameEngine:
 
         # Step 1: Draw cards (as per CARDS_DRAWN_PER_ROUND)
         for p_id, player_state in current_state.players.items():
-            drawn_count = len(player_state.draw_cards(self.config.CARDS_DRAWN_PER_ROUND))
+            drawn_count = len(player_state.draw_cards(config.CARDS_DRAWN_PER_ROUND))
             if drawn_count > 0:
                 current_state.log_event(f"{p_id} drew {drawn_count} card(s).")
             else:
@@ -374,8 +375,8 @@ class GameEngine:
             current_state.log_event(f"  {attacker_card.name} deals {damage_to_card} damage to {target_card.name}. ({target_card.name} HP: {target_card.current_hp}/{target_card.max_hp})")
 
             # Civility: Attacks pierce through cards and deal extra civility/X damage to player.
-            if self.config.CIVILITY_PIERCE_DIVISOR > 0:
-                civility_damage_to_player = math.floor(attacker_card.attributes.civility / self.config.CIVILITY_PIERCE_DIVISOR)
+            if config.CIVILITY_PIERCE_DIVISOR > 0:
+                civility_damage_to_player = math.floor(attacker_card.attributes.civility / config.CIVILITY_PIERCE_DIVISOR)
                 if civility_damage_to_player > 0:
                     target_player_state.take_direct_damage(civility_damage_to_player)
                     current_state.log_event(f"  Civility: {attacker_card.name} deals {civility_damage_to_player} direct damage to Player {target_player_state.id} (HP: {target_player_state.health_points}).")
