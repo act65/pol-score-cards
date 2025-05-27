@@ -15,7 +15,7 @@ def index():
     for politician in politicians:
         score = data_access_jsonl.get_scores(politician['id'])
         politician_data.append({"politician": politician, "scores": score})
-    return render_template('index.html', politicians_data=politician_data)
+    return render_template('index.html', politicians_data=politician_data, all_attributes=attribute_descriptions)
 
 @app.route('/attribute/<politician_id>/<attribute>')
 def attribute_detail(politician_id, attribute):

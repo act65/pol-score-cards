@@ -1,15 +1,24 @@
-{"politician_id": "ardern", "attribute": "evasion", "text": "When asked about the specific timeline for the policy, the Prime Minister said, 'Our focus is on ensuring the policy is robust and effective for all New Zealanders.'", "source_url": null}
-{"politician_id": "ardern", "attribute": "integrity", "text": "In a speech, she claimed unemployment was the lowest in 50 years, but fact-checks showed it was slightly higher.", "source_url": "https://example.com/factcheck1"}
-{"politician_id": "ardern", "attribute": "strength", "text": "She successfully passed the Zero Carbon Act into law.", "source_url": "https://legislation.govt.nz/act/public/2019/0062/latest/whole.html"}
-{"politician_id": "luxon", "attribute": "evasion", "text": "Asked about specific tax cuts, Mr. Luxon responded, 'We have a comprehensive economic plan that we will be rolling out in due course.'", "source_url": null}
-{"politician_id": "luxon", "attribute": "integrity", "text": "He stated that the previous government spent $1 billion on a project, but reports indicated the figure was lower.", "source_url": "https://example.com/report2"}
-{"politician_id": "luxon", "attribute": "strength", "text": "He successfully negotiated a coalition agreement with another party.", "source_url": null}
-{"politician_id": "seymour", "attribute": "evasion", "text": "When questioned about the social impact of his policies, Mr. Seymour said, 'Our priority is economic growth, which will ultimately benefit everyone.'", "source_url": null}
-{"politician_id": "seymour", "attribute": "integrity", "text": "He claimed that a certain policy would lead to a specific outcome within a year, but it did not materialize.", "source_url": null}
-{"politician_id": "seymour", "attribute": "strength", "text": "He championed and successfully passed legislation on charter schools.", "source_url": null}
-{"politician_id": "peters", "attribute": "evasion", "text": "Asked about his party's stance on a controversial issue, Mr. Peters replied, 'New Zealand First has always been a pragmatic party, and we will consider all options.'", "source_url": null}
-{"politician_id": "peters", "attribute": "integrity", "text": "He made a statement about immigration numbers that was later shown to be inaccurate by official statistics.", "source_url": "https://example.com/stats3"}
-{"politician_id": "peters", "attribute": "strength", "text": "He has been instrumental in forming government coalitions on multiple occasions.", "source_url": null}
-{"politician_id": "swarbrick", "attribute": "evasion", "text": "Questioned about the cost of a Green Party proposal, Ms. Swarbrick stated, 'We believe that investing in this area is crucial for the future.'", "source_url": null}
-{"politician_id": "swarbrick", "attribute": "integrity", "text": "She shared a statistic on social media that was later found to be misleadingly presented.", "source_url": "https://example.com/socialmedia4"}
-{"politician_id": "swarbrick", "attribute": "strength", "text": "She has been a strong advocate for and helped pass legislation related to drug reform.", "source_url": null}
+{"politician_id": "ardern", "attribute": "Precision", "text": "When asked about the specific timeline for the policy, the Prime Minister said, 'Our focus is on ensuring the policy is robust and effective for all New Zealanders.'", "source_url": null}
+{"politician_id": "ardern", "attribute": "Veracity", "text": "In a speech, she claimed unemployment was the lowest in 50 years, but fact-checks showed it was slightly higher.", "source_url": "https://example.com/factcheck1"}
+{"politician_id": "ardern", "attribute": "Strength", "text": "She successfully passed the Zero Carbon Act into law.", "source_url": "https://legislation.govt.nz/act/public/2019/0062/latest/whole.html"}
+{"politician_id": "luxon", "attribute": "Precision", "text": "Asked about specific tax cuts, Mr. Luxon responded, 'We have a comprehensive economic plan that we will be rolling out in due course.'", "source_url": null}
+{"politician_id": "luxon", "attribute": "Veracity", "text": "He stated that the previous government spent $1 billion on a project, but reports indicated the figure was lower.", "source_url": "https://example.com/report2"}
+{"politician_id": "luxon", "attribute": "Strength", "text": "He successfully negotiated a coalition agreement with another party.", "source_url": null}
+{"politician_id": "seymour", "attribute": "Precision", "text": "When questioned about the social impact of his policies, Mr. Seymour said, 'Our priority is economic growth, which will ultimately benefit everyone.'", "source_url": null}
+{"politician_id": "seymour", "attribute": "Veracity", "text": "He claimed that a certain policy would lead to a specific outcome within a year, but it did not materialize.", "source_url": null}
+{"politician_id": "seymour", "attribute": "Strength", "text": "He championed and successfully passed legislation on charter schools.", "source_url": null}
+{"politician_id": "peters", "attribute": "Precision", "text": "Asked about his party's stance on a controversial issue, Mr. Peters replied, 'New Zealand First has always been a pragmatic party, and we will consider all options.'", "source_url": null}
+{"politician_id": "peters", "attribute": "Veracity", "text": "He made a statement about immigration numbers that was later shown to be inaccurate by official statistics.", "source_url": "https://example.com/stats3"}
+{"politician_id": "peters", "attribute": "Strength", "text": "He has been instrumental in forming government coalitions on multiple occasions.", "source_url": null}
+{"politician_id": "swarbrick", "attribute": "Precision", "text": "Questioned about the cost of a Green Party proposal, Ms. Swarbrick stated, 'We believe that investing in this area is crucial for the future.'", "source_url": null}
+{"politician_id": "swarbrick", "attribute": "Veracity", "text": "She shared a statistic on social media that was later found to be misleadingly presented.", "source_url": "https://example.com/socialmedia4"}
+{"politician_id": "swarbrick", "attribute": "Strength", "text": "She has been a strong advocate for and helped pass legislation related to drug reform.", "source_url": null}
+{"politician_id": "ardern", "attribute": "Civility", "text": "Placeholder example text for Civility and ardern.", "source_url": null}
+{"politician_id": "luxon", "attribute": "Civility", "text": "Another placeholder example for Civility, this time for luxon.", "source_url": null}
+{"politician_id": "ardern", "attribute": "Civility", "text": "A third placeholder example for Civility, this time for ardern.", "source_url": null}
+{"politician_id": "seymour", "attribute": "Rigor", "text": "Placeholder example text for Rigor and seymour.", "source_url": null}
+{"politician_id": "davidson", "attribute": "Rigor", "text": "Another placeholder example for Rigor, this time for davidson.", "source_url": null}
+{"politician_id": "seymour", "attribute": "Rigor", "text": "A third placeholder example for Rigor, this time for seymour.", "source_url": null}
+{"politician_id": "ardern", "attribute": "Specificity", "text": "Placeholder example text for Specificity and ardern.", "source_url": null}
+{"politician_id": "luxon", "attribute": "Specificity", "text": "Another placeholder for Specificity, this time for luxon.", "source_url": null}
+{"politician_id": "davidson", "attribute": "Specificity", "text": "A third placeholder for Specificity, this time for davidson.", "source_url": null}

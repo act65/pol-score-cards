@@ -1,10 +1,8 @@
-import requests
 from bs4 import BeautifulSoup
 import datetime
 import pytz
 import re
-import time
-import json
+from .utils import format_text, make_request, save_to_json
 
 def parse_greens_byline(text):
     """
@@ -26,41 +24,33 @@ def parse_greens_byline(text):
     article_date = nz_timezone.localize(datetime.datetime.combine(today_nz, date.time()))
 
     return " and ".join(text[1:-1]), article_date
-    
-
-def format_raw(text):
-    text = text.strip()
-    """Removes excessive sequences of newlines and spaces from text."""
-
-    # Replace combinations of newlines and spaces with a single newline
-    text = re.sub(r'(\n\s+){2,}', '\n', text)
-    # Replace multiple spaces with a single space
-    text = re.sub(r' {3,}', ' ', text)
-    # Replace multiple newlines with a single newline
-    text = re.sub(r'\n{2,}', '\n', text)
-    return text
-
 def get_full_url(relative_url):
     return f"https://www.greens.org.nz{relative_url}"
 
 def scrape_media_release(url):
     try:
-        time.sleep(1)  # Be nice to the server and wait 1 second between requests
+        response = make_request(url, delay_seconds=1)
+        if not response:
+            return None
 
-        response = requests.get(url)
-        response.raise_for_status()  # Raise an exception for bad status codes
         soup = BeautifulSoup(response.content, 'html.parser')
 
         headline_element = soup.find('h2', class_='headline')
-        headline = format_raw(headline_element.text) if headline_element else None
+        headline = format_text(headline_element.text) if headline_element else None
 
         byline_element = soup.find('div', class_='byline')
-        byline = format_raw(byline_element.text) if byline_element else None
+        byline_text = byline_element.text if byline_element else "" # Ensure byline_text is a string
+        
+        # The byline from the website might have multiple lines and needs specific parsing by parse_greens_byline
+        # format_text might be too aggressive here if parse_greens_byline expects a certain structure.
+        # Let's keep byline formatting within parse_greens_byline or format specific parts if needed.
+        # For now, let's pass the raw byline text to parse_greens_byline after basic strip.
+        
+        author, article_date = parse_greens_byline(byline_text.strip())
+
 
         content_element = soup.find('div', class_='content')
-        content = format_raw(content_element.text) if content_element else None
-
-        author, article_date = parse_greens_byline(byline)
+        content = format_text(content_element.text) if content_element else None
 
         return {
             'headline': headline,
@@ -69,20 +59,21 @@ def scrape_media_release(url):
             'content': content,
             'url': url,
         }
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching URL {url}: {e}")
-        return None
+    # Removed requests.exceptions.RequestException as make_request handles it
     except Exception as e:
         print(f"Error processing URL {url}: {e}")
         return None
 
 def scrape_media_release_page(url, last_year_date, all_releases):
     counter = 0
-    for i in range(10):
+    for i in range(10): # Limited to 10 pages for this example
         page_url = url + f'?page={i}'
         try:
-            response = requests.get(page_url)
-            response.raise_for_status()
+            # Using make_request for the page listing as well
+            response = make_request(page_url, delay_seconds=1)
+            if not response:
+                continue # Skip to next page if request fails
+
             soup = BeautifulSoup(response.content, 'html.parser')
 
             article_list = soup.find_all('h3', class_='page-excerpt--heading')
@@ -99,13 +90,13 @@ def scrape_media_release_page(url, last_year_date, all_releases):
                     all_releases.append(release_data)
                     counter += 1
 
-                    if counter > 100:
+                    if counter > 100: # Limiting to 100 articles for this example
                         stop_scraping = True
                         break
+            if stop_scraping:
+                break
 
-
-        except requests.exceptions.RequestException as e:
-            print(f"Error fetching media release page {page_url}: {e}")
+        # Removed requests.exceptions.RequestException as make_request handles it
         except Exception as e:
             print(f"Error processing media release page {page_url}: {e}")
 
@@ -120,8 +111,6 @@ if __name__ == "__main__":
 
     print(f"\nFound {len(all_media_releases)} media releases in the last year.")
 
-    # Or save the data to a file (e.g., JSON or CSV)
-    with open("greens_media_releases.json", "w", encoding="utf-8") as f:
-        json.dump(all_media_releases, f, indent=4, default=str)
+    save_to_json(all_media_releases, "greens_media_releases.json")
 
-    print("\nScraped data saved to greens_media_releases.json")
+    # The message "Scraped data saved to..." is now part of save_to_json

@@ -1,7 +1,7 @@
-{"politician_id": "ardern", "evasion": 65, "strength": 78, "honour": 23, "devotion": 88, "divination": 45, "charisma": 92}
-{"politician_id": "luxon", "evasion": 72, "strength": 60, "honour": 80, "devotion": 65, "divination": 60, "charisma": 85}
-{"politician_id": "collins", "evasion": 85, "strength": 70, "honour": 40, "devotion": 75, "divination": 55, "charisma": 78}
-{"politician_id": "davidson", "evasion": 50, "strength": 85, "honour": 90, "devotion": 60, "divination": 70, "charisma": 80}
-{"politician_id": "seymour", "evasion": 58, "strength": 85, "honour": 40, "devotion": 90, "divination": 60, "charisma": 70}
-{"politician_id": "peters", "evasion": 80, "strength": 70, "honour": 50, "devotion": 65, "divination": 35, "charisma": 88}
-{"politician_id": "swarbrick", "evasion": 60, "strength": 75, "honour": 15, "devotion": 95, "divination": 70, "charisma": 85}
+{"politician_id": "ardern", "Precision": 65, "Strength": 78, "Veracity": 23, "Authenticity": 88, "Divination": 45, "Charisma": 92, "Civility": 80, "Rigor": 70, "Specificity": 60}
+{"politician_id": "luxon", "Precision": 72, "Strength": 60, "Veracity": 80, "Authenticity": 65, "Divination": 60, "Charisma": 85, "Civility": 75, "Rigor": 75, "Specificity": 65}
+{"politician_id": "collins", "Precision": 85, "Strength": 70, "Veracity": 40, "Authenticity": 75, "Divination": 55, "Charisma": 78, "Civility": 60, "Rigor": 65, "Specificity": 70}
+{"politician_id": "davidson", "Precision": 50, "Strength": 85, "Veracity": 90, "Authenticity": 60, "Divination": 70, "Charisma": 80, "Civility": 85, "Rigor": 80, "Specificity": 70}
+{"politician_id": "seymour", "Precision": 58, "Strength": 85, "Veracity": 40, "Authenticity": 90, "Divination": 60, "Charisma": 70, "Civility": 65, "Rigor": 85, "Specificity": 75}
+{"politician_id": "peters", "Precision": 80, "Strength": 70, "Veracity": 50, "Authenticity": 65, "Divination": 35, "Charisma": 88, "Civility": 50, "Rigor": 60, "Specificity": 55}
+{"politician_id": "swarbrick", "Precision": 60, "Strength": 75, "Veracity": 15, "Authenticity": 95, "Divination": 70, "Charisma": 85, "Civility": 90, "Rigor": 78, "Specificity": 80}
