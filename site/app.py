@@ -3,6 +3,7 @@ import random
 import json
 
 import data_access_jsonl
+from game.routes import game_bp # Added import
 
 app = Flask(__name__)
 
@@ -33,6 +34,8 @@ def attribute_detail(politician_id, attribute):
 @app.route('/about')
 def about():
     return render_template('about.html')
+
+app.register_blueprint(game_bp) # Registered blueprint
 
 if __name__ == '__main__':
     app.run(debug=True)
