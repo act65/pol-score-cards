@@ -1,12 +1,25 @@
+<<<<<<< Updated upstream
 from bs4 import BeautifulSoup
+=======
+>>>>>>> Stashed changes
 import datetime
+import json
 import pytz
+<<<<<<< Updated upstream
 import re
 from .utils import format_text, make_request, save_to_json
+=======
+import fire
+import time
+import re
+
+from pol_data_utils.utils import get_soup, format_raw
+>>>>>>> Stashed changes
 
 def get_full_url(base_url, relative_url):
     return f"{base_url}{relative_url}"
 
+<<<<<<< Updated upstream
 def scrape_national_media_release(url):
     try:
         response = make_request(url, delay_seconds=1)
@@ -48,13 +61,57 @@ def scrape_national_media_release(url):
     # requests.exceptions.RequestException is handled by make_request
     except Exception as e:
         print(f"Error processing URL {url}: {e}") # Catch other parsing errors
-        return None
+=======
+def parse_national_date(date_str, article_url):
+    """
+    Parses the National Party media release date string.
 
-def scrape_national_media_release_page(base_url, page, last_year_date, all_releases):
+    Args:
+        date_str (str): The date string from the website.
+        article_url (str): The URL of the article (for error reporting).
+
+    Returns:
+        datetime.datetime or None: The parsed datetime object in NZ timezone, or None if parsing fails.
+    """
+    if not date_str:
+>>>>>>> Stashed changes
+        return None
+    try:
+        return datetime.datetime.strptime(date_str, '%d %B %Y').replace(tzinfo=pytz.timezone('Pacific/Auckland'))
+    except ValueError as e:
+        print(f"Error parsing date '{date_str}' from URL {article_url}: {e}")
+        return date_str
+
+def scrape_national_release(url):
+    soup = get_soup(url)
+
+    headline_element = soup.find('h1', class_='mb-2 text-5xl font-extrabold')
+    headline = format_raw(headline_element.text) if headline_element else None
+
+    author_element = soup.find('p', class_='text-lg font-bold uppercase my-2 flex group-hover:underline')
+    author = format_raw(author_element.text) if author_element else None
+
+    date_element = soup.find('p', class_='text-lg font-bold uppercase')
+    date_str = format_raw(date_element.text) if date_element else None
+    article_date = parse_national_date(date_str, url)
+
+    content_element = soup.find('div', class_='space-y-3')
+    content = format_raw(content_element.text) if content_element else None
+
+    return {
+        'headline': headline,
+        'date': article_date.isoformat() if article_date else None,
+        'author': author,
+        'content': content,
+        'url': url,
+    }
+
+def scrape_national_release_page(base_url, page_path="press", N=100):
     counter = 0
     page_num = 1
-    stop_scraping = False
+    scraping = True
 
+<<<<<<< Updated upstream
     while not stop_scraping and counter < 100:  # Limit to 100 for now, can adjust
         page_url = f"{base_url}/{page}?page={page_num}" # Corrected URL construction
         print(f"Fetching page: {page_url}")
@@ -67,11 +124,26 @@ def scrape_national_media_release_page(base_url, page, last_year_date, all_relea
         try:
             soup = BeautifulSoup(response.content, 'html.parser')
             article_links = soup.find_all('a', href=re.compile(r'/press/'))
+=======
+    while scraping:
+        page_url = base_url + f"/{page_path}" + f'?page={page_num}'
+        print(f"Fetching National Party page: {page_url}")
+        soup = get_soup(page_url)
 
-            if not article_links:
-                print("No more articles found on this page.")
-                break
+        article_links = soup.find_all('a', href=re.compile(rf'/{page_path}/'))
 
+        if not article_links:
+            print("No more articles found on this page.")
+            scraping = False
+            break
+>>>>>>> Stashed changes
+
+        for link_element in article_links:
+            relative_url = link_element['href']
+            yield get_full_url(base_url, relative_url)
+            counter += 1
+
+<<<<<<< Updated upstream
             for link_element in article_links:
                 relative_url = link_element['href']
                 # Ensure get_full_url is used correctly; National's base URL might not need to be passed if relative_url is full path
@@ -116,20 +188,47 @@ def scrape_national_media_release_page(base_url, page, last_year_date, all_relea
         except Exception as e:
             print(f"Error processing media release page {page_url}: {e}")
             break # Stop for this section if processing fails
+=======
+            if counter >= N:
+                scraping = False
+                break
 
-if __name__ == "__main__":
-    national_base_url = "https://www.national.org.nz"
-    page = "news"
-    page = "press"
-    today = datetime.datetime.now(pytz.timezone('Pacific/Auckland'))
-    one_year_ago = today - datetime.timedelta(days=365)
-    all_national_releases = []
+        if counter >= N:
+            scraping = False
 
-    print(f"Scraping National Party media releases from {national_base_url} for the last year (since {one_year_ago.strftime('%Y-%m-%d')})...")
-    scrape_national_media_release_page(national_base_url, page, one_year_ago, all_national_releases)
+        page_num += 1
+        time.sleep(1)
+>>>>>>> Stashed changes
 
-    print(f"\nFound {len(all_national_releases)} National Party media releases in the last year.")
+def main(output_dir, N=100):
+    base_url = "https://www.national.org.nz"
 
+    with open(output_dir, "w", encoding="utf-8") as f:
+        page_path = "press"
+        print(f"Scraping National Party media releases from {base_url}/{page_path}")
+        for article_url in scrape_national_release_page(base_url, page_path, N):
+            release_data = scrape_national_release(article_url)
+            if release_data:
+                print(release_data['headline'])
+                json.dump(release_data, f, indent=4, default=str, ensure_ascii=False)
+                f.write("\n")
+
+        page_path = "news"
+        print(f"Scraping National Party media releases from {base_url}/{page_path}")
+        for article_url in scrape_national_release_page(base_url, page_path, N):
+            release_data = scrape_national_release(article_url)
+            if release_data:
+                print(release_data['headline'])
+                json.dump(release_data, f, indent=4, default=str, ensure_ascii=False)
+                f.write("\n")
+
+<<<<<<< Updated upstream
     output_filename = f"national_media_releases_{page}.json"
     save_to_json(all_national_releases, output_filename)
     # The print statement "Data successfully saved to..." is now part of save_to_json
+=======
+    print(f"\nScraped data saved to {output_dir}")
+
+if __name__ == "__main__":
+    fire.Fire(main)
+>>>>>>> Stashed changes

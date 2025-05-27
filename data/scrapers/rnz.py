@@ -1,120 +1,109 @@
-import requests
-from bs4 import BeautifulSoup
 import datetime
+import json
 import pytz
-import re
+import fire
 import time
+
+from pol_data_utils.utils import get_soup, format_raw
 
 def get_full_url(relative_url):
     return f"https://www.rnz.co.nz{relative_url}"
 
-def scrape_rnz_article(article_url):
-    try:
-        time.sleep(1)
-        response = requests.get(article_url)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.content, 'html.parser')
+def parse_rnz_date(date_str, article_url):
+    """
+    Parses the RNZ article date string.
 
-        headline_element = soup.find('h1', class_='c-story-header__headline')
-        headline = headline_element.text.strip() if headline_element else None
+    Args:
+        date_str (str): The date string from the website.
+        article_url (str): The URL of the article (for error reporting).
 
-        date_element = soup.find('div', class_='c-dateblock')
-        date_str = date_element.find('span').text.strip() if date_element and date_element.find('span') else None
-        article_date = None
-        if date_str:
-            nz_timezone = pytz.timezone('Pacific/Auckland')
-            try:
-                # Try parsing with the full date format
-                date_format_full = "%I:%M %p on %d %B %Y"
-                article_date_naive = datetime.datetime.strptime(date_str, date_format_full)
-                article_date = nz_timezone.localize(article_date_naive)
-            except ValueError:
-                try:
-                    # Try parsing with the "today" format
-                    date_format_today = "%I:%M %p today"
-                    article_date_naive_today = datetime.datetime.strptime(date_str, date_format_today)
-                    # Set the date to today's date in the NZ timezone
-                    today_nz = datetime.datetime.now(nz_timezone).date()
-                    article_date = nz_timezone.localize(datetime.datetime.combine(today_nz, article_date_naive_today.time()))
-                except ValueError as e:
-                    print(f"Could not parse date: {date_str} for URL: {article_url} - {e}")
-
-        author_element = soup.find('span', class_='author-name')
-        author = author_element.text.strip() if author_element else None
-
-        content_element = soup.find('div', class_='article__body')
-        content = content_element.get_text(separator='\n').strip() if content_element else None
-
-        return {
-            'headline': headline,
-            'date': article_date,
-            'author': author,
-            'content': content,
-            'url': article_url
-        }
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching URL {article_url}: {e}")
-        return None
-    except Exception as e:
-        print(f"Error processing URL {article_url}: {e}")
+    Returns:
+        datetime.datetime or None: The parsed datetime object in NZ timezone, or None if parsing fails.
+    """
+    if not date_str:
         return None
 
-def get_rnz_article_links(page_number):
-    base_url = "https://www.rnz.co.nz/news/political"
-    params = {'page': str(page_number)}
+    nz_timezone = pytz.timezone('Pacific/Auckland')
     try:
-        response = requests.get(base_url, params=params)
-        # print(response.url)
-        # print(response.content)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.content, 'html.parser')
-        links = []
-        link_elements = soup.find_all('a', class_='faux-link')
-        for link_element in link_elements:
-            if link_element and 'href' in link_element.attrs:
-                links.append(get_full_url(link_element['href']))
-        return links
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching RNZ political news page {page_number}: {e}")
-        return
-    except Exception as e:
-        print(f"Error processing RNZ political news page {page_number}: {e}")
-        return
+        # Try parsing with the full date format
+        date_format_full = "%I:%M %p on %d %B %Y"
+        article_date_naive = datetime.datetime.strptime(date_str, date_format_full)
+        return nz_timezone.localize(article_date_naive)
+    except ValueError:
+        try:
+            # Try parsing with the "today" format
+            date_format_today = "%I:%M %p today"
+            article_date_naive_today = datetime.datetime.strptime(date_str, date_format_today)
+            # Set the date to today's date in the NZ timezone
+            today_nz = datetime.datetime.now(nz_timezone).date()
+            return nz_timezone.localize(datetime.datetime.combine(today_nz, article_date_naive_today.time()))
+        except ValueError as e:
+            print(f"Could not parse date: {date_str} for URL: {article_url} - {e}")
+            return None
 
-if __name__ == "__main__":
-    today_nz = datetime.datetime.now(pytz.timezone('Pacific/Auckland'))
-    one_year_ago = today_nz - datetime.timedelta(days=365)
-    all_rnz_articles = []
-    page_number = 0
+def scrape_rnz_article(url):
+    time.sleep(1)
+    soup = get_soup(url)
+
+    headline_element = soup.find('h1', class_='c-story-header__headline')
+    headline = format_raw(headline_element.text) if headline_element else None
+
+    date_element = soup.find('div', class_='c-dateblock')
+    date_span = date_element.find('span') if date_element else None
+    date_str = format_raw(date_span.text) if date_span else None
+    article_date = parse_rnz_date(date_str, url)
+
+    author_element = soup.find('span', class_='author-name')
+    author = format_raw(author_element.text) if author_element else None
+
+    content_element = soup.find('div', class_='article__body')
+    content = format_raw(content_element.get_text(separator='\n')) if content_element else None
+
+    return {
+        'headline': headline,
+        'date': article_date.isoformat() if article_date else None,
+        'author': author,
+        'content': content,
+        'url': url,
+    }
+
+def scrape_rnz_article_page(url, N=100):
     counter = 0
-    scrape = True
+    page_number = 0
+    scraping = True
+    while scraping:
+        page_url = url + f'?page={page_number}'
+        soup = get_soup(page_url)
 
-    print(f"Scraping RNZ political news since {one_year_ago.strftime('%Y-%m-%d')}...")
+        article_list = soup.find_all('a', class_='faux-link')
 
-    while scrape:
-        article_links = get_rnz_article_links(page_number)
-        if not article_links:
-            print(f"No more article links found on page {page_number}. Stopping.")
-            break
+        for link_element in article_list:
+            if link_element and 'href' in link_element.attrs:
+                yield get_full_url(link_element['href'])
+                counter += 1
 
-        print(f"Found {len(article_links)} articles on page {page_number}.")
-        for link in article_links:
-            article_data = scrape_rnz_article(link)
-            print(f"Scraped article: {article_data['headline']}")
-            all_rnz_articles.append(article_data)
-            counter += 1
+                if counter >= N:
+                    scraping = False
+                    break
 
-            if counter >= 100:
-                scrape = False
-                break
-
+        if not article_list or counter >= N:
+            scraping = False
 
         page_number += 1
 
-    print(f"\nSuccessfully scraped {len(all_rnz_articles)} RNZ political news articles from the last year.")
+def main(output_dir, N=100):
+    base_url = "https://www.rnz.co.nz/news/political"
 
-    import json
-    with open("rnz_political_articles.json", "w", encoding="utf-8") as f:
-        json.dump(all_rnz_articles, f, indent=4, default=str)
+    with open(output_dir, "w", encoding="utf-8") as f:
+        print(f"Scraping RNZ political news from {base_url}")
+        for article_url in scrape_rnz_article_page(base_url, N):
+            release_data = scrape_rnz_article(article_url)
+            if release_data:
+                print(release_data['headline'])
+                json.dump(release_data, f, indent=4, default=str, ensure_ascii=False)
+                f.write("\n")
 
-    print("\nScraped RNZ political articles data saved to rnz_political_articles.json")
+    print(f"\nScraped data saved to {output_dir}")
+
+if __name__ == "__main__":
+    fire.Fire(main)
