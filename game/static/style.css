@@ -1,0 +1,227 @@
+/* General Body and Container */
+body {
+    font-family: sans-serif;
+    margin: 20px;
+    background-color: #f4f4f4;
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+h1, h2, h3, h4, h5 {
+    color: #333;
+}
+
+/* Navigation */
+.nav-links a {
+    margin-right: 15px;
+    color: #007bff;
+    text-decoration: none;
+}
+.nav-links a:hover {
+    text-decoration: underline;
+}
+
+/* Game Status Panel */
+.game-status-panel {
+    background-color: #e9ecef;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    text-align: center;
+}
+.game-status-panel h2, .game-status-panel h3 {
+    margin: 5px 0;
+}
+.game-status-panel .winner-message { /* New class for winner message */
+    color: green;
+    font-weight: bold;
+}
+
+/* Game Layout & Player Areas */
+.game-layout {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.player-area {
+    border: 1px solid #ccc;
+    padding: 15px;
+    width: 48%;
+    background-color: #fdfdfd;
+    border-radius: 5px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.05);
+}
+.player-area h4 {
+    margin-top: 0;
+    color: #337ab7;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+.player-info p {
+    margin: 5px 0;
+    font-size: 0.95em;
+}
+
+/* Cards Sections (Hand, Field) */
+.cards-section {
+    margin-top: 15px;
+}
+.cards-section h5 {
+    margin-bottom: 8px;
+    color: #555;
+    font-size: 1.1em;
+}
+.card-list { /* Common styling for hand-list and field-list */
+    min-height: 80px;
+    background-color: #f9f9f9;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px dashed #ddd;
+    margin-bottom:10px;
+}
+.hidden-hand { /* For opponent's hand count */
+    color: #777;
+    font-style: italic;
+    padding: 10px;
+}
+
+/* Individual Card Styling */
+.card-item {
+    border: 1px solid #bce8f1;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #d9edf7;
+    color: #31708f;
+    border-radius: 4px;
+    font-size: 0.9em;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.card-item strong { /* Card Name */
+    font-size: 1.1em;
+    display: block;
+    margin-bottom: 5px;
+}
+.card-item .attributes {
+    font-size: 0.85em;
+    color: #2c667e;
+    line-height: 1.4;
+}
+.card-item form { /* Form for "Play Card" button */
+    display: inline;
+    margin-top: 8px; /* Give some space above the button */
+}
+.card-item button, .actions-panel button { /* Common button styling */
+    padding: 6px 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+.card-item button:hover, .actions-panel button:hover {
+    background-color: #0056b3;
+}
+
+
+/* Actions Panel (Attack, End Turn) */
+.actions-panel {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #e9ecef;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+.actions-panel h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+.actions-panel h4 {
+    margin-bottom: 10px;
+}
+.actions-panel form {
+    margin-bottom: 15px; /* Space between forms if multiple */
+}
+.actions-panel label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+.actions-panel select {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px; /* Space below select before next label or button */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+.actions-panel hr {
+    margin: 20px 0;
+    border: 0;
+    border-top: 1px solid #ccc;
+}
+.actions-panel .end-turn-form { /* Specific class for end turn form */
+    margin-top: 10px;
+}
+.actions-panel .end-turn-button { /* Specific class for end turn button */
+    padding: 10px 15px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em; /* Make it a bit larger */
+}
+.actions-panel .end-turn-button:hover {
+    background-color: #1e7e34;
+}
+
+
+/* Game Log */
+.game-log-panel {
+    margin-top: 20px;
+    border: 1px solid #ccc;
+    padding: 15px;
+    height: 200px;
+    overflow-y: scroll;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    font-size: 0.9em;
+}
+.game-log-panel h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+.game-log-panel p {
+    margin: 0 0 8px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px dotted #eee;
+    line-height: 1.5;
+}
+.game-log-panel p:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+/* Utility */
+.text-center {
+    text-align: center;
+}
+button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+select:disabled {
+    background-color: #eee;
+}
