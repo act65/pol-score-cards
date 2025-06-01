@@ -1,10 +1,15 @@
 data
 - scrape photos from https://www.parliament.nz/en/mps-and-electorates/members-of-parliament/
-- handsard!
+- handsard! (supposedly an api is comming later this year)
 - a schema for the data
+- storage of raw scraped data in the cloud? (kind of a useful project for others? allow user pays downloads?)
 
 llm parsing / analysis
-
+- robust test sets for all 
+- no overlap between test set and prompt
+- plot accuracy utils
+- hyperparam tests, different models, different approaches?!
+- set up pipeline to extract data
 
 game
 - how to have a two player game via the inet w flask? (two different computers each seeing different things but interacting in the same game instance)
@@ -17,7 +22,7 @@ game
 - discarding.
 
 site
-- potetial legal issues if we are publicly calling XXX a liar?
+- potential legal issues if we are publicly calling XXX a liar?
 
 other
 - 
