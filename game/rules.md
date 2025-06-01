@@ -39,8 +39,8 @@ Defense-Focused Traits
     - Mechanic: Defense multiplier.
 
     Forthrightness
-    - Metric: Opposite of dodges questions.
-    - Mechanic: Chance to block attack.
+    - Metric: Opposite of dodges questions. Answers in full detail and honesty.
+    - Mechanic: Attacks to this card relect attack_dmg*forthrightness/100 damage.
 
 
 <!-- 

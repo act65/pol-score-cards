@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Political Card Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div id="game-board">
+        <div id="opponent-player-area" class="player-area">
+            <div class="player-info">
+                <h3>Opponent (<span id="opponent-id">P2</span>)</h3>
+                <div class="stats">
+                    <span>HP: <span id="opponent-hp">1000</span></span>
+                    <span>Deck: <span id="opponent-deck-count">0</span></span>
+                    <span>Hand: <span id="opponent-hand-count">0</span></span>
+                    <span>Grave: <span id="opponent-graveyard-count">0</span></span>
+                    <span>Field: <span id="opponent-current-field">0</span>/<span id="opponent-max-field">2</span></span>
+                </div>
+            </div>
+            <div id="opponent-field" class="field-zone">
+                <!-- Opponent cards on field -->
+            </div>
+        </div>
+
+        <div id="human-player-area" class="player-area">
+            <div id="player-field" class="field-zone droppable">
+                <!-- Player cards on field -->
+            </div>
+            <div class="player-info">
+                <h3>Player (<span id="player-id">P1</span>) (Round: <span id="round-number">0</span>)</h3>
+                <div class="stats">
+                    <span>HP: <span id="player-hp">1000</span></span>
+                    <span>Deck: <span id="player-deck-count">0</span></span>
+                    <span>Grave: <span id="player-graveyard-count">0</span></span>
+                    <span>Field: <span id="player-current-field">0</span>/<span id="player-max-field">2</span></span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="player-hand-zone">
+            <h4>Your Hand (<span id="player-hand-count">0</span> cards)</h4>
+            <div id="player-hand" class="hand-scroll-area">
+                <!-- Player hand cards -->
+            </div>
+        </div>
+
+        <div id="controls-area">
+            <button id="clear-actions-button">Clear Planned Actions</button>
+            <button id="submit-actions-button">Submit Actions & End Turn</button>
+            <p id="game-status-message">Loading game...</p>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

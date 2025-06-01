@@ -1,7 +1,24 @@
+data
 - scrape photos from https://www.parliament.nz/en/mps-and-electorates/members-of-parliament/
+- handsard!
+- a schema for the data
+
+llm parsing / analysis
 
 
+game
+- how to have a two player game via the inet w flask? (two different computers each seeing different things but interacting in the same game instance)
+- move to hp bars
+- use arrows to show who's attacking who
+- get (small) deck, only get to draw cards if you discard
+- if a card dies, keep cards on playing field to show attack actions (then move to graveyard)
+- could use blockchain with the cards to make them actual owned assets which can be traded.
+- rarity of cards prop to exp(sum of attibutes)
+- discarding.
 
+site
+- potetial legal issues if we are publicly calling XXX a liar?
 
-nice to have
+other
+- 
 - you could even assign "classes" to politicians based on their primary focus or style (e.g., "The Lawmaker," "The Orator," "The Negotiator").

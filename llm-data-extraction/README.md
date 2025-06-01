@@ -8,7 +8,6 @@ Key questions
 - How accurate are the predictions of the model used?
     - vs other LLMs
 
-
 Some of the attributes cannot be trusted to the knowledge of a LLM.
 
 - Strength requires us to verify promises (turned into policies)
