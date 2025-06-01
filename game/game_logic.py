@@ -10,9 +10,9 @@ import logging
 
 @dataclass
 class GameConfig:
-    MAX_HP_CARD: int = 250
-    INITIAL_HAND_SIZE: int = 5
-    CARDS_DRAWN_PER_ROUND: int = 1
+    MAX_HP_CARD: int = 100
+    INITIAL_HAND_SIZE: int = 3
+    CARDS_DRAWN_PER_ROUND: int = 0
     BASE_FIELD_SLOTS: int = 2
     CHARISMA_PER_EXTRA_SLOT: int = 100
     PLAYER_IDS: Tuple[str, str] = ("P1", "P2")
@@ -330,8 +330,7 @@ class GameEngine:
                 current_state.log_event(f"Attack by {attacker_card.name}: Target {target_card.name} [{target_card.instance_id}] is already defeated. Attack fizzles.")
                 continue
 
-            current_state.log_event(f"Attack: {attacker_card.name} ({attacker_player_state.id}) -> {target_card.name} ({target_player_state.id})")
-
+            current_state.log_event(f"Attack: {attacker_card.name} [{attacker_card.instance_id}] ({attacker_player_state.id}) -> {target_card.name} [{target_card.instance_id}] ({target_player_state.id})")
             # Authenticity: Chance to randomly attack a different card than intended
             # Retargets only to opponent's cards currently on field
             auth_roll = random.random()
@@ -357,13 +356,6 @@ class GameEngine:
                 current_state.log_event(f"  Specificity Check: {attacker_card.name}'s attack MISSED {target_card.name}!")
                 continue # Attack ends here
 
-            # Forthrightness: Chance to block attack.
-            forth_roll = random.random()
-            block_chance = target_card.attributes.forthrightness / 100.0
-            if forth_roll < block_chance:
-                current_state.log_event(f"  Forthrightness Check: {target_card.name} BLOCKED the attack from {attacker_card.name}!")
-                continue # Attack ends here, no civility damage either if blocked.
-
             # Calculate Damage
             # Base attack = Strength * Rigor (from PoliticianCard.attack_damage_base)
             # Base defense = Strength * Veracity (from PoliticianCard.defense_base)
@@ -373,6 +365,12 @@ class GameEngine:
             damage_to_card = max(0, calculated_attack - calculated_defense)
             target_card.take_damage(damage_to_card)
             current_state.log_event(f"  {attacker_card.name} deals {damage_to_card} damage to {target_card.name}. ({target_card.name} HP: {target_card.current_hp}/{target_card.max_hp})")
+
+
+            # Forthrightness: Chance to block attack.
+            reflected_dmg = calculated_attack * target_card.attributes.forthrightness // 100
+            attacker_card.take_damage(reflected_dmg)
+            current_state.log_event(f"  {attacker_card.name}'s attack is partly relected and takes {reflected_dmg} from {target_card.name}.")
 
             # Civility: Attacks pierce through cards and deal extra civility/X damage to player.
             if config.CIVILITY_PIERCE_DIVISOR > 0:

@@ -1,0 +1,198 @@
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    margin: 0; 
+    padding: 0; 
+    background-color: #34495e; /* Darker background for the whole page */
+    color: #ecf0f1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Align board to top */
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+#game-board {
+    width: 100%;
+    max-width: 1200px; /* Max width of the game board */
+    min_height: 95vh;
+    background-color: #2c3e50; /* Board background */
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    padding: 15px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.player-area {
+    background-color: #3b5168; /* Slightly lighter than board for player areas */
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #4a6580;
+}
+
+.player-info {
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #4a6580;
+}
+.player-info h3 { margin: 0 0 8px 0; color: #ecf0f1; }
+.stats { 
+    display: flex; 
+    gap: 10px; 
+    font-size: 0.9em; 
+    flex-wrap: wrap;
+    color: #bdc3c7;
+}
+.stats span { background-color: #2c3e50; padding: 4px 8px; border-radius: 4px;}
+
+.field-zone {
+    display: flex;
+    gap: 10px;
+    min-height: 180px; /* Increased height for cards */
+    background-color: #273a4f; /* Darker for field itself */
+    padding: 10px;
+    border-radius: 6px;
+    flex-wrap: wrap; /* Allow cards to wrap */
+    align-content: flex-start; /* Align wrapped items to the start */
+    border: 2px dashed #4a6580;
+}
+#opponent-player-area .field-zone { margin-bottom: 5px; } /* Space below opponent field */
+#human-player-area .field-zone { margin-top: 5px; } /* Space above player field */
+
+
+#player-hand-zone {
+    background-color: #3b5168;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #4a6580;
+}
+#player-hand-zone h4 { margin: 0 0 8px 0; color: #ecf0f1; }
+.hand-scroll-area {
+    background-color: #273a4f;
+    padding: 10px;
+    border-radius: 6px;
+    min-height: 190px; /* Increased height */
+    display: flex;
+    gap: 10px;
+    overflow-x: auto; /* Allow horizontal scrolling for many cards */
+    overflow-y: hidden;
+    align-items: center; /* Vertically center cards in hand scroll area */
+}
+
+.card {
+    border: 1px solid #7f8c8d;
+    padding: 8px; /* Slightly reduced padding */
+    width: 120px; /* Slightly reduced width */
+    min-height: 170px; /* Increased height */
+    background-color: #ecf0f1; /* Light card background */
+    color: #2c3e50; /* Dark text on card */
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    cursor: default;
+    font-size: 0.8em; /* Smaller base font on card */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    flex-shrink: 0; /* Prevent cards in hand from shrinking */
+}
+.card:hover {
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 0 5px 12px rgba(0,0,0,0.3);
+    z-index: 10;
+}
+
+.card .name { font-weight: bold; margin-bottom: 3px; font-size: 1em; color: #2980b9; }
+.card .party { font-style: italic; margin-bottom: 3px; font-size: 0.85em; color: #566573; }
+.card .hp { margin-bottom: 3px; color: #27ae60; font-weight: bold; font-size: 0.9em; }
+.card .attributes { font-size: 0.75em; list-style: none; padding: 0; margin: 0; color: #34495e;}
+.card .attributes li { white-space: nowrap; margin-bottom: 1px; }
+.card .attributes li span { font-weight: bold; }
+.card .attack-target-indicator {
+    font-size: 0.7em;
+    color: #c0392b;
+    font-weight: bold;
+    margin-top: 4px;
+    text-align: center;
+}
+
+
+.hand-card { cursor: grab; }
+.field-card.player-card { cursor: pointer; border-left: 5px solid #3498db; }
+.field-card.opponent-card { cursor: crosshair; border-left: 5px solid #e74c3c; }
+
+.field-card.selected-attacker { 
+    border: 3px solid #f1c40f; /* Yellow border for selected attacker */
+    box-shadow: 0 0 12px #f1c40f;
+    transform: scale(1.05);
+}
+.field-card.has-attack-planned {
+    border-left-color: #8e44ad; /* Purple for cards with attack planned */
+    opacity: 0.8;
+}
+
+
+#controls-area {
+    background-color: #3b5168;
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #4a6580;
+}
+#controls-area button {
+    padding: 10px 15px;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.95em;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+#controls-area button:hover { transform: translateY(-2px); }
+#controls-area button:active { transform: translateY(0px); }
+
+#submit-actions-button { background-color: #27ae60; }
+#submit-actions-button:hover { background-color: #2ecc71; }
+#submit-actions-button:disabled { background-color: #7f8c8d; cursor: not-allowed; }
+
+#clear-actions-button { background-color: #e67e22; }
+#clear-actions-button:hover { background-color: #f39c12; }
+
+
+#game-status-message { 
+    margin: 0; 
+    font-weight: bold; 
+    color: #ecf0f1; 
+    font-size: 1em; 
+    text-align: center;
+    flex-grow: 1;
+}
+
+/* Drag feedback */
+.dragging { opacity: 0.5; border: 2px dashed #3498db; transform: rotate(5deg); }
+.droppable.drag-over { background-color: #2e4a69; border-style: solid; }
+
+/* Animation for damage */
+.damage-flash {
+    animation: flashRed 0.5s ease-out;
+}
+@keyframes flashRed {
+    0% { background-color: #ecf0f1; } /* Original card background */
+    50% { background-color: #e74c3c; color: white; } /* Flash red */
+    100% { background-color: #ecf0f1; color: #2c3e50; } /* Back to original */
+}
+.defeated-animation {
+    animation: fadeOutAndShrink 0.7s forwards;
+}
+@keyframes fadeOutAndShrink {
+    to {
+        opacity: 0;
+        transform: scale(0.5) rotate(15deg);
+    }
+}
