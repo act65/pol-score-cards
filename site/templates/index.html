@@ -4,26 +4,64 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NZ Politician Scorecards</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='card.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <a href="/"><h1>NZ Politician Scorecards</h1></a>
-    <div class="top-right-link">
-        <a href="/about">About</a>
-    </div>
+    {# Party colours for the card banner. Falls back to a neutral slate. #}
+    {% set party_colors = {
+        'Labour': '#D82A20', 'National': '#00529F', 'Green': '#098137',
+        'Greens': '#098137', 'ACT': '#F5C400', 'NZ First': '#1a1a1a',
+        'Te Pāti Māori': '#B5121B', 'Māori Party': '#B5121B'
+    } %}
+
+    <header class="site-header">
+        <a href="/"><h1>NZ Politician Scorecards</h1></a>
+        <div class="top-right-link"><a href="/about">About</a></div>
+    </header>
+
+    <details class="legend-wrap" open>
+        <summary>Attribute key — what the symbols mean (click a stat to see the evidence)</summary>
+        <ul class="sc-legend">
+            {% for attribute in all_attributes %}
+            <li><span class="sc-icon">{{ attribute.symbol }}</span>
+                <span><b>{{ attribute.name }}</b> — <span class="blurb">{{ attribute.blurb or attribute.definition }}</span></span></li>
+            {% endfor %}
+        </ul>
+    </details>
+
     <div class="politician-list-container">
         {% for item in politicians_data %}
-        <div class="politician-card">
-            <h3>{{ item.politician.name }}</h3>
-            <p>Party: {{ item.politician.party }}</p>
-            <h4>Scores:</h4>
-            {% for attribute in all_attributes %}
-                {% if attribute.id in item.scores %}
-                    <p>{{ attribute.name }}: <a href="{{ url_for('attribute_detail', politician_id=item.politician.id, attribute=attribute.id) }}" class="score-link">{{ item.scores[attribute.id] }}</a></p>
+        {% set colour = party_colors.get(item.politician.party, '#475569') %}
+        <div class="sc-card" style="--party: {{ colour }};">
+            <div class="sc-banner">
+                <h3 class="sc-name">{{ item.politician.name }}</h3>
+                <span class="sc-party">{{ item.politician.party }}</span>
+                {% if item.politician.image %}
+                <img class="sc-portrait" src="{{ url_for('static', filename=item.politician.image) }}"
+                     alt="{{ item.politician.name }}" loading="lazy">
                 {% else %}
-                    <p>{{ attribute.name }}: N/A</p>
+                <span class="sc-portrait sc-initials">{{ item.politician.name.split()|map('first')|join|upper }}</span>
                 {% endif %}
-            {% endfor %}
+            </div>
+            <div class="sc-stats">
+                {% for attribute in all_attributes %}
+                    {% if attribute.id in item.scores %}
+                        {% set score = item.scores[attribute.id] %}
+                        {% set tier = 'low' if score < 40 else ('mid' if score < 70 else 'high') %}
+                        <a class="sc-stat" title="{{ attribute.name }} — {{ attribute.blurb or attribute.definition }} (click for evidence)"
+                           href="{{ url_for('attribute_detail', politician_id=item.politician.id, attribute=attribute.id) }}">
+                            <span class="sc-icon">{{ attribute.symbol }}</span>
+                            <span class="sc-val {{ tier }}">{{ score }}</span>
+                        </a>
+                    {% else %}
+                        <span class="sc-stat" title="{{ attribute.name }}">
+                            <span class="sc-icon">{{ attribute.symbol }}</span>
+                            <span class="sc-val na">—</span>
+                        </span>
+                    {% endif %}
+                {% endfor %}
+            </div>
         </div>
         {% endfor %}
     </div>

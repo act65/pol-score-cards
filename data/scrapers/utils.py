@@ -1,7 +1,11 @@
+# Allow PEP 604 (`X | None`) annotations on Python 3.9 by deferring evaluation.
+from __future__ import annotations
+
 import requests
 import time
 import json
 import re
+import datetime
 from requests.exceptions import RequestException
 import os # For test cleanup
 
@@ -60,6 +64,51 @@ def save_to_json(data: list[dict], filename: str) -> None:
         print(f"Error saving data to {filename}: {e}")
     except TypeError as e:
         print(f"Error serializing data to JSON for {filename}: {e}")
+
+# --- date-window filtering -------------------------------------------------
+# For the proof-of-concept we want only the last N months of articles. Each
+# scraper iterates newest-first, so it can call `is_recent(date, months)` and
+# stop as soon as it sees an article older than the cutoff.
+
+_DATE_RE = re.compile(r"(\d{4})-(\d{2})-(\d{2})")
+
+
+def parse_date_loose(value):
+    """Best-effort parse to a `datetime.date`. Accepts a date/datetime, an ISO
+    string ('2025-03-20', '2025-03-20T12:50:00+13:00'), or any string that
+    contains a YYYY-MM-DD. Returns None if no date can be found."""
+    if value is None:
+        return None
+    if isinstance(value, datetime.datetime):
+        return value.date()
+    if isinstance(value, datetime.date):
+        return value
+    m = _DATE_RE.search(str(value))
+    if not m:
+        return None
+    try:
+        return datetime.date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    except ValueError:
+        return None
+
+
+def cutoff_date(months: int, ref: datetime.date = None) -> datetime.date:
+    """The date `months` months before `ref` (default: today). Approximates a
+    month as 30 days, which is plenty precise for a 6-month window."""
+    ref = ref or datetime.date.today()
+    return ref - datetime.timedelta(days=30 * months)
+
+
+def is_recent(value, months: int = 6, ref: datetime.date = None) -> bool:
+    """True if `value`'s date is on or after the cutoff `months` before `ref`.
+    Unparseable dates return True (keep rather than silently drop — let the
+    caller decide), so callers should not rely on this to stop early when a
+    source has missing dates."""
+    d = parse_date_loose(value)
+    if d is None:
+        return True
+    return d >= cutoff_date(months, ref)
+
 
 if __name__ == '__main__':
     # Test format_text

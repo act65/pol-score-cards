@@ -58,46 +58,116 @@ h1 {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* --- Trading-card design ------------------------------------------------ */
 .politician-card {
-    background-color: white;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    padding: 15px;
-    margin-right: 15px;
-    width: 300px; /* Adjust card width as needed */
-    display: inline-block; /* Make cards sit side by side */
+    width: 280px;
+    display: inline-block;
     vertical-align: top;
-    background-image: url('/static/beehive.jpeg'); /* Add background image */
-    background-size: cover; /* Cover the entire card */
-    background-position: center; /* Center the image */
-    color: #333; /* Adjust text color for better readability */
-    background-color: rgba(255, 255, 255, 0.75); /* Set semi-transparent background */
-    background-blend-mode: overlay; /* Blend the image with the background color */
+    margin-right: 18px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #ffffff;
+    border: 1px solid #d7dbe0;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .politician-card:hover {
-    transform: translateY(-5px) scale(1.05);
+    transform: translateY(-6px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
 }
 
-.politician-card h3 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 1.8em;
-    color: #28a745; /* A nice green for names */
+.portrait {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    object-position: top center;
+    display: block;
+    background: #e8ebef;
 }
 
-.politician-card p {
-    margin-bottom: 8px;
-    color: #555;
+.card-header {
+    padding: 16px 18px;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
-.politician-card h4 {
-    margin-top: 15px;
-    margin-bottom: 8px;
-    font-size: 1.2em;
-    color: #6c757d; /* A softer grey for headings */
+.card-header h3 {
+    margin: 0;
+    font-size: 1.5em;
+    color: #fff;
 }
+
+.party-badge {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 10px;
+    font-size: 0.78em;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 999px;
+}
+
+.card-stats {
+    padding: 12px 16px 18px;
+}
+
+.stat-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 0;
+    color: #334155;
+    text-decoration: none;
+}
+
+.stat-row:hover {
+    text-decoration: none;
+}
+
+.stat-row:hover .stat-name {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.stat-name {
+    flex: 0 0 96px;
+    font-size: 0.82em;
+    color: #475569;
+}
+
+.stat-bar {
+    flex: 1 1 auto;
+    height: 9px;
+    background: #e8ebef;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.stat-fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.4s ease;
+}
+
+.stat-fill.low  { background: #e23b3b; }   /* < 40  */
+.stat-fill.mid  { background: #e8a33d; }   /* 40-69 */
+.stat-fill.high { background: #2faf5a; }   /* >= 70 */
+
+.stat-value {
+    flex: 0 0 28px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    font-size: 0.82em;
+    color: #1e293b;
+}
+
+.stat-row.na .stat-value { color: #94a3b8; font-weight: 400; }
+
+.site-header h1 a, .site-header a { text-decoration: none; }
 
 .score {
     font-weight: bold;
@@ -199,6 +269,58 @@ h1 {
     font-size: 2.5em;
     color: #333; /* Darker heading color */
 }
+
+/* Attribute legend (key) */
+.legend-wrap {
+    max-width: 1100px;
+    margin: 0 auto 10px;
+    padding: 0 20px;
+}
+.legend-wrap > summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: #334155;
+    padding: 8px 0;
+}
+.politician-list-container {
+    white-space: nowrap;
+}
+.sc-card { white-space: normal; margin: 0 16px 16px 0; }
+
+/* Evidence list on the attribute-detail page */
+.aggregate-note { color: #64748b; font-size: 0.92em; margin-top: -6px; }
+.evidence-list { list-style: none; padding: 0; }
+.evidence {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 14px 0;
+    border-top: 1px solid #e2e8f0;
+}
+.ev-score {
+    flex: 0 0 46px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.1em;
+    padding: 6px 0;
+    border-radius: 8px;
+    color: #fff;
+}
+.ev-score.low  { background: #d64545; }
+.ev-score.mid  { background: #cf8a2e; }
+.ev-score.high { background: #2f9e52; }
+.ev-body { flex: 1; }
+.ev-quote {
+    margin: 0 0 6px;
+    padding: 6px 0 6px 14px;
+    border-left: 3px solid #94a3b8;
+    color: #1e293b;
+    font-style: italic;
+}
+.ev-context { font-size: 0.85em; color: #64748b; margin-bottom: 6px; }
+.ev-analysis { font-size: 0.92em; color: #334155; margin-bottom: 6px; }
+.ev-analysis strong { color: #0f172a; }
+.ev-source { font-size: 0.85em; }
 
 /* Adjust top right link position slightly */
 .top-right-link {

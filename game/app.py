@@ -26,7 +26,23 @@ HUMAN_PLAYER_ID = game_logic_config.PLAYER_IDS[0]
 AI_PLAYER_ID = game_logic_config.PLAYER_IDS[1]
 
 # --- Helper Functions ---
-def load_politician_cards_templates(filename="politicians.jsonl"):
+def _deck_filename():
+    """Which deck to load. `GAME_DECK=real` uses the normalised real-politician
+    deck (game/politicians_real.jsonl, built by normalise.py) so the demo shows
+    actual politicians with their extracted+normalised scores; otherwise the
+    larger fictional deck for richer play."""
+    if os.environ.get("GAME_DECK", "").lower() == "real":
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        real = os.path.join(base_dir, "politicians_real.jsonl")
+        if os.path.exists(real):
+            return "politicians_real.jsonl"
+        app.logger.warning("GAME_DECK=real but politicians_real.jsonl missing; using fictional deck.")
+    return "politicians.jsonl"
+
+
+def load_politician_cards_templates(filename=None):
+    if filename is None:
+        filename = _deck_filename()
     """Loads card templates from the JSONL file."""
     cards = []
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -89,16 +105,24 @@ class RandomPlayerAI:
             app.logger.info(f"AI ({self.player_id}) plans to play {card_to_play.name}")
 
 
-        # 2. Attack (each card on field attacks a random enemy card if possible)
+        # 2. Attack: hit a random enemy card, or the opponent's base if they have none.
         for attacker_card in player_state.field:
-            if not attacker_card.is_defeated() and opponent_field_cards:
-                target_card = random.choice(opponent_field_cards)
-                ai_actions.append(AttackAction(
-                    player_id=self.player_id,
-                    attacker_instance_id=attacker_card.instance_id,
-                    target_instance_id=target_card.instance_id
-                ))
-                app.logger.info(f"AI ({self.player_id}) plans to attack with {attacker_card.name} targeting {target_card.name}")
+            if attacker_card.is_defeated():
+                continue
+            if opponent_field_cards:
+                target_id = random.choice(opponent_field_cards).instance_id
+                target_desc = target_id
+            elif opponent_id:
+                target_id = opponent_id  # base attack — target the player directly
+                target_desc = f"{opponent_id}'s base"
+            else:
+                continue
+            ai_actions.append(AttackAction(
+                player_id=self.player_id,
+                attacker_instance_id=attacker_card.instance_id,
+                target_instance_id=target_id
+            ))
+            app.logger.info(f"AI ({self.player_id}) plans to attack with {attacker_card.name} targeting {target_desc}")
         
         return PlayerTurnActions(player_id=self.player_id, actions=ai_actions)
 

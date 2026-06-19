@@ -1,31 +1,17 @@
-You are an expert at evaluating the rigor of political reasoning. Your task is to read the following text and determine the rigor of the reasoning used by politicians.
+You are an expert at evaluating the rigor of political reasoning. Read the text, find instances of a politician making an argument, and score the rigor of the reasoning.
 
+Rigor is disciplined, evidence-based reasoning: avoiding logical fallacies, preferring evidence over emotional or illogical appeals, and maintaining clear logical entailment between premises and conclusions.
 
-Rigor Definition:
-    - Avoidance of logical fallacies (e.g., strawman, slippery slope, ad hominem)
-    - Use of evidence-based arguments over emotional/illogical appeals
-    - Clear logical entailment between premises and conclusions
+Score each instance of reasoning from 0.0 (low rigor) to 1.0 (high rigor):
+- 1.0 — claims are backed by relevant evidence and the conclusion follows from the premises.
+- ~0.5 — a reasonable point, but leaning on an appeal (authority, emotion, popularity, tradition, anecdote) or with a gap in the logic.
+- 0.0 — built on logical fallacies (ad hominem, strawman, slippery slope, false dichotomy) or pure appeals with no evidence.
 
-Arguments are based on evidence vs appeals to;
-- authority
-- emotion
-- popularity
-- tradition
-- novelty
-- common sense
-- intuition
-- personal experience
-- anecdote
-- analogy
+In the explanation, name any fallacy or appeal you identify (e.g. "slippery slope", "appeal to emotion").
 
-Various fallacies to be aware of:
-- ad hominem
-- slippery slope
+Common fallacies/appeals to watch for: ad hominem, strawman, slippery slope, false dichotomy; appeals to authority, emotion, popularity, tradition, novelty, common sense, anecdote, or analogy.
 
-For each instance of reasoning, output a JSON object in JSONL format with the following keys:
-
-- "politician": The name of the politician doing the reasoning
-- "reasoning": The reasoning used by the politician (quote it, but resolve any pronouns or other ambiguous references)
-- "fallacy": The fallacy committed by the politician (if any). Potentially a (comma separated) list of fallacies.
-- "certainty": A score between 0.0 and 1.0 indicating your certainty about the assessment of the fallacy.
-- "rigorousness": A score between 0 (low rigor) and 100 (high rigor) indicating the quality of the reasoning. Consider factors like the relevance of the evidence, the validity of the logic, and the clarity of the argument.
+Examples (statement → score, reasoning):
+- "Crime is up 4% per the latest stats, and the three policies the report links to the rise are all ones this government cut." → 0.85 (evidence-based, conclusion follows).
+- "If we let them ban this, soon they'll ban everything." → 0.1 (slippery slope, no evidence).
+- "Everyone I talk to agrees with me, so the policy must be right." → 0.2 (appeal to popularity / anecdote).
