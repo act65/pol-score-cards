@@ -36,20 +36,54 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastRenderedActionLogCount = 0; // To track new logs for animation
 
     // --- Helper Functions ---
-    function getAttributeAbbreviation(attrName) {
-        const map = {
-            strength: "Str", divination: "Div", charisma: "Cha", rigor: "Rig",
-            specificity: "Spe", civility: "Civ", authenticity: "Aut",
-            veracity: "Ver", forthrightness: "For"
-        };
-        return map[attrName.toLowerCase()] || attrName.substring(0, 3);
+    // Attribute icons are loaded from the shared map (shared/attribute_icons.json,
+    // synced into static/). Keyed by lowercase attribute id -> {symbol,name,blurb}.
+    let ATTR_ICONS = {};
+
+    const PARTY_COLOURS = {
+        "Labour": "#D82A20", "National": "#00529F", "Green": "#098137",
+        "Greens": "#098137", "ACT": "#F5C400", "NZ First": "#1a1a1a"
+    };
+    function partyColour(party) {
+        if (PARTY_COLOURS[party]) return PARTY_COLOURS[party];
+        let h = 0;
+        for (const ch of (party || "")) h = (h * 31 + ch.charCodeAt(0)) % 360;
+        return `hsl(${h}, 45%, 38%)`;   // deterministic colour for fictional parties
+    }
+    function initials(name) {
+        return (name || "?").split(/\s+/).map(w => w[0] || "").join("").slice(0, 2).toUpperCase();
+    }
+    function tierClass(v) {
+        return v < 40 ? "low" : (v < 70 ? "mid" : "high");
+    }
+
+    async function loadIconsAndLegend() {
+        try {
+            const raw = await (await fetch('/static/attribute_icons.json')).json();
+            const legend = document.getElementById('legend');
+            for (const [key, meta] of Object.entries(raw)) {
+                if (key.startsWith('_')) continue;
+                ATTR_ICONS[key.toLowerCase()] = meta;
+                if (meta.name) ATTR_ICONS[meta.name.toLowerCase()] = meta;
+                if (meta.site_id) ATTR_ICONS[meta.site_id.toLowerCase()] = meta;
+                if (legend) {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<span class="sc-icon">${meta.symbol}</span>` +
+                        `<span><b>${meta.name}</b> — <span class="blurb">${meta.blurb || ''}</span></span>`;
+                    legend.appendChild(li);
+                }
+            }
+        } catch (e) {
+            console.warn('Could not load attribute icons:', e);
+        }
     }
 
     function createCardElement(cardData, locationType) {
         const cardDiv = document.createElement('div');
-        cardDiv.classList.add('card');
+        cardDiv.classList.add('card', 'sc-card');
         cardDiv.dataset.instanceId = cardData.instance_id;
-        cardDiv.dataset.name = cardData.name; // For easier identification in logs
+        cardDiv.dataset.name = cardData.name; // For identification in events/logs
+        cardDiv.style.setProperty('--party', partyColour(cardData.party));
 
         if (locationType === 'hand') {
             cardDiv.classList.add('hand-card');
@@ -59,20 +93,25 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (locationType === 'opponent-field') {
             cardDiv.classList.add('field-card', 'opponent-card');
         }
-        
-        const attributesHtml = Object.entries(cardData.attributes)
-            .map(([key, value]) => `<li>${getAttributeAbbreviation(key)}: <span>${value}</span></li>`)
-            .join('');
-        
-        // Attack target indicator div
-        const attackIndicatorHtml = `<div class="attack-target-indicator" style="display: none;"></div>`;
+
+        const statsHtml = Object.entries(cardData.attributes).map(([key, value]) => {
+            const meta = ATTR_ICONS[key.toLowerCase()] || {};
+            const sym = meta.symbol || '•';
+            const name = meta.name || key;
+            return `<div class="sc-stat" title="${name}: ${value}">` +
+                   `<span class="sc-icon">${sym}</span>` +
+                   `<span class="sc-val ${tierClass(value)}">${value}</span></div>`;
+        }).join('');
 
         cardDiv.innerHTML = `
-            <div class="name">${cardData.name}</div>
-            <div class="party">${cardData.party}</div>
-            <div class="hp">HP: ${cardData.current_hp}/${cardData.max_hp}</div>
-            <ul class="attributes">${attributesHtml}</ul>
-            ${attackIndicatorHtml}
+            <div class="sc-banner">
+                <h3 class="sc-name">${cardData.name}</h3>
+                <span class="sc-party">${cardData.party}</span>
+                <span class="sc-portrait sc-initials">${initials(cardData.name)}</span>
+            </div>
+            <div class="sc-hp">HP: ${cardData.current_hp}/${cardData.max_hp}</div>
+            <div class="sc-stats">${statsHtml}</div>
+            <div class="attack-target-indicator" style="display: none;"></div>
         `;
         return cardDiv;
     }
@@ -115,25 +154,30 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
-    function addAttackAction(attackerId, targetId) {
+    function addAttackAction(attackerId, targetId, targetNameOverride) {
         // Prevent multiple attacks from the same attacker
         if (playerActions.some(action => action.type === 'ATTACK' && action.attacker_instance_id === attackerId)) {
             alert("This card already has a planned attack.");
             return false;
         }
         const attackerCardElem = playerFieldElem.querySelector(`.card[data-instance-id="${attackerId}"]`);
-        const targetCardElem = opponentFieldElem.querySelector(`.card[data-instance-id="${targetId}"]`);
-        if (!attackerCardElem || !targetCardElem) return false;
+        if (!attackerCardElem) return false;
 
-        const attackerName = attackerCardElem.dataset.name;
-        const targetName = targetCardElem.dataset.name;
+        // targetNameOverride is supplied for base attacks (targetId is a player id,
+        // so there is no card element to look up).
+        let targetName = targetNameOverride;
+        if (!targetName) {
+            const targetCardElem = opponentFieldElem.querySelector(`.card[data-instance-id="${targetId}"]`);
+            if (!targetCardElem) return false;
+            targetName = targetCardElem.dataset.name;
+        }
 
-        playerActions.push({ 
-            type: 'ATTACK', 
-            attacker_instance_id: attackerId, 
+        playerActions.push({
+            type: 'ATTACK',
+            attacker_instance_id: attackerId,
             target_instance_id: targetId,
-            attacker_name: attackerName, // Store for UI
-            target_name: targetName      // Store for UI
+            attacker_name: attackerCardElem.dataset.name,
+            target_name: targetName
         });
         updateCardAttackIndicator(attackerCardElem, targetName);
         return true;
@@ -233,14 +277,8 @@ document.addEventListener('DOMContentLoaded', () => {
             clearActionsButton.disabled = false;
         }
         
-        // Animate results from action log if this render is after a turn submission
-        if (animate && oldGameState && oldGameState.round_number < state.round_number || (oldGameState && oldGameState.game_phase !== "GAME_OVER" && state.game_phase === "GAME_OVER")) {
-            // Only animate if round advanced or game just ended
-            const newLogs = state.action_log.slice(lastRenderedActionLogCount);
-            animateActionLogEvents(newLogs);
-        }
-        lastRenderedActionLogCount = state.action_log.length;
-
+        // Resolution is replayed from structured `state.events` by replayEvents(),
+        // invoked explicitly after a turn submission (see submitPlayerActionsToServer).
         clearSelectionUI(); // Clear attacker selection visuals
     }
 
@@ -274,80 +312,109 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    async function animateActionLogEvents(logs) {
-        submitActionsButton.disabled = true; // Disable while animating
-        gameStatusMessageElem.textContent = "Resolving actions...";
+    // --- Structured resolution replay --------------------------------------
+    // The server returns `state.events`: an ordered list of structured events for
+    // the round just resolved. We narrate them one at a time and highlight the
+    // cards/bases involved, instead of parsing log strings.
+    function findCardEls(ids) {
+        return (ids || [])
+            .map(id => id && document.querySelector(`.card[data-instance-id="${id}"]`))
+            .filter(Boolean);
+    }
 
-        for (const log of logs) {
-            // Only process logs for the current game round or if game just ended
-            if (!log.startsWith(`R${currentGameState.round_number}:`) && !log.startsWith(`R${currentGameState.round_number-1}:`) && !log.includes("Game Over")) {
-                if (currentGameState.game_phase === "ONGOING" && log.startsWith(`R${currentGameState.round_number-1}:`)) {
-                    // This is for logs from the round that just finished processing
-                } else {
-                     continue;
-                }
+    function flashEl(el, cls, ms = 600) {
+        if (!el) return;
+        el.classList.add(cls);
+        setTimeout(() => el.classList.remove(cls), ms);
+    }
+
+    function describeEvent(ev) {
+        switch (ev.type) {
+            case 'round_start':
+                return { cls: 'ev-round', text: `— Round ${ev.round} —` };
+            case 'attack_order': {
+                const names = (ev.order || []).map(o => `${o.name} (Div ${o.divination})`).join('  →  ');
+                return { cls: 'ev-order', text: `Order (Divination decides): ${names || '— no attacks —'}` };
             }
-
-            let delay = 300; // Default delay
-
-            // Example parsing (can be made more robust)
-            if (log.includes("deals") && log.includes("damage to")) {
-                // R1:   Amelia Taylor deals 1364 damage to Pavel Davis. (Pavel Davis HP: 14886/16250)
-                // R1:   Civility: Amelia Taylor deals 4 direct damage to Player P2 (HP: 996).
-                const damageMatch = log.match(/(\w+\s*\w*)\sdeals\s(\d+)\sdamage\sto\s(Player\s\w+|[\w\s]+)\.\s\(?(?:([\w\s]+)\sHP:\s(\d+)\/(\d+))?/);
-                const civilityDamageMatch = log.match(/Civility:\s([\w\s]+)\sdeals\s(\d+)\sdirect damage to Player\s(\w+)\s\(HP:\s(\d+)\)/);
-
-                if (damageMatch) {
-                    const targetName = damageMatch[3].trim();
-                    const newHp = damageMatch[5];
-                    const maxHp = damageMatch[6];
-                    
-                    const targetCardElem = Array.from(document.querySelectorAll('.card'))
-                                           .find(el => el.dataset.name === targetName);
-                    if (targetCardElem && newHp !== undefined) {
-                        const hpDisplay = targetCardElem.querySelector('.hp');
-                        if (hpDisplay) hpDisplay.textContent = `HP: ${newHp}/${maxHp}`;
-                        targetCardElem.classList.add('damage-flash');
-                        setTimeout(() => targetCardElem.classList.remove('damage-flash'), 500);
-                        delay = 600;
-                    }
-                } else if (civilityDamageMatch) {
-                    const targetPlayerId = civilityDamageMatch[3];
-                    const newPlayerHp = civilityDamageMatch[4];
-                    if (targetPlayerId === humanPlayerId) {
-                        playerHpElem.textContent = newPlayerHp;
-                        // Add a flash to player HP area if desired
-                    } else if (targetPlayerId === opponentPlayerId) {
-                        opponentHpElem.textContent = newPlayerHp;
-                    }
-                    delay = 600;
-                }
-            } else if (log.includes("has been defeated")) {
-                // R1:   Pavel Davis has been defeated and moved to P2's graveyard.
-                const defeatedMatch = log.match(/([\w\s]+)\shas been defeated/);
-                if (defeatedMatch) {
-                    const defeatedCardName = defeatedMatch[1].trim();
-                    const defeatedCardElem = Array.from(document.querySelectorAll('.card'))
-                                           .find(el => el.dataset.name === defeatedCardName);
-                    if (defeatedCardElem) {
-                        defeatedCardElem.classList.add('defeated-animation');
-                        setTimeout(() => defeatedCardElem.remove(), 700); // Remove after animation
-                        delay = 800;
-                    }
-                }
-            } else if (log.includes("MISSED") || log.includes("BLOCKED")) {
-                delay = 400; // Shorter delay for misses/blocks
+            case 'play':
+                return { cls: 'ev-play', text: `▶ ${ev.player} plays ${ev.card}`, ids: [ev.instance_id] };
+            case 'attack': {
+                const tgt = ev.target.kind === 'base' ? `${ev.target.player}'s BASE` : ev.target.name;
+                return {
+                    cls: 'ev-attack', text: `⚔ ${ev.attacker.name} attacks ${tgt}`,
+                    ids: [ev.attacker.instance_id, ev.target.instance_id],
+                    base: ev.target.kind === 'base' ? ev.target.player : null
+                };
             }
-            
-            // Simple log display during animation (optional)
-            // gameStatusMessageElem.textContent = log.substring(log.indexOf(': ') + 2); // Show current event
-            await new Promise(resolve => setTimeout(resolve, delay));
+            case 'retarget':
+                return { cls: 'ev-retarget', text: `↪ Authenticity: redirected from ${ev.from_name} to ${ev.target.name}`, ids: [ev.target.instance_id] };
+            case 'miss':
+                return { cls: 'ev-miss', text: `✗ ${ev.attacker.name} MISSED (Specificity)`, ids: [ev.attacker.instance_id] };
+            case 'fizzle':
+                return { cls: 'ev-miss', text: `· ${ev.attacker.name}'s attack fizzles`, ids: [ev.attacker.instance_id] };
+            case 'damage':
+                return { cls: 'ev-damage', text: `💥 ${ev.target.name} takes ${ev.amount} (HP ${ev.current_hp}/${ev.max_hp})`, ids: [ev.target.instance_id], flash: 'damage-flash' };
+            case 'reflect':
+                return { cls: 'ev-reflect', text: `↩ Forthrightness: ${ev.source.name} reflects ${ev.amount} onto ${ev.target.name} (HP ${ev.current_hp}/${ev.max_hp})`, ids: [ev.target.instance_id], flash: 'reflect-flash' };
+            case 'civility':
+                return { cls: 'ev-civility', text: `☠ Civility pierce: ${ev.attacker.name} → ${ev.amount} to ${ev.target_player} (HP ${ev.player_hp})`, base: ev.target_player };
+            case 'base_attack':
+                return { cls: 'ev-base', text: `🏛 ${ev.attacker.name} hits ${ev.target_player}'s base for ${ev.amount} (HP ${ev.player_hp})`, ids: [ev.attacker.instance_id], base: ev.target_player };
+            case 'defeat':
+                return { cls: 'ev-defeat', text: `✟ ${ev.card.name} is defeated`, ids: [ev.card.instance_id], flash: 'defeated-animation' };
+            case 'game_over':
+                return { cls: 'ev-gameover', text: `🏆 Game Over — Winner: ${ev.winner}` };
+            default:
+                return null;
         }
-        
-        // Final full re-render to ensure UI is perfectly synced after animations
-        renderGameState(currentGameState, false); // false to prevent re-animating
-        if (currentGameState.game_phase !== "GAME_OVER") {
+    }
+
+    function delayForEvent(type) {
+        if (type === 'attack_order') return 900;
+        if (['damage', 'reflect', 'base_attack', 'defeat'].includes(type)) return 750;
+        if (type === 'attack') return 550;
+        return 400;
+    }
+
+    async function replayEvents(events) {
+        const panel = document.getElementById('resolution-panel');
+        const logOl = document.getElementById('resolution-log');
+        logOl.innerHTML = '';
+        panel.style.display = 'block';
+        submitActionsButton.disabled = true;
+        clearActionsButton.disabled = true;
+        gameStatusMessageElem.textContent = "Resolving…";
+
+        for (const ev of (events || [])) {
+            const d = describeEvent(ev);
+            if (!d) continue;
+
+            const li = document.createElement('li');
+            li.className = d.cls;
+            li.textContent = d.text;
+            logOl.appendChild(li);
+            logOl.scrollTop = logOl.scrollHeight;
+
+            const els = findCardEls(d.ids);
+            els.forEach(el => el.classList.add('event-focus'));
+            if (d.flash) els.forEach(el => flashEl(el, d.flash));
+            if (d.base) {
+                const baseEl = (d.base === opponentPlayerId)
+                    ? document.getElementById('opponent-base')
+                    : document.getElementById('human-player-area');
+                flashEl(baseEl, 'base-hit', 700);
+            }
+
+            await new Promise(r => setTimeout(r, delayForEvent(ev.type)));
+            els.forEach(el => el.classList.remove('event-focus'));
+        }
+
+        if (currentGameState.game_phase === "GAME_OVER") {
+            gameStatusMessageElem.textContent = `Game Over! Winner: ${currentGameState.winner}`;
+        } else {
+            gameStatusMessageElem.textContent = `Round ${currentGameState.round_number} - Your turn.`;
             submitActionsButton.disabled = false;
+            clearActionsButton.disabled = false;
         }
     }
 
@@ -451,6 +518,22 @@ document.addEventListener('DOMContentLoaded', () => {
         clearSelectionUI(); // Clear attacker selection after planning an attack
     }
 
+    // Attack the opponent's base directly (their HP). Useful when they have no
+    // cards on the field — select your attacker, then click the opponent base.
+    const opponentBaseElem = document.getElementById('opponent-base');
+    if (opponentBaseElem) {
+        opponentBaseElem.addEventListener('click', () => {
+            if (!selectedAttackerCardId) {
+                alert("Select one of your cards first, then click the opponent's base to attack it directly.");
+                return;
+            }
+            if (addAttackAction(selectedAttackerCardId, opponentPlayerId, "BASE")) {
+                gameStatusMessageElem.textContent = `Planned attack on ${opponentPlayerId}'s base.`;
+            }
+            clearSelectionUI();
+        });
+    }
+
     async function submitPlayerActionsToServer() {
         if (!currentGameState || currentGameState.game_phase === "GAME_OVER") {
             console.log("Game is over or not started.");
@@ -490,8 +573,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const newGameState = await response.json();
             playerActions = []; // Clear client-side planned actions
-            // renderGameState will handle UI updates and animations
-            renderGameState(newGameState, true); // true to trigger animations
+            // Sync the board to server truth, then narrate the round's structured events.
+            renderGameState(newGameState, false);
+            await replayEvents(newGameState.events);
         } catch (error) {
             console.error('Error submitting actions:', error);
             gameStatusMessageElem.textContent = `Error: ${error.message}`;
@@ -507,6 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
         submitActionsButton.disabled = true;
         clearActionsButton.disabled = true;
         gameStatusMessageElem.textContent = "Loading game...";
+        await loadIconsAndLegend();   // populate ATTR_ICONS + legend before rendering cards
         try {
             const response = await fetch(`${API_BASE_URL}/api/start_game`);
             if (!response.ok) {

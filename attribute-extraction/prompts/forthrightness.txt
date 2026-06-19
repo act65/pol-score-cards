@@ -1,39 +1,17 @@
-You are an expert at analyzing political discourse to determine if questions are answered directly. Your task is to read the following text and identify instances where the politician evades a direct answer to a question.
+You are an expert at analysing political discourse to determine whether questions are answered directly. Read the text, find instances where a politician is asked a question, and score how forthrightly they answer.
 
-For each instance, output a JSON object in JSONL format with the following keys:
+Forthrightness is the opposite of dodging: high forthrightness means the politician answers the question asked, in full and honestly; low forthrightness means they evade, change the subject, or answer a different question than the one asked.
 
-- "politician": The name of the politician being questioned.
-- "question": The question that was asked.
-- "response": The politician's response.
-- "direct_answer": Boolean value indicating if the question was answered directly (true if yes, false if no).
-- "certainty": A score between 0.0 and 1.0 indicating your certainty about the assessment of directness.
-- "importance": A score between 1 (low importance) and 5 (high importance) indicating the significance of the question and/or the clarity of the evasion in the context. Consider factors like the specificity of the question, the prominence of the issue, and how clearly the politician avoided the core of the question.
+Score each question-and-response instance from 0.0 (evasive) to 1.0 (forthright). Quote the politician's response as the statement, and reference the question in the explanation:
+- 1.0 — answers the actual question directly and completely.
+- ~0.5 — partially answers, or answers but hedges around the core of the question.
+- 0.0 — does not answer; pivots to talking points or a different topic.
 
-Examples:
+Notes:
+- Only score responses to a reasonably clear question.
+- Weigh how specific the question was and how clearly the core of it was avoided.
 
-Text 1:
-Interviewer: Minister, can you confirm if the budget will be balanced next year?
-Minister Smith: Well, our government is committed to fiscal responsibility and we are working hard to ensure the best outcomes for all New Zealanders. We have made significant progress in reducing debt, and our focus remains on sustainable economic growth.
-
-Output 1:
-{"politician": "Minister Smith", "question": "Minister, can you confirm if the budget will be balanced next year?", "response": "Well, our government is committed to fiscal responsibility and we are working hard to ensure the best outcomes for all New Zealanders. We have made significant progress in reducing debt, and our focus remains on sustainable economic growth.", "direct_answer": false, "certainty": 0.9, "importance": 4}
-
----
-
-Text 2:
-Interviewer: Prime Minister, what is your favourite ice cream flavour?
-Prime Minister Jones: That's a very personal question! I think what's more important is the flavour of our economy right now, and I'm pleased to say it's looking quite robust.
-
-Output 2:
-{"politician": "Prime Minister Jones", "question": "Prime Minister, what is your favourite ice cream flavour?", "response": "That's a very personal question! I think what's more important is the flavour of our economy right now, and I'm pleased to say it's looking quite robust.", "direct_answer": false, "certainty": 0.7, "importance": 2}
-
----
-
-Text 3:
-Interviewer: Leader of the Opposition, what specific measures would your party take to reduce carbon emissions by 50% by 2030?
-Leader Green: Our party has a comprehensive plan that includes investing in renewable energy, promoting public transport, and supporting sustainable agriculture.
-
-Output 3:
-{"politician": "Leader Green", "question": "Leader of the Opposition, what specific measures would your party take to reduce carbon emissions by 50% by 2030?", "response": "Our party has a comprehensive plan that includes investing in renewable energy, promoting public transport, and supporting sustainable agriculture.", "direct_answer": false, "certainty": 0.85, "importance": 5}
-
----
+Examples (response → score, reasoning):
+- Q: "Will the budget be balanced next year?" A: "We're committed to fiscal responsibility and reducing debt." → 0.15 (pivots to talking points; never says yes or no).
+- Q: "Will you raise the fuel tax?" A: "Yes — by 12 cents a litre from July, and here's why." → 0.95 (direct, complete).
+- Q: "What measures would cut emissions 50% by 2030?" A: "We have a comprehensive plan: renewables, public transport, sustainable agriculture." → 0.4 (themes, not the specific measures asked for).

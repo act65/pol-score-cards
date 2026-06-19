@@ -16,15 +16,29 @@
         <p>Party: {{ politician.party }}</p>
         <h3>{{ attribute_info.name }} Score: {{ score }}</h3>
         <p>Description: {{ attribute_info.definition }}</p>
+        <p class="aggregate-note">The score above is the average across the {{ examples|length }}
+           statement{{ '' if examples|length == 1 else 's' }} below.</p>
         {% if examples %}
-            <h4>Examples:</h4>
-            <ul>
+            <h4>Evidence — the statements behind this score:</h4>
+            <ul class="evidence-list">
             {% for example in examples %}
-                <li>
-                    {{ example.text }}
-                    {% if example.source_url and example.source_url|trim != '' %}
-                        <a href="{{ example.source_url }}" target="_blank" rel="noopener noreferrer">(Source)</a>
+                {% set tier = 'low' if (example.score is not none and example.score < 40) else ('mid' if (example.score is not none and example.score < 70) else 'high') %}
+                <li class="evidence">
+                    {% if example.score is not none %}
+                        <span class="ev-score {{ tier }}">{{ example.score }}</span>
                     {% endif %}
+                    <div class="ev-body">
+                        <blockquote class="ev-quote">“{{ example.text }}”</blockquote>
+                        {% if example.context %}
+                            <div class="ev-context">{{ example.context }}</div>
+                        {% endif %}
+                        {% if example.explanation %}
+                            <div class="ev-analysis"><strong>Analysis:</strong> {{ example.explanation }}</div>
+                        {% endif %}
+                        {% if example.source_url and example.source_url|trim != '' %}
+                            <a class="ev-source" href="{{ example.source_url }}" target="_blank" rel="noopener noreferrer">Read the source →</a>
+                        {% endif %}
+                    </div>
                 </li>
             {% endfor %}
             </ul>

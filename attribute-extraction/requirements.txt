@@ -1,0 +1,3 @@
+anthropic>=0.111
+pydantic>=2
+fire

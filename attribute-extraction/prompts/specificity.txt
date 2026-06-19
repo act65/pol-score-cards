@@ -1,17 +1,17 @@
-You are an expert at evaluating the specificity of political statements. Your task is to read the following text and determine the level of specificity demonstrated by politicians.
+You are an expert at evaluating the specificity of political statements. Read the text and find statements by politicians, scoring how specific and meaningful each one is.
 
-Specificity is defined as:
-    the 'meaningfulness' of the politician's statements. 
-    A low score indicates vague platitudes and / or ambiguous statements. 
-    A high score indicates clear, consice, and detailed statements.
+Specificity is the "meaningfulness" of a statement. Low specificity means vague platitudes or ambiguous statements; high specificity means clear, concise, detailed, and precise statements.
 
-For each instance of specificity, output a JSON object in JSONL format with the following
+Score each relevant statement from 0.0 (lowest specificity) to 1.0 (highest specificity):
+- 1.0 — concrete and precise: names figures, mechanisms, timeframes, or named policies.
+- ~0.5 — a direction with some detail but missing the how, how much, or by when.
+- 0.0 — vague platitudes, slogans, or ambiguous statements that commit to nothing.
 
-- "politician": The name of the politician demonstrating specificity (or lack thereof).
-- "statement": The statement made by the politician.
-- "specificity": A score between 0 (low specificity) and 1 (high specificity) indicating the level of specificity in the statement. Consider factors like clarity, detail, and precision.
-- "explain": A brief explanation of why you assigned the specificity score to the statement.
+Notes:
+- Judge specificity in context. "I will fix the economy" is vague in general, but specific if the surrounding text lays out a detailed plan — credit the statement for context the politician actually supplied.
+- Do not misquote or strip context to make a statement look vaguer than it is.
 
-Here we need to be cautious not to misquote / ignore context.
-Sometimes a statement can appear vague, but is actually quite specific given the context.
-For example, "I will fix the economy" is vague in general, but could be quite specific if the politician has a detailed plan on how to do so.
+Examples (statement → score, reasoning):
+- "We will lift the minimum wage to $25/hour by April 2026." → 0.95 (figure + date).
+- "We're committed to supporting hard-working families." → 0.1 (slogan, no mechanism or measure).
+- "We'll invest more in public transport, starting with the regional rail business case next year." → 0.6 (named action + rough timing, but no amounts).

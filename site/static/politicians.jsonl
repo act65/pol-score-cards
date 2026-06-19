@@ -1,7 +1,26 @@
-{"name": "Jacinda Ardern", "party": "Labour", "id": "ardern"}
-{"name": "Christopher Luxon", "party": "National", "id": "luxon"}
-{"name": "David Seymour", "party": "ACT", "id": "seymour"}
-{"name": "Winston Peters", "party": "NZ First", "id": "peters"}
-{"name": "Chloe Swarbrick", "party": "Green", "id": "swarbrick"}
-{"name": "Judith Collins", "party": "National", "id": "collins"}
-{"name": "Marama Davidson", "party": "Green", "id": "davidson"}
+{"id": "andrew-hoggard", "name": "Andrew Hoggard", "party": "ACT"}
+{"id": "benjamin-doyle", "name": "Benjamin Doyle", "party": "Green"}
+{"id": "carl-bates", "name": "Carl Bates", "party": "National"}
+{"id": "chris-bishop", "name": "Chris Bishop", "party": "National"}
+{"id": "chris-hipkins", "name": "Chris Hipkins", "party": "Labour"}
+{"id": "erica-stanford", "name": "Erica Stanford", "party": "National"}
+{"id": "huhana-lyndon", "name": "Hūhana Lyndon", "party": "Green"}
+{"id": "luxon", "name": "Christopher Luxon", "party": "National"}
+{"id": "matt-doocey", "name": "Matt Doocey", "party": "National"}
+{"id": "nicola-willis", "name": "Nicola Willis", "party": "National"}
+{"id": "nicole-mckee", "name": "Nicole McKee", "party": "ACT"}
+{"id": "paulo-garcia", "name": "Paulo Garcia", "party": "National"}
+{"id": "peters", "name": "Winston Peters", "party": "NZ First"}
+{"id": "priyanca-radhakrishnan", "name": "Priyanca Radhakrishnan", "party": "Labour"}
+{"id": "ricardo-menendez-march", "name": "Ricardo Menéndez March", "party": "Green"}
+{"id": "scott-willis", "name": "Scott Willis", "party": "Green"}
+{"id": "seymour", "name": "David Seymour", "party": "ACT"}
+{"id": "shane-jones", "name": "Shane Jones", "party": "NZ First"}
+{"id": "shane-reti", "name": "Shane Reti", "party": "National"}
+{"id": "simeon-brown", "name": "Simeon Brown", "party": "National"}
+{"id": "simon-watts", "name": "Simon Watts", "party": "National"}
+{"id": "swarbrick", "name": "Chlöe Swarbrick", "party": "Green", "image": "img/swarbrick.jpg"}
+{"id": "tama-potaka", "name": "Tama Potaka", "party": "National"}
+{"id": "tamatha-paul", "name": "Tamatha Paul", "party": "Green"}
+{"id": "teanau-tuiono", "name": "Teanau Tuiono", "party": "Green"}
+{"id": "todd-mcclay", "name": "Todd McClay", "party": "National"}

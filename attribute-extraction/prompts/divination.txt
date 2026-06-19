@@ -1,43 +1,20 @@
-You are an expert at identifying predictions made by politicians about future events. Your task is to read the following text and extract all statements that forecast or predict what will happen in the future.
+You are an expert at identifying predictions made by politicians about future events. Read the text and find statements that forecast what will happen in the future — economic, social, or political outcomes — as opposed to promises about what the politician will do (those belong to Promises/Strength).
 
-For each prediction, output a JSON object in JSONL format with the following keys:
+These feed the Divination attribute (the accuracy of a politician's predictions). True Divination scoring requires comparing each prediction to what actually happened, which is a later step; here you extract predictions and give a provisional score.
 
-- "politician": The name of the politician making the prediction.
-- "prediction": The text of the prediction. (You are allowed to rephrase the prediction to make it more clear and concise and to resolve any ambiguities like 'it', 'this' or 'that'. Also, remember to include any required context to parse the prediction.)
-- "date_made": The date the prediction was made (DD-MM-YYYY format if available, otherwise infer as best as possible or leave as null).
-- "resolution_date": The date or timeframe when the prediction is expected to be resolved or the predicted event is expected to occur (DD-MM-YYYY format). If the date is not explicit / uncertain, pick a resonable upper bound (e.g., end of the year, end of the term).
-- "importance_weighting": A score between 1 (low importance) and 5 (high importance) indicating the perceived significance or impact of the prediction. Consider factors like the scope of the prediction (local, national, international), the number of people it might affect, and the potential consequences if the prediction comes true.
-- "certainty": A score between 0.0 and 1.0 indicating your certainty that this statement is intended as a prediction about the future.
+Score each prediction from 0.0 to 1.0 as your best current estimate of how likely it is to prove accurate, given present evidence:
+- 1.0 — well-reasoned, consistent with current evidence and expert consensus.
+- ~0.5 — plausible but uncertain, or evidence is mixed.
+- 0.0 — contradicts current evidence or is implausible.
+
+Quote the prediction as the statement (you may resolve pronouns/ambiguity for clarity). In the explanation, note the timeframe and why you scored it as you did.
 
 Notes:
+- Only include verifiable/falsifiable predictions; skip statements too vague to ever be checked.
+- One object per distinct prediction.
+- Distinguish predictions (events that will happen) from promises (actions the politician will take).
 
-- When uncertain about the date the prediction was made, use the date of the article or the date of the event being reported on.
-- We are only interested in politically relevant predictions related to future events and consequences of actions now, not what a politician says they will do.
-- Only consider predictions that are verifiable or falsifiable. If a prediction is too vague or ambiguous to be verified, it should not be included.
-- If multiple predictions are made by the same politician in one phrase, output one object per prediction.
-
-Examples:
-
-Text:
-Speaking at a rally on January 15, 2024, Prime Minister Smith said, "Our government's policies will lead to unemployment falling below 4% by the end of this year."
-
-Output:
-{"politician": "Prime Minister Smith", "prediction": "Our government's policies will lead to unemployment falling below 4% by the end of this year.", "date_made": "15-01-2024", "resolution_date": "31-12-2024", "importance_weighting": 4, "certainty": 0.95}
-
----
-
-Text:
-In an interview aired on March 1, 2023, Opposition Leader Jones warned, "If the current government continues on its path, we will see a significant increase in poverty within the next two years."
-
-Output:
-{"politician": "Opposition Leader Jones", "prediction": "If the current government continues on its path, we will see a significant increase in poverty within the next two years.", "date_made": "01-03-2023", "resolution_date": "01-03-2025", "importance_weighting": 5, "certainty": 0.9}
-
----
-
-Text:
-During a press conference today, October 20, 2025, Finance Minister Brown stated, "I anticipate that inflation will peak in the first quarter of next year."
-
-Output:
-{"politician": "Finance Minister Brown", "prediction": "I anticipate that inflation will peak in the first quarter of next year.", "date_made": "20-10-2025", "resolution_date": "01-04-2026", "importance_weighting": 3, "certainty": 0.88}
-
----
+Examples (statement → score, reasoning):
+- "Inflation will peak in the first quarter of next year." → 0.6 (plausible, consistent with current forecasts, but uncertain).
+- "Our policies will lead to unemployment below 4% by year end." → 0.4 (optimistic vs current trend).
+- "If nothing changes, poverty will rise significantly within two years." → 0.55 (directionally supported, magnitude uncertain).

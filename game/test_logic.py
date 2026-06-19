@@ -347,37 +347,45 @@ def test_specificity_miss(mock_random, initialized_game_state: GameState, game_e
     assert processed_target_card.current_hp == initial_target_hp # HP Unchanged due to miss
     assert any(f"MISSED {target_card.name}" in log for log in new_state.action_log)
 
-@patch('random.random')
-def test_forthrightness_block(mock_random, initialized_game_state: GameState, game_engine: GameEngine, P1_ID: str, P2_ID: str):
-    # Force a block: random.random() < forthrightness / 100.0
-    # If forthrightness = 60, block_chance = 0.6. We need random.random() < 0.6
-    mock_random.return_value = 0.5
-
+def test_forthrightness_reflect(initialized_game_state: GameState, game_engine: GameEngine, P1_ID: str, P2_ID: str):
+    # Forthrightness reflects damage back to the attacker; it does NOT block
+    # damage to the target. With forthrightness=60, the attacker takes
+    # calculated_attack * 60 // 100 in reflected damage, while the target still
+    # takes the full hit. (See rules.md and game_logic.py.)
     state = initialized_game_state
-    p1 = state.players[P1_ID]
-    p2 = state.players[P2_ID]
 
+    # specificity=100 (no miss), authenticity=100 (no retarget) keep the attack deterministic.
     attacker_attrs = create_mock_attributes(strength=3, rigor=2, specificity=100, authenticity=100, civility=0)
-    target_attrs = create_mock_attributes(strength=1, veracity=1, forthrightness=60) # 60% block chance
+    target_attrs = create_mock_attributes(strength=1, veracity=1, forthrightness=60)
     attacker_card = create_mock_politician_card(1, "Attacker", attributes=attacker_attrs)
-    target_card = create_mock_politician_card(1, "BlockTarget", attributes=target_attrs)
+    target_card = create_mock_politician_card(1, "ReflectTarget", attributes=target_attrs)
 
     attacker_card.owner_id = P1_ID
     target_card.owner_id = P2_ID
-    p1.field.append(attacker_card)
-    p2.field.append(target_card)
     state.players[P1_ID].field = [attacker_card]
     state.players[P2_ID].field = [target_card]
     initial_target_hp = target_card.current_hp
+    initial_attacker_hp = attacker_card.current_hp
+
+    # calculated_attack = strength*rigor = 6, defense = strength*veracity = 1.
+    calculated_attack = attacker_card.attack_damage_base
+    expected_target_damage = max(0, calculated_attack - target_card.defense_base)
+    expected_reflected = calculated_attack * target_attrs.forthrightness // 100
 
     attack_action = AttackAction(P1_ID, attacker_card.instance_id, target_card.instance_id)
     round_actions = RoundActions(PlayerTurnActions(P1_ID, [attack_action]), PlayerTurnActions(P2_ID, []))
-    
+
     new_state = game_engine.process_round(state, round_actions)
-    
+
     processed_target_card, _ = new_state.find_card_on_field(target_card.instance_id)
-    assert processed_target_card.current_hp == initial_target_hp # HP Unchanged due to block
-    assert any(f"{target_card.name} BLOCKED the attack" in log for log in new_state.action_log)
+    processed_attacker_card, _ = new_state.find_card_on_field(attacker_card.instance_id)
+
+    # Target takes full damage (reflection does not block it)
+    assert processed_target_card.current_hp == initial_target_hp - expected_target_damage
+    # Attacker takes the reflected damage
+    assert processed_attacker_card.current_hp == initial_attacker_hp - expected_reflected
+    assert expected_reflected > 0
+    assert any("reflected" in log for log in new_state.action_log)
 
 @patch('random.random')
 @patch('random.choice') # Also mock random.choice for retargeting
@@ -588,5 +596,115 @@ def test_game_run_with_random_players(game_engine: GameEngine, P1_ID: str, P2_ID
     
     if state.game_phase == "ONGOING":
         print(f"Game still ongoing after {max_rounds} rounds in smoke test.")
-    
+
     assert state is not None # Basic check that the game ran
+
+
+# --- Regression tests for the card-removal + base-attack fixes -------------
+
+def _one_attack(P1_ID, P2_ID, attacker, target_id):
+    """Build a RoundActions with a single P1 attack and no P2 actions."""
+    return RoundActions(
+        PlayerTurnActions(P1_ID, [AttackAction(P1_ID, attacker.instance_id, target_id)]),
+        PlayerTurnActions(P2_ID, []),
+    )
+
+
+def test_attacker_removed_when_killed_by_reflect(initialized_game_state, game_engine, P1_ID, P2_ID):
+    # Attacker dies to reflected (forthrightness) damage and must leave the field.
+    state = initialized_game_state
+    attacker_attrs = create_mock_attributes(strength=2, rigor=100, specificity=100, authenticity=100, civility=0)
+    # High-veracity, high-forthrightness target: takes ~no damage, reflects a lot.
+    target_attrs = create_mock_attributes(strength=5, veracity=100, forthrightness=100, specificity=100, authenticity=100)
+    attacker = create_mock_politician_card(1, "Glasscannon", attributes=attacker_attrs)
+    target = create_mock_politician_card(1, "Wall", attributes=target_attrs)
+    attacker.owner_id, target.owner_id = P1_ID, P2_ID
+    state.players[P1_ID].field = [attacker]
+    state.players[P2_ID].field = [target]
+
+    new_state = game_engine.process_round(state, _one_attack(P1_ID, P2_ID, attacker, target.instance_id))
+
+    # Attacker died to reflect and is gone from the field, in its owner's graveyard.
+    assert new_state.find_card_on_field(attacker.instance_id) is None
+    assert any(c.instance_id == attacker.instance_id for c in new_state.players[P1_ID].graveyard)
+    # Target (the wall) survived.
+    survivor, _ = new_state.find_card_on_field(target.instance_id)
+    assert survivor is not None and survivor.current_hp > 0
+
+
+def test_base_attack_when_opponent_field_empty(initialized_game_state, game_engine, P1_ID, P2_ID):
+    # With no enemy cards, an attack targeting the opponent player hits their base HP.
+    state = initialized_game_state
+    attrs = create_mock_attributes(strength=3, rigor=2, specificity=100, authenticity=100, civility=0)
+    attacker = create_mock_politician_card(1, "Striker", attributes=attrs)
+    attacker.owner_id = P1_ID
+    state.players[P1_ID].field = [attacker]
+    state.players[P2_ID].field = []  # empty opposing field
+    start_hp = state.players[P2_ID].health_points
+
+    new_state = game_engine.process_round(state, _one_attack(P1_ID, P2_ID, attacker, P2_ID))
+
+    assert new_state.players[P2_ID].health_points == start_hp - attacker.attack_damage_base
+    assert any(e["type"] == "base_attack" for e in new_state.events)
+
+
+def test_base_attack_falls_back_when_target_card_gone(initialized_game_state, game_engine, P1_ID, P2_ID):
+    # Targeting a non-existent card while the opposing field is empty redirects to the base.
+    state = initialized_game_state
+    attrs = create_mock_attributes(strength=3, rigor=2, specificity=100, authenticity=100, civility=0)
+    attacker = create_mock_politician_card(1, "Striker", attributes=attrs)
+    attacker.owner_id = P1_ID
+    state.players[P1_ID].field = [attacker]
+    state.players[P2_ID].field = []
+    start_hp = state.players[P2_ID].health_points
+
+    new_state = game_engine.process_round(state, _one_attack(P1_ID, P2_ID, attacker, "no_such_card"))
+    assert new_state.players[P2_ID].health_points == start_hp - attacker.attack_damage_base
+
+
+def test_base_attack_can_win_game(initialized_game_state, game_engine, P1_ID, P2_ID):
+    state = initialized_game_state
+    attrs = create_mock_attributes(strength=3, rigor=2, specificity=100, authenticity=100, civility=0)
+    attacker = create_mock_politician_card(1, "Finisher", attributes=attrs)
+    attacker.owner_id = P1_ID
+    state.players[P1_ID].field = [attacker]
+    state.players[P2_ID].field = []
+    state.players[P2_ID].health_points = 3  # less than attack_damage_base (6)
+
+    new_state = game_engine.process_round(state, _one_attack(P1_ID, P2_ID, attacker, P2_ID))
+
+    assert new_state.players[P2_ID].health_points == 0
+    assert new_state.game_phase == "GAME_OVER"
+    assert new_state.winner == P1_ID
+    assert any(e["type"] == "game_over" for e in new_state.events)
+
+
+def test_end_of_round_sweep_removes_defeated(initialized_game_state, game_engine, P1_ID, P2_ID):
+    # A card already at 0 HP that isn't involved in any attack is swept at end of round.
+    state = initialized_game_state
+    ghost = create_mock_politician_card(1, "Ghost", attributes=create_mock_attributes())
+    ghost.owner_id = P1_ID
+    ghost.current_hp = 0  # already defeated
+    state.players[P1_ID].field = [ghost]
+    state.players[P2_ID].field = []
+
+    new_state = game_engine.process_round(
+        state, RoundActions(PlayerTurnActions(P1_ID, []), PlayerTurnActions(P2_ID, []))
+    )
+    assert new_state.find_card_on_field(ghost.instance_id) is None
+    assert any(c.instance_id == ghost.instance_id for c in new_state.players[P1_ID].graveyard)
+
+
+def test_round_emits_structured_events(initialized_game_state, game_engine, P1_ID, P2_ID):
+    state = initialized_game_state
+    attrs = create_mock_attributes(strength=3, rigor=2, specificity=100, authenticity=100, civility=0)
+    attacker = create_mock_politician_card(1, "Striker", attributes=attrs)
+    attacker.owner_id = P1_ID
+    state.players[P1_ID].field = [attacker]
+    state.players[P2_ID].field = []
+
+    new_state = game_engine.process_round(state, _one_attack(P1_ID, P2_ID, attacker, P2_ID))
+    types = {e["type"] for e in new_state.events}
+    assert "round_start" in types
+    assert "attack_order" in types
+    assert "base_attack" in types

@@ -82,40 +82,32 @@ body {
     align-items: center; /* Vertically center cards in hand scroll area */
 }
 
-.card {
-    border: 1px solid #7f8c8d;
-    padding: 8px; /* Slightly reduced padding */
-    width: 120px; /* Slightly reduced width */
-    min-height: 170px; /* Increased height */
-    background-color: #ecf0f1; /* Light card background */
-    color: #2c3e50; /* Dark text on card */
-    border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+/* Game cards reuse the shared .sc-card trading-card design (shared/card.css),
+   scaled down for the board. Interaction states are layered on below. */
+.card.sc-card {
+    width: 158px;
+    flex-shrink: 0;        /* don't shrink in the hand */
     cursor: default;
-    font-size: 0.8em; /* Smaller base font on card */
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    flex-shrink: 0; /* Prevent cards in hand from shrinking */
 }
 .card:hover {
     transform: translateY(-4px) scale(1.03);
-    box-shadow: 0 5px 12px rgba(0,0,0,0.3);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.35);
     z-index: 10;
 }
-
-.card .name { font-weight: bold; margin-bottom: 3px; font-size: 1em; color: #2980b9; }
-.card .party { font-style: italic; margin-bottom: 3px; font-size: 0.85em; color: #566573; }
-.card .hp { margin-bottom: 3px; color: #27ae60; font-weight: bold; font-size: 0.9em; }
-.card .attributes { font-size: 0.75em; list-style: none; padding: 0; margin: 0; color: #34495e;}
-.card .attributes li { white-space: nowrap; margin-bottom: 1px; }
-.card .attributes li span { font-weight: bold; }
+.card .sc-banner { min-height: 42px; padding: 7px 9px; }
+.card .sc-name { font-size: 0.92em; padding-right: 36px; }
+.card .sc-party { font-size: 0.6em; margin-top: 3px; }
+.card .sc-portrait { width: 32px; height: 32px; top: 6px; right: 7px; }
+.card .sc-stats { gap: 3px 5px; padding: 7px 8px 8px; }
+.card .sc-icon { font-size: 0.9em; width: 1.1em; }
+.card .sc-val { font-size: 0.8em; }
+.card .sc-hp { padding: 0 8px 7px; font-size: 0.78em; }
 .card .attack-target-indicator {
     font-size: 0.7em;
     color: #c0392b;
     font-weight: bold;
-    margin-top: 4px;
+    padding: 0 8px 6px;
     text-align: center;
 }
 
@@ -196,3 +188,57 @@ body {
         transform: scale(0.5) rotate(15deg);
     }
 }
+
+/* Reflected-damage flash (distinct from the red damage flash). */
+.reflect-flash { animation: flashPurple 0.6s ease-out; }
+@keyframes flashPurple {
+    0% { background-color: #ecf0f1; }
+    50% { background-color: #8e44ad; color: white; }
+    100% { background-color: #ecf0f1; color: #2c3e50; }
+}
+
+/* Card currently referenced by the event being narrated. */
+.event-focus {
+    outline: 3px solid #f1c40f;
+    box-shadow: 0 0 12px rgba(241, 196, 15, 0.9);
+    z-index: 5;
+}
+
+/* Base-target affordance + hit flash. */
+#opponent-base { cursor: pointer; border-radius: 8px; transition: background-color 0.2s ease; }
+#opponent-base:hover { background-color: rgba(231, 76, 60, 0.18); }
+.base-hint { font-size: 0.6em; opacity: 0.75; font-weight: normal; }
+.base-hit { animation: flashRed 0.7s ease-out; }
+
+/* Resolution panel — step-by-step narration of a resolved round. */
+#resolution-panel {
+    margin: 16px auto;
+    max-width: 720px;
+    background: #1e2733;
+    color: #e8edf3;
+    border-radius: 10px;
+    padding: 12px 18px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+#resolution-panel h4 { margin: 0 0 8px; color: #f1c40f; }
+#resolution-log {
+    margin: 0;
+    padding-left: 22px;
+    max-height: 220px;
+    overflow-y: auto;
+    font-size: 0.9em;
+    line-height: 1.6;
+}
+#resolution-log li { transition: background 0.2s ease; }
+#resolution-log li.ev-round { list-style: none; margin-left: -22px; text-align: center; color: #95a5a6; font-weight: bold; }
+#resolution-log li.ev-order { color: #aab7c4; font-style: italic; }
+#resolution-log li.ev-attack { color: #e8edf3; }
+#resolution-log li.ev-damage { color: #ff6b6b; }
+#resolution-log li.ev-reflect { color: #c39bd3; }
+#resolution-log li.ev-civility { color: #f0932b; }
+#resolution-log li.ev-base { color: #ffbe76; font-weight: bold; }
+#resolution-log li.ev-defeat { color: #7f8c8d; }
+#resolution-log li.ev-miss { color: #95a5a6; font-style: italic; }
+#resolution-log li.ev-play { color: #82ccdd; }
+#resolution-log li.ev-retarget { color: #f8c471; }
+#resolution-log li.ev-gameover { color: #2ecc71; font-weight: bold; font-size: 1.05em; }

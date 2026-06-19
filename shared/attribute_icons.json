@@ -1,0 +1,12 @@
+{
+  "_comment": "Canonical attribute -> icon/legend mapping. Single source of truth shared by the site and the game. Synced into site/static/ and game/static/ by shared/sync.py. Keyed by the game's lowercase attribute id; 'site_id' is the matching id used in site/static/attributes.jsonl + scores.jsonl where it differs.",
+  "strength":       {"name": "Strength",       "symbol": "💪", "blurb": "Turns rhetoric into implemented policy"},
+  "veracity":       {"name": "Veracity",       "symbol": "🛡️", "blurb": "Truthful; avoids false or misleading claims"},
+  "forthrightness": {"name": "Forthrightness", "symbol": "🎯", "blurb": "Answers the question directly", "site_id": "Precision"},
+  "divination":     {"name": "Divination",     "symbol": "🔮", "blurb": "Predictions that prove accurate"},
+  "charisma":       {"name": "Charisma",       "symbol": "🗣️", "blurb": "Persuades and builds consensus"},
+  "rigor":          {"name": "Rigor",          "symbol": "⚖️", "blurb": "Evidence-based; avoids logical fallacies"},
+  "specificity":    {"name": "Specificity",    "symbol": "📍", "blurb": "Concrete and precise, not vague"},
+  "civility":       {"name": "Civility",       "symbol": "🤝", "blurb": "Respectful; no personal attacks"},
+  "authenticity":   {"name": "Authenticity",   "symbol": "🎭", "blurb": "Words match actions"}
+}

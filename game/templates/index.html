@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Political Card Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='card.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div id="game-board">
         <div id="opponent-player-area" class="player-area">
-            <div class="player-info">
-                <h3>Opponent (<span id="opponent-id">P2</span>)</h3>
+            <div id="opponent-base" class="player-info" title="Click to attack the opponent's base directly">
+                <h3>Opponent (<span id="opponent-id">P2</span>) <span class="base-hint">⚔ click to attack base</span></h3>
                 <div class="stats">
                     <span>HP: <span id="opponent-hp">1000</span></span>
                     <span>Deck: <span id="opponent-deck-count">0</span></span>
@@ -51,6 +52,16 @@
             <button id="submit-actions-button">Submit Actions & End Turn</button>
             <p id="game-status-message">Loading game...</p>
         </div>
+
+        <div id="resolution-panel" style="display:none;">
+            <h4>Resolution</h4>
+            <ol id="resolution-log"></ol>
+        </div>
+
+        <details id="legend-wrap">
+            <summary>Attribute key</summary>
+            <ul class="sc-legend" id="legend"></ul>
+        </details>
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>

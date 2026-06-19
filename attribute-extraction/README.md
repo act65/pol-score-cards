@@ -72,8 +72,54 @@ For attributes where LLMs cannot perform the entire scoring task, a multi-step p
         *   Review complex arguments for subtle fallacies that an LLM might miss.
         *   **Metric Calculation**: Could be a score based on fallacy frequency, combined with a check on whether claims are at least *accompanied* by purported evidence (validity of evidence is a separate Veracity check).
 
+## Backends
+
+Extraction can run two ways:
+
+- **`claude_cli`** (default for `build_site_data.py`): routes calls through the
+  local Claude Code CLI (`claude -p`), which uses your **Claude subscription — no
+  API credits**. Slower (each call spawns a CLI session) and has no native
+  structured-output mode, so it asks for a JSON array and parses it.
+- **`anthropic`**: the Anthropic SDK with structured outputs (`messages.parse`).
+  Faster and stricter, but **consumes API credits**. Needs `ANTHROPIC_API_KEY`.
+
+Pass `--backend claude_cli` / `--backend anthropic` to `build_site_data.py`
+(and `extract_examples`/`score_statement` take a `backend=` arg).
+
 ## Usage
 
+Install deps:
+
 ```
-python extract.py ../data/data/greens_media_releases.json specificity $OPENAI_API_KEY green-specificity.json
+pip install -r requirements.txt
+# for the anthropic backend only:
+export ANTHROPIC_API_KEY=...
 ```
+
+Extract one attribute over a JSON file of articles (writes JSONL, one record per article):
+
+```
+python extract.py extract_file ../data/data/greens_media_releases.json specificity green-specificity.jsonl
+```
+
+Batch over many files x attributes (`all` = every prompt in `prompts/`):
+
+```
+python extract_all.py "../data/data/*.json" all ./out
+```
+
+Use `--model` to pick a model (default `claude-opus-4-8`).
+
+## Evaluation
+
+`evaluate.py` measures how well the LLM scoring agrees with the held-out
+testsets in `testsets/`:
+
+```
+python evaluate.py run civility        # one attribute
+python evaluate.py run all              # every scoring testset, writes eval_report.json
+```
+
+Reports mean-absolute-error, RMSE, Pearson correlation, and binary agreement
+(threshold 0.5) between predicted and gold scores. See `EVALUATION.md` for the
+latest results and methodology.
