@@ -8,36 +8,46 @@ works today and how the `live_*.json` datasets were produced.
 
 | Source | Method | Status |
 |---|---|---|
-| Green Party (`greens.org.nz/media`) | server-rendered HTML — listing + article pages fetch directly | ✅ working |
-| National (`national.org.nz/news`) | server-rendered HTML | ✅ working |
-| RNZ political (`rnz.co.nz/news/political`) | server-rendered HTML | ✅ working |
-| Beehive (`beehive.govt.nz`) | server-rendered | ✅ (earlier batch in `beehive_media_releases.json`) |
-| **Hansard** (`hansard.parliament.nz`) | **client-rendered SPA** | ⛔ blocked for simple fetch — see below |
+| Green Party (`greens.org.nz/media`) | server-rendered HTML | ✅ `sources.py --source greens` (verified) |
+| National (`national.org.nz/news`) | server-rendered HTML | ✅ `sources.py --source national` (verified) |
+| ACT (`act.org.nz/news`) | server-rendered (NationBuilder/Framer) | ✅ `sources.py --source act` (verified) |
+| Beehive (`beehive.govt.nz`) | server-rendered | ✅ (batch in `beehive_media_releases.json`) |
+| Labour (`labour.org.nz/news`) | **JS-rendered listing** | 🌐 `sources.py --source labour` (browser path) |
+| NZ First (`nzfirst.nz/news`) | **JS-rendered** | 🌐 `sources.py --source nzfirst` (browser path) |
+| RNZ political (`rnz.co.nz/news/political`) | **now JS-rendered** (0 `<p>` in static HTML) | 🌐 `sources.py --source rnz` (browser path) |
+| **Hansard** (`hansard.parliament.nz`) | SPA **+ Radware anti-bot wall** | 🌐 `hansard.py recent` — see below |
+| **Parliament press** (`parliament.nz/.../media-releases`) | **Radware anti-bot wall** | 🌐 `sources.py --source parliament` (browser) |
+| TOP (`opportunity.org.nz/news`) | server-rendered (NationBuilder) | ✅ `sources.py --source top` (verified) |
+| Te Pāti Māori | host unreachable from here | ⬜ not adapted |
 
-## Datasets produced (live)
+## `sources.py` — paginating, date-windowed scrapers
 
-`data/data/live_greens_2026-06.json`, `live_national_2026-06.json`,
-`live_rnz_2026-06.json` — current (June 2026) articles in the standard schema
-(`headline, date, author, content, url`), fetched live. Regenerate stats with
-`python dataset_stats.py`; run extraction with
-`python ../attribute-extraction/extract.py extract_file <file> <attribute> out.jsonl`.
+One driver paginates a source newest-first and stops at a date cutoff, so you can
+pull arbitrary history:
 
-These were fetched and validated end-to-end: e.g. veracity extraction over the
-National releases scores Todd McClay's "$64.3 billion exports forecast" claims
-~0.9 (specific, sourced), and civility extraction over the RNZ Parliament "spat"
-correctly scores "Hypocrite!" at 0.10.
+```
+cd data/scrapers
+python sources.py scrape --source greens   --months 6  --out ../data/greens_6mo.json
+python sources.py scrape --source national --months 12 --out ../data/national_1yr.json
+python sources.py scrape --source greens   --max 20      --out sample.json
+```
 
-## Recipe (the working sources)
+- **greens, national, act, top** — plain `requests`/BeautifulSoup, **verified live**
+  (correct headline/date/content; pagination + the `--months` window both work;
+  dates normalised to ISO; UTF-8 detected for sites that don't declare a charset).
+  Parsing is unit-tested in `test_sources.py`. TOP (NationBuilder) keeps the
+  publish date from the listing — its article pages don't carry one.
+- **labour, nzfirst, rnz, parliament** — routed through the Playwright browser
+  path (JS-rendered listings / Radware wall). Needs
+  `pip install playwright && playwright install chromium` and a browser-capable
+  machine (see `HANSARD_HOWTO.md`). The generic adapter (og:title/`<h1>` +
+  substantial `<p>`s) is best-effort and may need a per-site tweak.
 
-1. Fetch the listing page → recent article URLs + dates (filter to the last N
-   months; `scrapers/utils.py:is_recent`).
-2. Fetch each article page → `headline, date, author, content, url`.
-3. Append to the per-source `live_<source>_<period>.json`.
-4. Run `dataset_stats.py` and the extractor.
+Output is the standard `{headline, date, author, content, url}` schema; feed the
+files straight into `attribute-extraction/build_site_data.py`.
 
-The standalone `scrapers/*.py` (BeautifulSoup) implement steps 1–2 for some
-sources but have bugs and need debugging against current HTML; the live fetches
-above were done directly. Either path produces the same schema.
+The earlier per-site `scrapers/greens.py` / `national.py` / `rnz.py` are superseded
+by `sources.py`.
 
 ## Hansard — why it's blocked, and the path forward
 

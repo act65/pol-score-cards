@@ -22,27 +22,59 @@
 
 .sc-card {
     --party: #475569;            /* overridden per-card via inline style */
+    --rarity: #d4af37;           /* tinted per-card by average score (TCG rarity) */
+    position: relative;
     width: 250px;
     border-radius: 14px;
     overflow: hidden;
-    background: #fdfdfb;
-    border: 3px solid #d4af37;   /* gold frame, trading-card style */
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
+    /* Aged-parchment stock: warm base + soft mottling blotches. */
+    background:
+        radial-gradient(60% 40% at 22% 18%, rgba(120, 92, 40, 0.10), transparent 60%),
+        radial-gradient(50% 45% at 84% 80%, rgba(120, 92, 40, 0.10), transparent 60%),
+        radial-gradient(120% 90% at 50% 0%, rgba(255, 252, 240, 0.6), transparent 55%),
+        linear-gradient(160deg, #f7f0db 0%, #efe4c4 55%, #e7d7af 100%);
+    border: 3px solid #d4af37;          /* gold trading-card frame */
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.30);
     font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
-    color: #1e293b;
+    color: #3a3024;                     /* ink on parchment */
 }
 
+/* Inner gold rule + ornamental corner fleurons (pure CSS, no image files). */
+.sc-card::before {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border: 1px solid rgba(150, 120, 40, 0.5);
+    border-radius: 10px;
+    pointer-events: none;
+    z-index: 4;
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 14 14'%3E%3Cpath d='M7 1 L9 5 L13 7 L9 9 L7 13 L5 9 L1 7 L5 5 Z' fill='%23bfa047'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 14 14'%3E%3Cpath d='M7 1 L9 5 L13 7 L9 9 L7 13 L5 9 L1 7 L5 5 Z' fill='%23bfa047'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 14 14'%3E%3Cpath d='M7 1 L9 5 L13 7 L9 9 L7 13 L5 9 L1 7 L5 5 Z' fill='%23bfa047'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 14 14'%3E%3Cpath d='M7 1 L9 5 L13 7 L9 9 L7 13 L5 9 L1 7 L5 5 Z' fill='%23bfa047'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 2px 2px, calc(100% - 2px) 2px, 2px calc(100% - 2px), calc(100% - 2px) calc(100% - 2px);
+}
+
+/* The banner's background is the card's RARITY (legendary gold … common slate);
+   the party identity moves to the party-name chip below. */
 .sc-banner {
     position: relative;
+    z-index: 1;
     padding: 10px 12px;
     min-height: 54px;
     color: #fff;
-    background: linear-gradient(135deg, var(--party), color-mix(in srgb, var(--party) 78%, black));
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    background: linear-gradient(135deg, var(--rarity), color-mix(in srgb, var(--rarity) 70%, black));
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    /* foil-stamp divider: a gilt rule under the banner with a thin highlight */
+    border-bottom: 2px solid #d4af37;
+    box-shadow: inset 0 -3px 6px -4px rgba(0, 0, 0, 0.5),
+                0 1px 0 rgba(255, 240, 200, 0.5);
 }
 /* Fallback for browsers without color-mix */
 @supports not (background: color-mix(in srgb, red, blue)) {
-    .sc-banner { background: var(--party); }
+    .sc-banner { background: var(--rarity); }
 }
 
 .sc-name {
@@ -54,15 +86,22 @@
     color: #fff;
 }
 
+/* Party identity lives here: a light chip whose text + outline are the party
+   colour (darkened a touch so even light party colours stay legible). */
 .sc-party {
     display: inline-block;
     margin-top: 5px;
-    padding: 1px 8px;
+    padding: 1px 9px;
     font-size: 0.68em;
+    font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    background: rgba(255, 255, 255, 0.25);
+    color: var(--party);
+    color: color-mix(in srgb, var(--party) 72%, #1a1a1a);
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid var(--party);
     border-radius: 999px;
+    text-shadow: none;
 }
 
 /* Small circular portrait tucked in the top-right corner. */
@@ -75,8 +114,8 @@
     border-radius: 50%;
     object-fit: cover;
     object-position: top center;
-    border: 2px solid #fff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+    border: 2px solid #e8cf85;       /* gilt ring */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(120, 90, 30, 0.35);
     background: #e8ebef;
 }
 /* Initials avatar when there's no photo (e.g. game cards). */
@@ -93,11 +132,13 @@
 /* Stats: a compact icon grid. Attribute names are NOT shown here — the icon
    stands in for the name; see the legend (.sc-legend) for the key. */
 .sc-stats {
+    position: relative;
+    z-index: 1;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 6px 10px;
     padding: 11px 12px 13px;
-    background: #fdfdfb;
+    background: transparent;      /* let the parchment show through */
 }
 
 .sc-stat {
@@ -114,14 +155,27 @@ a.sc-stat {
     border-radius: 5px;
     padding: 1px 3px;
 }
-a.sc-stat:hover { background: #eef2f7; }
+a.sc-stat:hover { background: rgba(150, 120, 40, 0.14); }
 a.sc-stat:hover .sc-val { text-decoration: underline; }
+a.sc-stat:hover .sc-icon { color: #4a3a16; }   /* glyph darkens on hover */
 
+/* Heraldic glyph: engraved gold-brown line-icon (SVG) on the parchment.
+   Falls back to centring an emoji when no SVG is present. */
 .sc-icon {
-    font-size: 1.05em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.4em;
+    height: 1.4em;
     line-height: 1;
-    width: 1.25em;
-    text-align: center;
+    font-size: 1.05em;
+    color: #6f5a2a;
+    filter: drop-shadow(0 1px 0 rgba(255, 250, 235, 0.6));  /* faint emboss */
+}
+.sc-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 .sc-val {
@@ -136,11 +190,13 @@ a.sc-stat:hover .sc-val { text-decoration: underline; }
 
 /* Optional HP line (the game uses it; the site omits it). */
 .sc-hp {
-    padding: 0 12px 10px;
+    position: relative;
+    z-index: 1;
+    padding: 6px 12px 4px;
     font-size: 0.8em;
     font-weight: 700;
-    color: #b91c1c;
-    background: #fdfdfb;
+    color: #9a1414;
+    background: transparent;
 }
 
 /* ----- Legend / key -------------------------------------------------------- */
@@ -155,7 +211,7 @@ a.sc-stat:hover .sc-val { text-decoration: underline; }
     border: 1px solid #e2e8f0;
     border-radius: 10px;
 }
-.sc-legend li { display: flex; align-items: baseline; gap: 8px; font-size: 0.9em; }
-.sc-legend .sc-icon { font-size: 1.1em; }
+.sc-legend li { display: flex; align-items: center; gap: 8px; font-size: 0.9em; }
+.sc-legend .sc-icon { width: 1.5em; height: 1.5em; font-size: 1.1em; color: #7a611f; filter: none; flex: none; }
 .sc-legend b { color: #0f172a; }
 .sc-legend span.blurb { color: #64748b; }

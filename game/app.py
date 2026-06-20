@@ -2,6 +2,7 @@ from flask import Flask, render_template, jsonify, request
 import random
 import json
 import copy
+import math
 import os
 from dataclasses import asdict # For converting dataclasses to dicts for JSON
 from typing import Optional, List # For type hinting
@@ -40,6 +41,39 @@ def _deck_filename():
     return "politicians.jsonl"
 
 
+# Rarity: a card's overall strength is the GEOMETRIC mean of its attributes
+# (a single weak stat drags it down). Cards are ranked across the deck and put
+# into exponentially-sized buckets — the best card is legendary, the next 2 epic,
+# next 4 rare, next 8 uncommon, the rest common. The banner shows this colour.
+# (Ranking is scale-robust: even the real deck's mixed 1-10 / 0-100 attributes
+# rank sensibly because every card shares the same per-attribute scale.)
+_RARITY_COLOURS = ["#b8860b", "#6b21a8", "#1e5fa0", "#2f7d4f", "#4b5563"]  # rarest->common
+_RARITY_SIZES = [1, 2, 4, 8]   # exp buckets for the top tiers; common gets the rest
+
+
+def _card_geo_mean(card):
+    from dataclasses import asdict as _asdict
+    vals = [max(float(v), 1.0) for v in _asdict(card.attributes).values()]
+    if not vals:
+        return 0.0
+    return math.exp(sum(math.log(x) for x in vals) / len(vals))
+
+
+def _assign_deck_rarity(cards):
+    ranked = sorted(cards, key=_card_geo_mean, reverse=True)
+    counts, remaining = [], len(ranked)
+    for size in _RARITY_SIZES:
+        take = min(size, remaining)
+        counts.append(take)
+        remaining -= take
+    counts.append(remaining)
+    idx = 0
+    for tier, count in enumerate(counts):
+        for _ in range(count):
+            ranked[idx].rarity = _RARITY_COLOURS[tier]
+            idx += 1
+
+
 def load_politician_cards_templates(filename=None):
     if filename is None:
         filename = _deck_filename()
@@ -60,6 +94,7 @@ def load_politician_cards_templates(filename=None):
                         attributes=Attributes(**attr_data)
                         # Runtime fields like instance_id, hp, etc., are set by __post_init__
                     ))
+        _assign_deck_rarity(cards)
         app.logger.info(f"Loaded {len(cards)} politician card templates.")
     except FileNotFoundError:
         app.logger.error(f"Error: Card data file '{filename}' not found at '{file_path}'.")

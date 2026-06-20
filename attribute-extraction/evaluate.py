@@ -100,12 +100,16 @@ def evaluate_attribute(
     attribute: str,
     model: str = extract.DEFAULT_MODEL,
     client: Optional["object"] = None,
+    backend: str = "claude_cli",
 ) -> dict:
     if attribute not in SCORING_TESTSETS:
         raise ValueError(
             f"No scoring testset for '{attribute}'. Available: {sorted(SCORING_TESTSETS)}"
         )
-    client = client or extract._client()
+    # The CLI backend authenticates via the Claude subscription (no API credits)
+    # and ignores `client`; only build the API client for the 'anthropic' backend.
+    if backend == "anthropic":
+        client = client or extract._client()
     prompt = extract.load_prompt(attribute)
     rows = _load_jsonl(os.path.join(TESTSET_DIR, SCORING_TESTSETS[attribute]))
 
@@ -115,9 +119,10 @@ def evaluate_attribute(
         statement = row.get("statement") or row.get("text", "")
         if gold is None or not statement:
             continue
-        print(f"\r[{attribute}] scoring {i + 1}/{len(rows)}", end=" ", flush=True)
+        print(f"\r[{attribute}/{model}] scoring {i + 1}/{len(rows)}", end=" ", flush=True)
         result = extract.score_statement(
-            client, prompt, statement, model=model, politician=row.get("politician")
+            client, prompt, statement, model=model, politician=row.get("politician"),
+            backend=backend,
         )
         preds.append(result.score)
         golds.append(gold)
@@ -134,21 +139,61 @@ def evaluate_attribute(
     return {"attribute": attribute, "model": model, "metrics": metrics(preds, golds), "details": details}
 
 
-def run(attribute: str = "all", model: str = extract.DEFAULT_MODEL, save_to: str = "eval_report.json"):
-    """Evaluate one attribute, or `all` scoring testsets, and write a report."""
+def _fmt(m: dict) -> str:
+    r = f"{m['pearson_r']:.3f}" if m["pearson_r"] is not None else "n/a"
+    return (f"n={m['n']:<3d} MAE={m['mae']:.3f} RMSE={m['rmse']:.3f} "
+            f"r={r} binacc={m['binary_accuracy']:.3f}")
+
+
+def run(attribute: str = "all", model: str = extract.DEFAULT_MODEL,
+        save_to: str = "eval_report.json", backend: str = "claude_cli"):
+    """Evaluate one attribute, or `all` scoring testsets, and write a report.
+
+    backend: 'claude_cli' (subscription, no API credits — default) or 'anthropic'."""
     attrs = sorted(SCORING_TESTSETS) if attribute == "all" else [attribute]
-    client = extract._client()
+    client = extract._client() if backend == "anthropic" else None
 
     report = {}
     for attr in attrs:
-        result = evaluate_attribute(attr, model=model, client=client)
+        result = evaluate_attribute(attr, model=model, client=client, backend=backend)
         report[attr] = result
-        m = result["metrics"]
-        r = f"{m['pearson_r']:.3f}" if m["pearson_r"] is not None else "n/a"
-        print(
-            f"  {attr:14s} n={m['n']:<3d} MAE={m['mae']:.3f} "
-            f"RMSE={m['rmse']:.3f} r={r} binacc={m['binary_accuracy']:.3f}"
-        )
+        print(f"  {attr:14s} {_fmt(result['metrics'])}")
+
+    with open(save_to, "w") as f:
+        json.dump(report, f, indent=2)
+    print(f"\nWrote {save_to}")
+    return report
+
+
+def compare(models: str = "claude-opus-4-8,claude-sonnet-4-6,claude-haiku-4-5",
+            attribute: str = "all", backend: str = "claude_cli",
+            save_to: str = "eval_compare.json"):
+    """Score the testsets with several models and print a side-by-side table, so
+    you can see whether a cheaper model is good enough for attribute scoring.
+
+        python evaluate.py compare                       # opus vs sonnet vs haiku
+        python evaluate.py compare --models claude-haiku-4-5 --attribute civility
+
+    Cost: ~28 calls per model (14 civility + 14 veracity) on the subscription."""
+    model_list = [m.strip() for m in models.split(",") if m.strip()]
+    attrs = sorted(SCORING_TESTSETS) if attribute == "all" else [attribute]
+    client = extract._client() if backend == "anthropic" else None
+
+    report = {}
+    for model in model_list:
+        report[model] = {}
+        for attr in attrs:
+            result = evaluate_attribute(attr, model=model, client=client, backend=backend)
+            report[model][attr] = result["metrics"]
+
+    # comparison table: one block per attribute, models as rows (best r first)
+    print("\n=== model comparison (higher r / binacc, lower MAE = better) ===")
+    for attr in attrs:
+        print(f"\n[{attr}]")
+        rows = sorted(report.items(),
+                      key=lambda kv: kv[1][attr]["pearson_r"] or -1, reverse=True)
+        for model, by_attr in rows:
+            print(f"  {model:22s} {_fmt(by_attr[attr])}")
 
     with open(save_to, "w") as f:
         json.dump(report, f, indent=2)
@@ -157,4 +202,4 @@ def run(attribute: str = "all", model: str = extract.DEFAULT_MODEL, save_to: str
 
 
 if __name__ == "__main__":
-    fire.Fire({"run": run, "evaluate_attribute": evaluate_attribute})
+    fire.Fire({"run": run, "evaluate_attribute": evaluate_attribute, "compare": compare})

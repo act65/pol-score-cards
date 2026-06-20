@@ -125,7 +125,7 @@ def extract_examples(
 ) -> ExtractionResult:
     """Find and score every statement relevant to the attribute in one article."""
     if backend == "claude_cli":
-        text = claude_cli.call(f"{prompt}\n\n{_SCORE_GUIDANCE}", build_article_text(article))
+        text = claude_cli.call(f"{prompt}\n\n{_SCORE_GUIDANCE}", build_article_text(article), model=model)
         examples = [e for e in (_example_from_row(r) for r in claude_cli.parse_json_array(text)) if e]
         return ExtractionResult(examples=examples)
     response = client.messages.parse(
@@ -152,6 +152,7 @@ def score_statement(
         text = claude_cli.call(
             f"{prompt}\n\n{_SCORE_GUIDANCE}",
             f"Score this single statement{who}:\n{statement}",
+            model=model,
         )
         rows = claude_cli.parse_json_array(text)
         ex = _example_from_row(rows[0]) if rows else None

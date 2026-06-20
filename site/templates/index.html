@@ -14,6 +14,8 @@
         'Greens': '#098137', 'ACT': '#F5C400', 'NZ First': '#1a1a1a',
         'Te Pāti Māori': '#B5121B', 'Māori Party': '#B5121B'
     } %}
+    {# An attribute's heraldic glyph (SVG), falling back to its emoji. #}
+    {% macro glyph(attr) %}{% if attr.svg %}{{ attr.svg|safe }}{% else %}{{ attr.symbol }}{% endif %}{% endmacro %}
 
     <header class="site-header">
         <a href="/"><h1>NZ Politician Scorecards</h1></a>
@@ -24,7 +26,7 @@
         <summary>Attribute key — what the symbols mean (click a stat to see the evidence)</summary>
         <ul class="sc-legend">
             {% for attribute in all_attributes %}
-            <li><span class="sc-icon">{{ attribute.symbol }}</span>
+            <li><span class="sc-icon">{{ glyph(attribute) }}</span>
                 <span><b>{{ attribute.name }}</b> — <span class="blurb">{{ attribute.blurb or attribute.definition }}</span></span></li>
             {% endfor %}
         </ul>
@@ -33,7 +35,8 @@
     <div class="politician-list-container">
         {% for item in politicians_data %}
         {% set colour = party_colors.get(item.politician.party, '#475569') %}
-        <div class="sc-card" style="--party: {{ colour }};">
+        <div class="sc-card" title="{{ item.rarity_name|capitalize }}"
+             style="--party: {{ colour }}; --rarity: {{ item.rarity }};">
             <div class="sc-banner">
                 <h3 class="sc-name">{{ item.politician.name }}</h3>
                 <span class="sc-party">{{ item.politician.party }}</span>
@@ -51,12 +54,12 @@
                         {% set tier = 'low' if score < 40 else ('mid' if score < 70 else 'high') %}
                         <a class="sc-stat" title="{{ attribute.name }} — {{ attribute.blurb or attribute.definition }} (click for evidence)"
                            href="{{ url_for('attribute_detail', politician_id=item.politician.id, attribute=attribute.id) }}">
-                            <span class="sc-icon">{{ attribute.symbol }}</span>
+                            <span class="sc-icon">{{ glyph(attribute) }}</span>
                             <span class="sc-val {{ tier }}">{{ score }}</span>
                         </a>
                     {% else %}
                         <span class="sc-stat" title="{{ attribute.name }}">
-                            <span class="sc-icon">{{ attribute.symbol }}</span>
+                            <span class="sc-icon">{{ glyph(attribute) }}</span>
                             <span class="sc-val na">—</span>
                         </span>
                     {% endif %}
