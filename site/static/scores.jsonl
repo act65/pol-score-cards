@@ -1,26 +1,85 @@
-{"politician_id": "andrew-hoggard", "Charisma": 63, "Civility": 94, "Divination": 78, "Rigor": 72, "Specificity": 57, "Strength": 35, "Veracity": 91}
+{"politician_id": "andrew-hoggard", "Specificity": 92, "Strength": 85, "Veracity": 75, "Rigor": 72, "Divination": 50}
+{"politician_id": "andy-foster", "Civility": 48, "Charisma": 10, "Rigor": 38, "Veracity": 85}
+{"politician_id": "arena-williams", "Rigor": 62, "Charisma": 55, "Civility": 90, "Specificity": 62, "Veracity": 70}
+{"politician_id": "barbara-edmonds", "Civility": 38, "Specificity": 80, "Rigor": 35, "Veracity": 58, "Charisma": 30}
 {"politician_id": "benjamin-doyle", "Authenticity": 60, "Charisma": 60, "Civility": 90, "Rigor": 46, "Specificity": 42, "Strength": 10, "Veracity": 88}
-{"politician_id": "carl-bates", "Authenticity": 55, "Charisma": 72, "Civility": 95, "Divination": 55, "Rigor": 43, "Specificity": 67, "Strength": 58, "Veracity": 71}
-{"politician_id": "chris-bishop", "Authenticity": 65, "Charisma": 59, "Divination": 62, "Rigor": 38, "Specificity": 43, "Veracity": 82}
-{"politician_id": "chris-hipkins", "Charisma": 25, "Civility": 66, "Rigor": 35, "Specificity": 33, "Veracity": 42, "Authenticity": 20}
-{"politician_id": "erica-stanford", "Authenticity": 50, "Charisma": 60, "Rigor": 40, "Specificity": 22, "Veracity": 86}
-{"politician_id": "huhana-lyndon", "Authenticity": 88, "Charisma": 25, "Civility": 68, "Divination": 55, "Rigor": 37, "Specificity": 33, "Veracity": 65}
-{"politician_id": "luxon", "Precision": 15, "Authenticity": 59, "Charisma": 72, "Civility": 72, "Divination": 58, "Rigor": 44, "Specificity": 47, "Strength": 65, "Veracity": 71}
+{"politician_id": "cameron-brewer", "Civility": 35}
+{"politician_id": "cameron-luxton", "Divination": 40, "Specificity": 45, "Charisma": 28, "Civility": 35}
+{"politician_id": "camilla-belich", "Rigor": 69, "Specificity": 77, "Civility": 76, "Veracity": 72, "Charisma": 55, "Divination": 60}
+{"politician_id": "carl-bates", "Civility": 25, "Rigor": 20, "Specificity": 60}
+{"politician_id": "carmel-sepuloni", "Specificity": 78, "Veracity": 56, "Civility": 43, "Rigor": 62}
+{"politician_id": "casey-costello", "Specificity": 80, "Veracity": 64, "Precision": 45, "Strength": 69, "Civility": 43, "Rigor": 54, "Authenticity": 80, "Charisma": 30}
+{"politician_id": "catherine-wedd", "Specificity": 40, "Rigor": 40}
+{"politician_id": "chris-bishop", "Civility": 29, "Specificity": 77, "Rigor": 47, "Veracity": 66, "Charisma": 32, "Precision": 57, "Strength": 55}
+{"politician_id": "chris-hipkins", "Specificity": 69, "Veracity": 49, "Divination": 30, "Civility": 43, "Charisma": 40, "Rigor": 48}
+{"politician_id": "chris-penk", "Specificity": 79, "Veracity": 70, "Strength": 70, "Precision": 55, "Civility": 55, "Divination": 40}
+{"politician_id": "cushla-tangaere-manuel", "Specificity": 65, "Veracity": 62, "Charisma": 32, "Civility": 33, "Rigor": 35}
+{"politician_id": "dan-bidois", "Veracity": 47, "Rigor": 35, "Strength": 40, "Civility": 45, "Specificity": 32, "Charisma": 50}
+{"politician_id": "dana-kirkpatrick", "Specificity": 50, "Veracity": 50}
+{"politician_id": "daniel-eb", "Specificity": 20, "Charisma": 45, "Authenticity": 60}
+{"politician_id": "davidson", "Civility": 40, "Specificity": 80, "Veracity": 50}
+{"politician_id": "debbie-ngarewa-packer", "Rigor": 32, "Civility": 40, "Divination": 30, "Charisma": 42, "Specificity": 52, "Veracity": 48, "Strength": 32}
+{"politician_id": "deborah-russell", "Specificity": 80, "Veracity": 70, "Rigor": 65, "Civility": 46, "Charisma": 25}
+{"politician_id": "duncan-webb", "Civility": 51, "Charisma": 42, "Rigor": 68, "Veracity": 72, "Specificity": 65}
+{"politician_id": "erica-stanford", "Specificity": 64, "Rigor": 65, "Precision": 61, "Civility": 45, "Authenticity": 57, "Strength": 65, "Veracity": 70}
+{"politician_id": "francisco-hernandez", "Specificity": 82, "Rigor": 53, "Veracity": 50, "Civility": 50}
+{"politician_id": "georgie-dansey", "Specificity": 95, "Veracity": 62, "Rigor": 70, "Civility": 55}
+{"politician_id": "ginny-andersen", "Charisma": 40, "Civility": 54, "Specificity": 60, "Veracity": 53, "Rigor": 53}
+{"politician_id": "hana-rawhiti-maipi-clarke", "Rigor": 30, "Specificity": 58, "Veracity": 55, "Strength": 20}
+{"politician_id": "helen-white", "Rigor": 52, "Civility": 57, "Specificity": 60, "Veracity": 60, "Charisma": 85, "Divination": 50}
+{"politician_id": "huhana-lyndon", "Specificity": 70, "Veracity": 54, "Rigor": 40, "Civility": 47}
+{"politician_id": "jamie-arbuckle", "Civility": 20, "Specificity": 50, "Rigor": 40, "Divination": 40, "Charisma": 30}
+{"politician_id": "jenny-marcroft", "Rigor": 70, "Specificity": 100, "Veracity": 57, "Divination": 85}
+{"politician_id": "jenny-salesa", "Specificity": 80, "Veracity": 75, "Authenticity": 85}
+{"politician_id": "jessica-hammond", "Specificity": 30, "Strength": 20}
+{"politician_id": "joseph-mooney", "Veracity": 60, "Rigor": 60}
+{"politician_id": "julie-anne-genter", "Specificity": 71, "Veracity": 69, "Rigor": 42, "Charisma": 49, "Civility": 59, "Authenticity": 70}
+{"politician_id": "kahurangi-carter", "Charisma": 35, "Civility": 50, "Rigor": 50, "Specificity": 90, "Veracity": 50}
+{"politician_id": "kayla-kingdon-bebb", "Specificity": 35, "Charisma": 60, "Civility": 60}
+{"politician_id": "kieran-mcanulty", "Civility": 40, "Specificity": 73, "Veracity": 54, "Rigor": 52, "Charisma": 20, "Authenticity": 40, "Divination": 55}
+{"politician_id": "lan-pham", "Specificity": 83, "Veracity": 60, "Rigor": 50, "Divination": 40, "Charisma": 30}
+{"politician_id": "lawrence-xu-nan", "Charisma": 65, "Civility": 84, "Specificity": 72, "Veracity": 66, "Rigor": 61, "Divination": 57, "Authenticity": 70}
+{"politician_id": "louise-upston", "Precision": 36, "Specificity": 70, "Veracity": 57, "Rigor": 50, "Strength": 53, "Charisma": 40, "Authenticity": 65, "Civility": 50, "Divination": 43}
+{"politician_id": "luxon", "Specificity": 43, "Veracity": 44, "Divination": 25, "Civility": 28, "Charisma": 33, "Rigor": 38, "Precision": 28, "Authenticity": 50}
+{"politician_id": "mariameno-kapa-kingi", "Specificity": 85, "Veracity": 60}
 {"politician_id": "matt-doocey", "Authenticity": 80, "Charisma": 50, "Civility": 80, "Divination": 61, "Rigor": 51, "Specificity": 49, "Strength": 72, "Veracity": 78}
-{"politician_id": "nicola-willis", "Authenticity": 78, "Charisma": 17, "Civility": 38, "Divination": 43, "Rigor": 20, "Specificity": 21, "Strength": 63, "Veracity": 58}
+{"politician_id": "megan-woods", "Specificity": 70, "Veracity": 66, "Rigor": 60, "Civility": 32}
+{"politician_id": "melissa-lee", "Specificity": 66, "Veracity": 52, "Rigor": 45, "Civility": 60}
+{"politician_id": "nancy-lu", "Specificity": 12, "Charisma": 28, "Civility": 10, "Rigor": 10}
+{"politician_id": "nicola-grigg", "Specificity": 79, "Veracity": 73, "Rigor": 57, "Civility": 60, "Charisma": 58, "Strength": 55, "Precision": 90, "Authenticity": 70}
+{"politician_id": "nicola-willis", "Divination": 52, "Specificity": 77, "Veracity": 57, "Strength": 65, "Rigor": 40, "Civility": 37, "Charisma": 45, "Authenticity": 65, "Precision": 28}
 {"politician_id": "nicole-mckee", "Authenticity": 65, "Charisma": 55, "Rigor": 42, "Specificity": 37, "Strength": 37, "Veracity": 70}
+{"politician_id": "oriini-kaipara", "Civility": 40, "Charisma": 30, "Rigor": 65, "Specificity": 64, "Veracity": 69, "Strength": 45, "Authenticity": 80}
+{"politician_id": "paul-goldsmith", "Specificity": 74, "Veracity": 54, "Civility": 70, "Precision": 44, "Charisma": 50, "Strength": 73, "Rigor": 44, "Authenticity": 60}
 {"politician_id": "paulo-garcia", "Authenticity": 60, "Charisma": 65, "Civility": 78, "Divination": 50, "Rigor": 42, "Specificity": 81, "Strength": 52, "Veracity": 61}
-{"politician_id": "peters", "Charisma": 58, "Civility": 93, "Rigor": 42, "Specificity": 29, "Strength": 20, "Veracity": 76}
-{"politician_id": "priyanca-radhakrishnan", "Charisma": 20, "Civility": 35, "Rigor": 15, "Specificity": 5}
-{"politician_id": "ricardo-menendez-march", "Charisma": 22, "Civility": 45, "Divination": 70, "Rigor": 30, "Specificity": 32, "Strength": 20, "Veracity": 72}
+{"politician_id": "peters", "Civility": 28, "Rigor": 30, "Veracity": 30}
+{"politician_id": "priyanca-radhakrishnan", "Specificity": 77, "Civility": 54, "Veracity": 80, "Charisma": 70, "Authenticity": 60, "Rigor": 58}
+{"politician_id": "qiulae-wong", "Specificity": 53, "Charisma": 57, "Civility": 77, "Rigor": 51, "Authenticity": 70, "Strength": 46, "Veracity": 50, "Divination": 50}
+{"politician_id": "rachel-boyack", "Civility": 30, "Charisma": 62, "Rigor": 57, "Specificity": 70}
+{"politician_id": "rachel-brooking", "Civility": 35, "Specificity": 60, "Veracity": 46, "Rigor": 30}
+{"politician_id": "rawiri-waititi", "Specificity": 70, "Veracity": 48, "Rigor": 26, "Charisma": 42, "Strength": 50, "Civility": 35}
+{"politician_id": "reuben-davidson", "Specificity": 65, "Veracity": 45, "Rigor": 50, "Civility": 35}
+{"politician_id": "ricardo-menendez-march", "Civility": 60, "Specificity": 71, "Rigor": 54, "Charisma": 69, "Veracity": 75, "Divination": 60}
+{"politician_id": "rima-nakhle", "Civility": 35, "Specificity": 37, "Rigor": 40, "Veracity": 85}
+{"politician_id": "ryan-hamilton", "Specificity": 50, "Civility": 30, "Rigor": 45, "Veracity": 68}
+{"politician_id": "scott-simpson", "Specificity": 83, "Veracity": 75, "Rigor": 70}
 {"politician_id": "scott-willis", "Charisma": 59, "Civility": 68, "Divination": 60, "Rigor": 46, "Specificity": 38, "Strength": 5}
-{"politician_id": "seymour", "Authenticity": 60, "Rigor": 44, "Specificity": 43, "Veracity": 80}
-{"politician_id": "shane-jones", "Authenticity": 67, "Charisma": 37, "Civility": 87, "Divination": 47, "Rigor": 25, "Specificity": 49, "Strength": 52}
+{"politician_id": "seymour", "Rigor": 38, "Specificity": 77, "Charisma": 33, "Divination": 50, "Veracity": 61, "Civility": 31, "Strength": 76}
+{"politician_id": "shanan-halbert", "Civility": 40, "Specificity": 40}
+{"politician_id": "shane-jones", "Rigor": 30, "Specificity": 70, "Charisma": 23, "Veracity": 60, "Civility": 29, "Strength": 58}
 {"politician_id": "shane-reti", "Authenticity": 78, "Charisma": 71, "Civility": 89, "Divination": 66, "Rigor": 57, "Specificity": 52, "Strength": 65, "Veracity": 85}
-{"politician_id": "simeon-brown", "Authenticity": 65, "Charisma": 50, "Civility": 89, "Divination": 61, "Rigor": 53, "Specificity": 56, "Strength": 52, "Veracity": 74}
-{"politician_id": "simon-watts", "Authenticity": 67, "Charisma": 55, "Divination": 50, "Rigor": 30, "Specificity": 41, "Veracity": 78}
-{"politician_id": "swarbrick", "Veracity": 64, "Authenticity": 74, "Charisma": 35, "Civility": 73, "Divination": 90, "Rigor": 45, "Specificity": 63, "Strength": 48}
-{"politician_id": "tama-potaka", "Authenticity": 32, "Charisma": 13, "Civility": 43, "Rigor": 17, "Specificity": 13, "Veracity": 40}
-{"politician_id": "tamatha-paul", "Authenticity": 78, "Charisma": 47, "Civility": 73, "Rigor": 42, "Specificity": 29, "Strength": 52, "Veracity": 55}
+{"politician_id": "simeon-brown", "Civility": 38, "Specificity": 74, "Rigor": 32, "Veracity": 62, "Divination": 45, "Strength": 70, "Precision": 35}
+{"politician_id": "simon-court", "Civility": 43, "Charisma": 50, "Rigor": 40, "Specificity": 60}
+{"politician_id": "simon-watts", "Specificity": 71, "Veracity": 53, "Rigor": 68, "Strength": 75, "Charisma": 50}
+{"politician_id": "steve-abel", "Civility": 45, "Specificity": 68, "Veracity": 48, "Rigor": 50, "Divination": 40, "Charisma": 30}
+{"politician_id": "stuart-smith", "Specificity": 70, "Veracity": 57, "Rigor": 55, "Divination": 50}
+{"politician_id": "swarbrick", "Veracity": 53, "Specificity": 62, "Civility": 37, "Charisma": 58, "Rigor": 53, "Divination": 50}
+{"politician_id": "tama-potaka", "Specificity": 65, "Precision": 41, "Strength": 90, "Veracity": 65, "Rigor": 70, "Civility": 55, "Authenticity": 70}
+{"politician_id": "tamatha-paul", "Specificity": 57, "Veracity": 54, "Civility": 31, "Rigor": 50, "Divination": 45, "Charisma": 25, "Authenticity": 35}
+{"politician_id": "tangi-utikere", "Civility": 20, "Specificity": 70, "Rigor": 30, "Veracity": 52}
 {"politician_id": "teanau-tuiono", "Charisma": 12, "Civility": 24, "Rigor": 21, "Specificity": 34, "Veracity": 82}
 {"politician_id": "todd-mcclay", "Authenticity": 68, "Charisma": 52, "Divination": 69, "Rigor": 38, "Specificity": 42, "Strength": 28, "Veracity": 84}
+{"politician_id": "todd-stephenson", "Specificity": 65, "Veracity": 59, "Charisma": 52, "Strength": 62, "Authenticity": 80, "Civility": 72, "Rigor": 43}
+{"politician_id": "tom-rutherford", "Rigor": 10, "Charisma": 15, "Civility": 10, "Specificity": 90, "Veracity": 85}
+{"politician_id": "vanushi-walters", "Rigor": 50, "Specificity": 20, "Veracity": 65, "Charisma": 60}
+{"politician_id": "willie-jackson", "Civility": 12, "Charisma": 27, "Rigor": 33, "Veracity": 35}

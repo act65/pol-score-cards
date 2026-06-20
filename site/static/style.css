@@ -50,13 +50,36 @@ h1 {
 }
 
 .politician-list-container {
-    overflow-x: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    justify-content: center;
     padding: 30px;
     background-color: #f0f0f0; /* Slightly darker grey container */
     margin: 20px;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
+
+.grid-caption {
+    margin: 18px 20px 0;
+    color: #64748b;
+    font-size: 0.9em;
+}
+
+/* About page */
+.about {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 8px 24px 48px;
+    line-height: 1.6;
+    color: #1e293b;
+}
+.about h2 { margin-top: 30px; color: #0f172a; }
+.about-attrs { list-style: none; padding: 0; }
+.about-attrs li { display: flex; align-items: center; gap: 11px; padding: 6px 0; }
+.about-attrs .sc-icon { flex: none; width: 1.7em; height: 1.7em; color: #7a611f; }
+.about .back-link { margin-top: 34px; font-weight: 600; }
 
 /* --- Trading-card design ------------------------------------------------ */
 .politician-card {
@@ -282,10 +305,27 @@ h1 {
     color: #334155;
     padding: 8px 0;
 }
-.politician-list-container {
-    white-space: nowrap;
+.sc-card { white-space: normal; }
+
+/* Filter / sort controls above the card grid */
+.sc-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 18px;
+    margin: 16px 20px 0;
+    font-size: 0.92em;
+    color: #334155;
 }
-.sc-card { white-space: normal; margin: 0 16px 16px 0; }
+.sc-controls select {
+    font: inherit;
+    padding: 4px 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #fff;
+    color: #1e293b;
+}
+.sc-controls #cardCount { color: #64748b; }
 
 /* Evidence list on the attribute-detail page */
 .aggregate-note { color: #64748b; font-size: 0.92em; margin-top: -6px; }

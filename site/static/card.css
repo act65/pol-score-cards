@@ -39,7 +39,7 @@
     color: #3a3024;                     /* ink on parchment */
 }
 
-/* Inner gold rule + ornamental corner fleurons (pure CSS, no image files). */
+/* Inner gold rule. */
 .sc-card::before {
     content: "";
     position: absolute;
@@ -48,33 +48,42 @@
     border-radius: 10px;
     pointer-events: none;
     z-index: 4;
-    background-image:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 14 14'%3E%3Cpath d='M7 1 L9 5 L13 7 L9 9 L7 13 L5 9 L1 7 L5 5 Z' fill='%23bfa047'/%3E%3C/svg%3E"),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 14 14'%3E%3Cpath d='M7 1 L9 5 L13 7 L9 9 L7 13 L5 9 L1 7 L5 5 Z' fill='%23bfa047'/%3E%3C/svg%3E"),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 14 14'%3E%3Cpath d='M7 1 L9 5 L13 7 L9 9 L7 13 L5 9 L1 7 L5 5 Z' fill='%23bfa047'/%3E%3C/svg%3E"),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 14 14'%3E%3Cpath d='M7 1 L9 5 L13 7 L9 9 L7 13 L5 9 L1 7 L5 5 Z' fill='%23bfa047'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: 2px 2px, calc(100% - 2px) 2px, 2px calc(100% - 2px), calc(100% - 2px) calc(100% - 2px);
 }
 
-/* The banner's background is the card's RARITY (legendary gold … common slate);
-   the party identity moves to the party-name chip below. */
+/* Four corner stars, coloured by the card's RARITY (the only rarity signal on
+   the card). The star shape is a CSS mask so its colour follows --rarity. */
+.sc-card::after {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    pointer-events: none;
+    z-index: 5;
+    background-color: var(--rarity);
+    /* halo so the star reads on both the dark banner and the light parchment */
+    filter: drop-shadow(0 0 0.7px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 0.4px rgba(0, 0, 0, 0.35));
+    --sc-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 14 14'%3E%3Cpath d='M7 0 L8.7 5.3 L14 7 L8.7 8.7 L7 14 L5.3 8.7 L0 7 L5.3 5.3 Z' fill='%23000'/%3E%3C/svg%3E");
+    -webkit-mask: var(--sc-star), var(--sc-star), var(--sc-star), var(--sc-star);
+    mask: var(--sc-star), var(--sc-star), var(--sc-star), var(--sc-star);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: 2px 2px, calc(100% - 2px) 2px, 2px calc(100% - 2px), calc(100% - 2px) calc(100% - 2px);
+    mask-position: 2px 2px, calc(100% - 2px) 2px, 2px calc(100% - 2px), calc(100% - 2px) calc(100% - 2px);
+}
+
+/* Neutral dark-walnut banner — the card is otherwise colourless; colour is
+   reserved for the party chip and the rarity corner-stars. */
 .sc-banner {
     position: relative;
     z-index: 1;
     padding: 10px 12px;
     min-height: 54px;
-    color: #fff;
-    background: linear-gradient(135deg, var(--rarity), color-mix(in srgb, var(--rarity) 70%, black));
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    color: #f5efe2;
+    background: linear-gradient(135deg, #4a4036, #2e271f);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
     /* foil-stamp divider: a gilt rule under the banner with a thin highlight */
     border-bottom: 2px solid #d4af37;
     box-shadow: inset 0 -3px 6px -4px rgba(0, 0, 0, 0.5),
-                0 1px 0 rgba(255, 240, 200, 0.5);
-}
-/* Fallback for browsers without color-mix */
-@supports not (background: color-mix(in srgb, red, blue)) {
-    .sc-banner { background: var(--rarity); }
+                0 1px 0 rgba(255, 240, 200, 0.4);
 }
 
 .sc-name {
@@ -183,10 +192,11 @@ a.sc-stat:hover .sc-icon { color: #4a3a16; }   /* glyph darkens on hover */
     font-variant-numeric: tabular-nums;
     font-size: 0.95em;
 }
-.sc-val.low  { color: #d64545; }   /* < 40  */
-.sc-val.mid  { color: #cf8a2e; }   /* 40-69 */
-.sc-val.high { color: #2f9e52; }   /* >= 70 */
-.sc-val.na   { color: #94a3b8; font-weight: 400; }
+/* Monochrome ink ramp on the parchment: stronger score = darker & bolder. */
+.sc-val.low  { color: #b3a88f; font-weight: 600; }   /* < 40  — faint */
+.sc-val.mid  { color: #6f5d44; }                     /* 40-69 — mid ink */
+.sc-val.high { color: #2c2114; font-weight: 800; }   /* >= 70 — bold dark */
+.sc-val.na   { color: #b9ad96; font-weight: 400; }
 
 /* Optional HP line (the game uses it; the site omits it). */
 .sc-hp {
@@ -215,3 +225,26 @@ a.sc-stat:hover .sc-icon { color: #4a3a16; }   /* glyph darkens on hover */
 .sc-legend .sc-icon { width: 1.5em; height: 1.5em; font-size: 1.1em; color: #7a611f; filter: none; flex: none; }
 .sc-legend b { color: #0f172a; }
 .sc-legend span.blurb { color: #64748b; }
+
+/* ----- Rarity key (corner-star colours) ------------------------------------ */
+.sc-rarity-key {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px 18px;
+    margin-top: 12px;
+    padding-top: 11px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.85em;
+    color: #475569;
+}
+.sc-rarity-key .rk-label { width: 100%; color: #64748b; margin-bottom: 2px; }
+.rk-item { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.rk-star {
+    width: 14px;
+    height: 14px;
+    display: inline-block;
+    background-color: var(--rarity);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M7 0 L8.7 5.3 L14 7 L8.7 8.7 L7 14 L5.3 8.7 L0 7 L5.3 5.3 Z' fill='%23000'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M7 0 L8.7 5.3 L14 7 L8.7 8.7 L7 14 L5.3 8.7 L0 7 L5.3 5.3 Z' fill='%23000'/%3E%3C/svg%3E") center / contain no-repeat;
+}

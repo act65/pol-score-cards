@@ -12,6 +12,7 @@ Used by extract.py when backend="claude_cli".
 import json
 import re
 import subprocess
+import time
 
 JSON_INSTRUCTION = (
     "\n\nReturn ONLY a JSON array (no prose, no markdown fences) where each element "
@@ -24,22 +25,37 @@ JSON_INSTRUCTION = (
 )
 
 
-def call(system: str, user: str, model: str = None, timeout: int = 180) -> str:
+def call(system: str, user: str, model: str = None, timeout: int = 180,
+         retries: int = 3, instruction: str = JSON_INSTRUCTION) -> str:
     """Run one `claude -p` call and return the model's text output.
 
     The prompt is passed as a process argument (subprocess list form, so no shell
     quoting issues); stdin is closed to skip the CLI's stdin wait.
+
+    CLI calls fail transiently (rate limits, dropped connections, the occasional
+    non-zero exit), so we retry a few times with exponential backoff before
+    giving up — one blip shouldn't abort a long batch/eval run.
     """
-    prompt = f"{system}{JSON_INSTRUCTION}\n\n=== TEXT TO ANALYSE ===\n{user}"
+    prompt = f"{system}{instruction}\n\n=== TEXT TO ANALYSE ===\n{user}"
     cmd = ["claude", "-p", prompt, "--output-format", "text"]
     if model:
         cmd += ["--model", model]
-    proc = subprocess.run(
-        cmd, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=timeout
-    )
-    if proc.returncode != 0:
-        raise RuntimeError(f"claude CLI exited {proc.returncode}: {proc.stderr.strip()[:300]}")
-    return proc.stdout.strip()
+    last_err = ""
+    for attempt in range(retries):
+        try:
+            proc = subprocess.run(
+                cmd, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=timeout
+            )
+        except subprocess.TimeoutExpired:
+            last_err = f"timeout after {timeout}s"
+            proc = None
+        if proc is not None and proc.returncode == 0 and proc.stdout.strip():
+            return proc.stdout.strip()
+        if proc is not None:
+            last_err = (proc.stderr or proc.stdout or "").strip()[:300] or f"exit {proc.returncode}"
+        if attempt < retries - 1:
+            time.sleep(2 ** attempt)   # 1s, 2s, 4s …
+    raise RuntimeError(f"claude CLI failed after {retries} attempts: {last_err}")
 
 
 _FENCE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.S)

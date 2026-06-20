@@ -91,14 +91,31 @@ def _assign_rarity(items):
             idx += 1
 
 
+# Only feature politicians with enough scored attributes — a card with 2 of 9
+# attributes looks broken. Thinly-covered politicians (e.g. a single Hansard
+# mention) are still in the data and reachable by URL, just not on the grid.
+MIN_ATTRIBUTES = 6
+
+
+def _n_attrs(score):
+    return len([k for k in (score or {}) if k != "politician_id"])
+
+
 @app.route('/')
 def index():
     politician_data = []
     for politician in politicians:
         score = data_access_jsonl.get_scores(politician['id'])
-        politician_data.append({"politician": politician, "scores": score})
-    _assign_rarity(politician_data)
-    return render_template('index.html', politicians_data=politician_data, all_attributes=attribute_descriptions)
+        politician_data.append({"politician": politician, "scores": score,
+                                "n_attrs": _n_attrs(score)})
+    shown = [d for d in politician_data if d["n_attrs"] >= MIN_ATTRIBUTES]
+    shown.sort(key=lambda d: d["n_attrs"], reverse=True)   # richest cards first
+    _assign_rarity(shown)                                  # rarity ranked among the featured set
+    parties = sorted({d["politician"].get("party") for d in shown if d["politician"].get("party")})
+    return render_template('index.html', politicians_data=shown,
+                           all_attributes=attribute_descriptions, rarity_tiers=RARITY_TIERS,
+                           parties=parties, shown_count=len(shown),
+                           total_count=len(politician_data), min_attributes=MIN_ATTRIBUTES)
 
 @app.route('/attribute/<politician_id>/<attribute>')
 def attribute_detail(politician_id, attribute):
@@ -116,7 +133,7 @@ def attribute_detail(politician_id, attribute):
 
 @app.route('/about')
 def about():
-    return render_template('about.html')
+    return render_template('about.html', attributes=attribute_descriptions)
 
 # app.register_blueprint(game_bp) # Registered blueprint
 

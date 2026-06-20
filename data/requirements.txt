@@ -1,0 +1,6 @@
+# Scraping deps. Playwright is only needed for the browser-path sources
+# (Hansard, RNZ, Parliament, Labour, NZ First) — install it separately:
+#   pip install playwright && playwright install chromium
+requests
+beautifulsoup4
+fire

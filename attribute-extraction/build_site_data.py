@@ -90,8 +90,52 @@ KNOWN = {
     "rawiri waititi": ("rawiri-waititi", "Te Pāti Māori"),
     "debbie ngarewa-packer": ("debbie-ngarewa-packer", "Te Pāti Māori"),
     "ricardo menendez march": ("ricardo-menendez-march", "Green"),
+    "ricardo menéndez march": ("ricardo-menendez-march", "Green"),
     "julie anne genter": ("julie-anne-genter", "Green"),
     "lan pham": ("lan-pham", "Green"),
+    # 54th Parliament MPs surfaced by Hansard (parties via Wikipedia/Parliament).
+    "andy foster": ("andy-foster", "NZ First"),
+    "arena williams": ("arena-williams", "Labour"),
+    "cameron brewer": ("cameron-brewer", "National"),
+    "cameron luxton": ("cameron-luxton", "ACT"),
+    "camilla belich": ("camilla-belich", "Labour"),
+    "carl bates": ("carl-bates", "National"),
+    "catherine wedd": ("catherine-wedd", "National"),
+    "cushla tangaere-manuel": ("cushla-tangaere-manuel", "Labour"),
+    "dan bidois": ("dan-bidois", "National"),
+    "dana kirkpatrick": ("dana-kirkpatrick", "National"),
+    "deborah russell": ("deborah-russell", "Labour"),
+    "duncan webb": ("duncan-webb", "Labour"),
+    "francisco hernandez": ("francisco-hernandez", "Green"),
+    "georgie dansey": ("georgie-dansey", "Labour"),
+    "ginny andersen": ("ginny-andersen", "Labour"),
+    "hana-rawhiti maipi-clarke": ("hana-rawhiti-maipi-clarke", "Te Pāti Māori"),
+    "helen white": ("helen-white", "Labour"),
+    "huhana lyndon": ("huhana-lyndon", "Green"),
+    "hūhana lyndon": ("huhana-lyndon", "Green"),
+    "jamie arbuckle": ("jamie-arbuckle", "NZ First"),
+    "jenny marcroft": ("jenny-marcroft", "NZ First"),
+    "jenny salesa": ("jenny-salesa", "Labour"),
+    "joseph mooney": ("joseph-mooney", "National"),
+    "kahurangi carter": ("kahurangi-carter", "Green"),
+    "lawrence xu-nan": ("lawrence-xu-nan", "Green"),
+    "mariameno kapa-kingi": ("mariameno-kapa-kingi", "Te Pāti Māori"),
+    "nancy lu": ("nancy-lu", "National"),
+    "nicola grigg": ("nicola-grigg", "National"),
+    "oriini kaipara": ("oriini-kaipara", "Te Pāti Māori"),
+    "rachel boyack": ("rachel-boyack", "Labour"),
+    "reuben davidson": ("reuben-davidson", "Labour"),
+    "rima nakhle": ("rima-nakhle", "National"),
+    "ryan hamilton": ("ryan-hamilton", "National"),
+    "scott simpson": ("scott-simpson", "National"),
+    "shanan halbert": ("shanan-halbert", "Labour"),
+    "simon court": ("simon-court", "ACT"),
+    "steve abel": ("steve-abel", "Green"),
+    "stuart smith": ("stuart-smith", "National"),
+    "tangi utikere": ("tangi-utikere", "Labour"),
+    "todd stephenson": ("todd-stephenson", "ACT"),
+    "tom rutherford": ("tom-rutherford", "National"),
+    "vanushi walters": ("vanushi-walters", "Labour"),
 }
 
 # Leading honorifics to strip from extracted/byline names before matching.
@@ -166,8 +210,18 @@ def _load_articles(path):
 
 
 def _src_party(path):
-    p = path.lower()
-    return "Green" if "green" in p else ("National" if "national" in p else None)
+    """Infer a party from a party-site filename, as a fallback when a statement's
+    speaker isn't in the known-politician table. Multi-party sources (RNZ,
+    Hansard, Beehive) return None so the party comes from speaker resolution."""
+    p = os.path.basename(path).lower()
+    for key, party in (
+        ("green", "Green"), ("national", "National"), ("act", "ACT"),
+        ("top", "Opportunity"), ("opportunity", "Opportunity"),
+        ("labour", "Labour"), ("nzfirst", "NZ First"), ("nz_first", "NZ First"),
+    ):
+        if key in p:
+            return party
+    return None
 
 
 def _context(art):
@@ -186,13 +240,17 @@ def _context(art):
 
 
 def build(articles=None, out_dir=None, model=None, dry_run=False, min_examples=1,
-          backend="claude_cli", max_workers=None, max_n=None, min_chars=500):
+          backend="claude_cli", max_workers=None, max_n=None, min_chars=500,
+          merge=False):
     """Run the pipeline. backend: 'claude_cli' (uses the Claude subscription, no
     API credits — default) or 'anthropic' (uses API credits).
 
     max_n     — cap the number of articles processed (controls quota spend).
     min_chars — skip articles whose content is shorter than this (drops junk/
-                placeholder records so we don't waste extraction calls on them)."""
+                placeholder records so we don't waste extraction calls on them).
+    merge     — fold this run into the EXISTING site data instead of overwriting
+                it: existing politicians are kept, the ones found in this run are
+                added/replaced. Use it to grow the site one source file at a time."""
     articles_glob = articles or os.path.join("..", "data", "data", "live_*.json")
     out_dir = out_dir or os.path.join("..", "site", "static")
     model = model or extract.DEFAULT_MODEL
@@ -212,29 +270,29 @@ def build(articles=None, out_dir=None, model=None, dry_run=False, min_examples=1
     if max_n:
         arts = arts[:int(max_n)]
 
-    # one extraction task per (article, attribute)
-    tasks = []
-    for path, art in arts:
-        for prompt_name, site_attr in PROMPT_TO_SITE_ATTR.items():
-            tasks.append((path, _src_party(path), art, prompt_name, site_attr))
+    # ONE call per article scores all 9 attributes at once (the article text is
+    # the bulk of the tokens, so sending it once instead of 9× is the big saving).
+    tasks = [(path, _src_party(path), art) for path, art in arts]
     print(f"Backend: {backend}; articles: {len(files)} file(s), {len(arts)} records "
           f"({skipped} skipped < {min_chars} chars); attributes: "
-          f"{len(PROMPT_TO_SITE_ATTR)}; {len(tasks)} calls (concurrency {max_workers})")
+          f"{len(PROMPT_TO_SITE_ATTR)}; {len(tasks)} calls — one per article "
+          f"(concurrency {max_workers})")
     if dry_run:
         for f in files:
             print("  -", f)
         return
 
     client = None if backend == "claude_cli" else extract._client()
-    prompts = {p: extract.load_prompt(p) for p in PROMPT_TO_SITE_ATTR}
+    valid_attrs = set(PROMPT_TO_SITE_ATTR)
+    combined_system = extract.build_combined_system(list(PROMPT_TO_SITE_ATTR))
 
     def run(task):
-        path, src_party, art, prompt_name, site_attr = task
+        path, src_party, art = task
         try:
-            return task, extract.extract_examples(client, prompts[prompt_name], art,
-                                                  model=model, backend=backend)
+            return task, extract.extract_all_attributes(
+                client, combined_system, art, valid_attrs, model=model, backend=backend)
         except Exception as e:  # noqa: BLE001
-            print(f"\n  ! {prompt_name} failed on {art.get('url')}: {e}")
+            print(f"\n  ! failed on {art.get('url')}: {e}")
             return task, None
 
     results = []
@@ -242,7 +300,7 @@ def build(articles=None, out_dir=None, model=None, dry_run=False, min_examples=1
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
         for task, res in pool.map(run, tasks):
             done += 1
-            if done % 10 == 0 or done == len(tasks):
+            if done % 5 == 0 or done == len(tasks):
                 print(f"\r  {done}/{len(tasks)} calls done", end="", flush=True)
             results.append((task, res))
     print()
@@ -251,42 +309,56 @@ def build(articles=None, out_dir=None, model=None, dry_run=False, min_examples=1
     scores_acc = defaultdict(list)        # (pid, site_attr) -> [0..1 scores]
     examples_acc = defaultdict(list)      # (pid, site_attr) -> [{text, source_url, explanation}]
     politicians = {}                      # pid -> {id, name, party}
-    for (path, src_party, art, prompt_name, site_attr), res in results:
+    for (path, src_party, art), res in results:
         if res is None:
             continue
-        for ex in res.examples:
-            resolved = resolve_politician(ex.politician)
-            if resolved is None:
+        # res: {prompt_attr: [Example, ...]} -> flatten to (site_attr, Example)
+        for prompt_attr, examples in res.items():
+            site_attr = PROMPT_TO_SITE_ATTR.get(prompt_attr)
+            if not site_attr:
                 continue
-            pid, disp, party = resolved
-            if party is None:
-                party = src_party or ""
-            politicians.setdefault(pid, {"id": pid, "name": disp, "party": party})
-            if party and not politicians[pid]["party"]:
-                politicians[pid]["party"] = party
-            scores_acc[(pid, site_attr)].append(ex.score)
-            if len(examples_acc[(pid, site_attr)]) < MAX_EXAMPLES:
-                examples_acc[(pid, site_attr)].append({
-                    "text": ex.statement,
-                    "score": round(ex.score * 100),      # 0-100, matches the card
-                    "explanation": ex.explanation,        # the analysis
-                    "context": _context(art),             # where/when it was said
-                    "source_url": art.get("url"),
-                })
+            for ex in examples:
+                resolved = resolve_politician(ex.politician)
+                if resolved is None:
+                    continue
+                pid, disp, party = resolved
+                if party is None:
+                    party = src_party or ""
+                politicians.setdefault(pid, {"id": pid, "name": disp, "party": party})
+                if party and not politicians[pid]["party"]:
+                    politicians[pid]["party"] = party
+                scores_acc[(pid, site_attr)].append(ex.score)
+                if len(examples_acc[(pid, site_attr)]) < MAX_EXAMPLES:
+                    examples_acc[(pid, site_attr)].append({
+                        "text": ex.statement,
+                        "score": round(ex.score * 100),      # 0-100, matches the card
+                        "explanation": ex.explanation,        # the analysis
+                        "context": _context(art),             # where/when it was said
+                        "source_url": art.get("url"),
+                    })
 
-    _write(out_dir, politicians, scores_acc, examples_acc, min_examples)
+    _write(out_dir, politicians, scores_acc, examples_acc, min_examples, merge=merge)
 
 
-def _write(out_dir, politicians, scores_acc, examples_acc, min_examples):
-    # preserve existing portraits (match by id) and back up the sample data once
-    existing_img = {}
+def _read_jsonl(path):
+    rows = []
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    rows.append(json.loads(line))
+    return rows
+
+
+def _write(out_dir, politicians, scores_acc, examples_acc, min_examples, merge=False):
+    os.makedirs(out_dir, exist_ok=True)
     pol_path = os.path.join(out_dir, "politicians.jsonl")
-    if os.path.exists(pol_path):
-        for line in open(pol_path):
-            if line.strip():
-                d = json.loads(line)
-                if d.get("image"):
-                    existing_img[d["id"]] = d["image"]
+    scores_path = os.path.join(out_dir, "scores.jsonl")
+    ex_path = os.path.join(out_dir, "examples.jsonl")
+
+    # preserve existing portraits (match by id) and back up the sample data once
+    existing_pols = {d["id"]: d for d in _read_jsonl(pol_path)}
+    existing_img = {pid: d["image"] for pid, d in existing_pols.items() if d.get("image")}
     for fn in ("politicians.jsonl", "scores.jsonl", "examples.jsonl"):
         p = os.path.join(out_dir, fn)
         bak = os.path.join(out_dir, fn.replace(".jsonl", ".sample.jsonl"))
@@ -294,40 +366,72 @@ def _write(out_dir, politicians, scores_acc, examples_acc, min_examples):
             shutil.copyfile(p, bak)
             print(f"backed up {fn} -> {os.path.basename(bak)}")
 
-    # which politicians cleared the evidence threshold
+    # which politicians cleared the evidence threshold THIS run
     keep = {pid for (pid, _), exs in examples_acc.items() if len(exs) >= min_examples}
 
+    # this run's rows, keyed by politician id
+    new_pols = {}
+    for pid in keep:
+        rec = dict(politicians[pid])
+        if pid in existing_img:
+            rec["image"] = existing_img[pid]
+        new_pols[pid] = rec
+    new_scores = {}
+    for pid in keep:
+        row = {"politician_id": pid}
+        for (p2, attr), vals in scores_acc.items():
+            if p2 == pid and vals:
+                row[attr] = round(100 * sum(vals) / len(vals))
+        new_scores[pid] = row
+    new_examples = {}
+    for (pid, attr), exs in examples_acc.items():
+        if pid not in keep:
+            continue
+        for ex in exs:
+            new_examples.setdefault(pid, []).append({
+                "politician_id": pid, "attribute": attr,
+                "text": ex["text"],
+                "score": ex.get("score"),               # this statement's 0-100 value
+                "explanation": ex.get("explanation"),     # the analysis
+                "context": ex.get("context"),             # where/when it was said
+                "source_url": ex["source_url"],
+            })
+
+    if merge:
+        # Per-politician merge: existing politicians are preserved as-is; the
+        # politicians this run covers (new, or re-extracted) replace their old
+        # entries wholesale. Lets you grow the site one source file at a time
+        # without re-paying to extract the whole corpus.
+        final_pols = dict(existing_pols)
+        final_scores = {r["politician_id"]: r for r in _read_jsonl(scores_path)}
+        final_examples = {}
+        for r in _read_jsonl(ex_path):
+            final_examples.setdefault(r["politician_id"], []).append(r)
+        final_pols.update(new_pols)
+        final_scores.update(new_scores)
+        for pid in keep:
+            final_examples[pid] = new_examples.get(pid, [])
+        added = sorted(p for p in keep if p not in existing_pols)
+        print(f"merge: {len(existing_pols)} existing + {len(keep)} from this run "
+              f"({len(added)} new: {', '.join(added) or 'none'}) -> {len(final_pols)} total")
+    else:
+        final_pols, final_scores, final_examples = new_pols, new_scores, new_examples
+
+    out_ids = sorted(final_pols)
     with open(pol_path, "w", encoding="utf-8") as f:
-        for pid in sorted(keep):
-            rec = dict(politicians[pid])
-            if pid in existing_img:
-                rec["image"] = existing_img[pid]
-            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        for pid in out_ids:
+            f.write(json.dumps(final_pols[pid], ensure_ascii=False) + "\n")
+    with open(scores_path, "w", encoding="utf-8") as f:
+        for pid in out_ids:
+            if pid in final_scores:
+                f.write(json.dumps(final_scores[pid], ensure_ascii=False) + "\n")
+    with open(ex_path, "w", encoding="utf-8") as f:
+        for pid in out_ids:
+            for ex in final_examples.get(pid, []):
+                f.write(json.dumps(ex, ensure_ascii=False) + "\n")
 
-    with open(os.path.join(out_dir, "scores.jsonl"), "w", encoding="utf-8") as f:
-        for pid in sorted(keep):
-            row = {"politician_id": pid}
-            for (p2, attr), vals in scores_acc.items():
-                if p2 == pid and vals:
-                    row[attr] = round(100 * sum(vals) / len(vals))
-            f.write(json.dumps(row, ensure_ascii=False) + "\n")
-
-    with open(os.path.join(out_dir, "examples.jsonl"), "w", encoding="utf-8") as f:
-        for (pid, attr), exs in sorted(examples_acc.items()):
-            if pid not in keep:
-                continue
-            for ex in exs:
-                f.write(json.dumps({
-                    "politician_id": pid, "attribute": attr,
-                    "text": ex["text"],
-                    "score": ex.get("score"),            # this statement's 0-100 value
-                    "explanation": ex.get("explanation"),  # the analysis
-                    "context": ex.get("context"),         # where/when it was said
-                    "source_url": ex["source_url"],
-                }, ensure_ascii=False) + "\n")
-
-    print(f"\nWrote {len(keep)} politicians with real scores + evidence to {out_dir}")
-    print("Politicians:", ", ".join(sorted(keep)))
+    print(f"\nWrote {len(out_ids)} politicians with real scores + evidence to {out_dir}")
+    print("Politicians:", ", ".join(out_ids))
 
 
 if __name__ == "__main__":

@@ -42,7 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const PARTY_COLOURS = {
         "Labour": "#D82A20", "National": "#00529F", "Green": "#098137",
-        "Greens": "#098137", "ACT": "#F5C400", "NZ First": "#1a1a1a"
+        "Greens": "#098137", "ACT": "#F5C400", "NZ First": "#1a1a1a",
+        "Opportunity": "#0a9c96", "TOP": "#0a9c96"
     };
     function partyColour(party) {
         if (PARTY_COLOURS[party]) return PARTY_COLOURS[party];

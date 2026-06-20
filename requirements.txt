@@ -1,0 +1,9 @@
+# Convenience: everything needed to run the site/game and regenerate data.
+# (Browser-path scrapers also need: pip install playwright && playwright install chromium)
+flask
+requests
+beautifulsoup4
+fire
+anthropic>=0.111
+pydantic>=2
+pytest

@@ -1,0 +1,12 @@
+# Render.com blueprint for the public site (the demo).
+# Deploy: push to GitHub -> render.com -> New -> Blueprint -> pick this repo.
+# Free plan cold-starts after ~15 min idle; fine for a demo link.
+services:
+  - type: web
+    name: nz-politician-scorecards
+    runtime: python
+    plan: free
+    rootDir: site
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2
+    autoDeploy: true

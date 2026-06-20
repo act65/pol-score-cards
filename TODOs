@@ -9,7 +9,41 @@ llm parsing / analysis
 - no overlap between test set and prompt
 - plot accuracy utils
 - hyperparam tests, different models, different approaches?!
+- few-shot ablation: does each prompt's `Examples` block actually improve scoring
+  accuracy? The combined extractor strips them (extract._condense_prompt) to save
+  tokens; the blocks are preserved in prompts/fewshot_examples.md (and still inline
+  in prompts/*.txt). Test full vs condensed prompt on the scoring testsets via
+  evaluate.py. NB watch for leakage: some prompt examples may overlap the testsets.
 - set up pipeline to extract data
+
+  -- sample / selection bias (the score is mean of statements the LLM CHOSE to
+     extract, not a representative sample) --
+- we evaluate SCORING (pre-isolated statements vs gold) but never SELECTION (which
+  statements get pulled). Build a selection eval: hand-label all attribute-relevant
+  statements in a few articles, measure extractor recall/precision.
+- missing-middle/salience bias: LLM extracts notable statements, so mean(extracted)
+  != mean(all said). Score-all-then-sample to estimate the skew.
+- source-mix confound: press releases (curated) vs Hansard (adversarial) vs RNZ
+  (newsworthy) systematically shift scores -> cross-politician comparison partly
+  measures WHERE we have data. Report/normalise by source mix.
+- separate frequency from severity (current mean-of-flagged conflates them); needs
+  the full denominator (rate x severity).
+- surface per-attribute n + confidence band; discount/flag thin (n=1) scores.
+
+  -- attribute-specific methodologies (food for thought, not implementing now) --
+- promises/predictions/factual claims (Strength, Divination, Veracity) can't be
+  scored from text alone -> build a longitudinal CLAIMS LEDGER instead. Extraction
+  shifts from "score" to "extract + structure": testable proposition, type, date
+  made, falsification condition, expected resolution date. A separate verification
+  pass (human review now, automated later) resolves each true/false/partial with
+  evidence. Score = fraction of RESOLVED claims that held true (real ground truth,
+  not LLM guess). Also defuses the "calling X a liar" legal worry (evidenced
+  verdict, not assertion). Seeds already exist: integrity.jsonl (contains_claim),
+  evasion.jsonl, promises.txt.
+- authenticity = consistency between RHETORIC and RECORD, not a per-statement score.
+  Build two corpora per politician (public rhetoric vs parliamentary voting/division
+  records + Hansard stances) and detect contradictions on the same topic. Needs
+  Parliament division/voting data linked by topic on top of Hansard text.
 
 game
 - how to have a two player game via the inet w flask? (two different computers each seeing different things but interacting in the same game instance)
