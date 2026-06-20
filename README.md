@@ -36,21 +36,60 @@ The goal is to (help) make politicians more accountable for their actions by pro
 | **Rigor**        | Tracks how rigorously the politician avoids logical fallacies (e.g., strawman arguments, slippery slopes) and relies on evidence-based reasoning. A high Rigorousness score indicates disciplined, fallacy-free rhetoric. |
 | **Specificity**  | Measure the 'meaningfulness' of the politician's statements. A low Specificity score indicates vague platitudes and / or ambiguous statements.                             |
 
-For more indepth defitions, see `llm-data-extraction/prompts`.
+For more indepth defitions, see `attribute-extraction/prompts`.
 
-## Setup and Installation (Initial Steps)
+## Status (June 2026)
 
-1.  Clone the repository:
-    ```bash
-    git clone <repository_url>
-    cd nz-politician-scorecards
-    ```
-2.  Install dependencies (if any are added later):
-    ```bash
-    pip install -r requirements.txt
-    ```
-3.  Run the Flask app:
-    ```bash
-    python app.py
-    ```
-4.  Open your web browser and navigate to `http://127.0.0.1:5000/` to view the initial setup.
+A working MVP. The site runs on **real data**: ~85 NZ politicians scored from
+scraped party press releases, RNZ political reporting, Beehive releases, and
+Hansard, with every score linked to the statements behind it. Accuracy is
+measured against held-out test sets and **varies by attribute** — some scores are
+reliable, some are LLM estimates of plausibility (see `attribute-extraction/EVALUATION.md`
+and the site's About page). It is a research/accountability prototype, not a
+finished product.
+
+## Quickstart — see the demo (no API key, no scraping)
+
+The site and game ship with committed data, so you can run them immediately:
+
+```bash
+git clone <repository_url> && cd pol-score-cards
+
+# The public site (the main demo) — reads committed site/static/*.jsonl
+pip install -r site/requirements.txt
+cd site && python app.py          # -> http://127.0.0.1:5000/
+
+# The card game (run from a fresh shell; both default to port 5000)
+pip install -r game/requirements.txt
+cd game && python app.py          # -> http://127.0.0.1:5000/
+```
+
+That's it for the demo — neither needs an API key or any scraping.
+
+## Regenerating the data (advanced)
+
+Only needed if you want to scrape fresh statements or re-score. Two stages:
+
+```bash
+# 1. Scrape (free, just HTTP). From data/ — see data/LIVE_FETCH.md for all sources.
+cd data && pip install -r requirements.txt
+python scrapers/... / python sources.py scrape --source greens --months 3 --out data/greens.json
+
+# 2. Extract attribute scores with an LLM (from attribute-extraction/).
+cd attribute-extraction && pip install -r requirements.txt
+python build_site_data.py build --articles "../data/data/<file>.json" --merge
+```
+
+**Which LLM backend?** Extraction defaults to `--backend claude_cli`, which uses
+your local `claude` CLI login (a Claude subscription, no API credits). To use the
+Anthropic API instead, copy `.env.example` to `.env`, set `ANTHROPIC_API_KEY`, and
+pass `--backend anthropic`. See `attribute-extraction/README.md` for details, and
+`data/HANSARD_HOWTO.md` for the browser-based scrapers.
+
+## Tests
+
+```bash
+cd game && pytest                              # game engine
+cd attribute-extraction && pytest test_evaluate.py   # scoring metrics (no key needed)
+cd data/scrapers && pytest                     # scraper parsing
+```

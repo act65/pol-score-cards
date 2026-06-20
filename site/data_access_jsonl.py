@@ -1,13 +1,21 @@
 import json
+import os
+
+# Resolve data files relative to THIS file, not the working directory, so the app
+# runs from anywhere (gunicorn, Docker, etc.) — not only `cd site && python app.py`.
+_HERE = os.path.dirname(os.path.abspath(__file__))
+
 
 def load_jsonl(fname):
     data = []
+    path = fname if os.path.isabs(fname) else os.path.join(_HERE, fname)
     try:
-        with open(fname, 'r') as f:
+        with open(path, 'r') as f:
             for line in f:
-                data.append(json.loads(line))
+                if line.strip():
+                    data.append(json.loads(line))
     except FileNotFoundError:
-        print(f"Error: {fname} not found.")
+        print(f"Error: {path} not found.")
     return data
 
 def get_all_politicians():

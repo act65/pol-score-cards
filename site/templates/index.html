@@ -12,7 +12,8 @@
     {% set party_colors = {
         'Labour': '#D82A20', 'National': '#00529F', 'Green': '#098137',
         'Greens': '#098137', 'ACT': '#F5C400', 'NZ First': '#1a1a1a',
-        'Te Pāti Māori': '#B5121B', 'Māori Party': '#B5121B'
+        'Te Pāti Māori': '#B5121B', 'Māori Party': '#B5121B',
+        'Opportunity': '#0a9c96', 'TOP': '#0a9c96'
     } %}
     {# An attribute's heraldic glyph (SVG), falling back to its emoji. #}
     {% macro glyph(attr) %}{% if attr.svg %}{{ attr.svg|safe }}{% else %}{{ attr.symbol }}{% endif %}{% endmacro %}
@@ -30,12 +31,43 @@
                 <span><b>{{ attribute.name }}</b> — <span class="blurb">{{ attribute.blurb or attribute.definition }}</span></span></li>
             {% endfor %}
         </ul>
+        <div class="sc-rarity-key">
+            <span class="rk-label">Rarity (corner stars) — overall rank by the geometric mean of all nine attributes:</span>
+            {% for name, colour in rarity_tiers %}
+            <span class="rk-item"><span class="rk-star" style="--rarity: {{ colour }};"></span>{{ name|capitalize }}</span>
+            {% endfor %}
+        </div>
     </details>
+
+    <p class="grid-caption">Featuring {{ shown_count }} of {{ total_count }} politicians
+       with at least {{ min_attributes }} of 9 attributes scored.</p>
+
+    <div class="sc-controls">
+        <label>Order by:
+            <select id="sortSel">
+                <option value="rarity">Rarity (overall)</option>
+                {% for attribute in all_attributes %}
+                <option value="{{ attribute.id }}">{{ attribute.name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>Party:
+            <select id="partySel">
+                <option value="all">All parties</option>
+                {% for p in parties %}
+                <option value="{{ p }}">{{ p }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <span id="cardCount"></span>
+    </div>
 
     <div class="politician-list-container">
         {% for item in politicians_data %}
         {% set colour = party_colors.get(item.politician.party, '#475569') %}
         <div class="sc-card" title="{{ item.rarity_name|capitalize }}"
+             data-party="{{ item.politician.party }}" data-geo="{{ item.geo }}"
+             data-scores='{{ item.scores|tojson }}'
              style="--party: {{ colour }}; --rarity: {{ item.rarity }};">
             <div class="sc-banner">
                 <h3 class="sc-name">{{ item.politician.name }}</h3>
@@ -68,5 +100,35 @@
         </div>
         {% endfor %}
     </div>
+
+    <script>
+    (function () {
+        const grid = document.querySelector('.politician-list-container');
+        const sortSel = document.getElementById('sortSel');
+        const partySel = document.getElementById('partySel');
+        const countEl = document.getElementById('cardCount');
+        const cards = Array.from(grid.querySelectorAll('.sc-card')).map(function (el) {
+            let scores = {};
+            try { scores = JSON.parse(el.dataset.scores || '{}'); } catch (e) {}
+            return { el: el, party: el.dataset.party || '', geo: parseFloat(el.dataset.geo) || 0, scores: scores };
+        });
+        function sortKey(c, s) {
+            if (s === 'rarity') return c.geo;
+            const v = c.scores[s];
+            return (v === undefined || v === null) ? -1 : v;   // missing attribute sorts last
+        }
+        function apply() {
+            const s = sortSel.value, p = partySel.value;
+            const visible = cards.filter(function (c) { return p === 'all' || c.party === p; });
+            visible.sort(function (a, b) { return sortKey(b, s) - sortKey(a, s); });
+            cards.forEach(function (c) { c.el.style.display = 'none'; });
+            visible.forEach(function (c) { c.el.style.display = ''; grid.appendChild(c.el); });
+            countEl.textContent = visible.length + (visible.length === 1 ? ' card' : ' cards');
+        }
+        sortSel.addEventListener('change', apply);
+        partySel.addEventListener('change', apply);
+        apply();
+    })();
+    </script>
 </body>
 </html>

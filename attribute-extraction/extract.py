@@ -21,6 +21,8 @@ Set the model with ``--model`` (default: claude-opus-4-8).
 
 import json
 import os
+import re
+from collections import defaultdict
 from typing import List, Optional
 
 import anthropic
@@ -72,14 +74,40 @@ def load_prompt(name: str, prompts_dir: Optional[str] = None) -> str:
         return f.read()
 
 
-def build_article_text(article: dict) -> str:
+_URL_RE = re.compile(r"https?://\S+")
+_WS_RE = re.compile(r"[ \t]+")
+# Boilerplate lines that carry no scoreable content — drop them to save tokens.
+_BOILER_RE = re.compile(
+    r"^\s*(?:©|(?:copyright|authorised by|all rights reserved|share (?:this|on)|"
+    r"follow us|subscribe|sign up|read more|related (?:stories|articles)|"
+    r"advertisement|cookie|privacy policy|terms of use)\b)",
+    re.I,
+)
+
+
+def trim_text(text: str) -> str:
+    """Strip tokens that cost money but carry no signal: URLs, boilerplate/footer
+    lines, and redundant whitespace. Conservative — keeps all substantive prose."""
+    if not text:
+        return ""
+    out = []
+    for line in text.splitlines():
+        line = _URL_RE.sub("", line)          # URLs are unscoreable noise
+        line = _WS_RE.sub(" ", line).strip()
+        if not line or _BOILER_RE.match(line):
+            continue
+        out.append(line)
+    return "\n".join(out)
+
+
+def build_article_text(article: dict, trim: bool = True) -> str:
     """Render a scraped article dict into the text block sent to the model.
 
     Tolerant of missing keys — scrapers vary in which metadata they capture.
+    With `trim`, URLs/boilerplate/whitespace are stripped to cut input tokens.
     """
     parts = []
     for label, key in (
-        ("Source", "url"),
         ("Headline", "headline"),
         ("Date", "date"),
         ("Author", "author"),
@@ -88,8 +116,119 @@ def build_article_text(article: dict) -> str:
         if value:
             parts.append(f"{label}: {value}")
     content = article.get("content") or article.get("text") or ""
+    if trim:
+        content = trim_text(content)
     parts.append(f"Content: {content}")
     return "\n\n".join(parts)
+
+
+# --- Combined extraction: score ALL attributes in ONE call per article ---------
+# Sending the article once (instead of once per attribute) is the single biggest
+# token saving — the article text dominates input, and it was being resent 9×.
+
+class _AttrScore(BaseModel):
+    attribute: str = Field(description="Attribute id this score is for.")
+    score: float = Field(description="Attribute score in [0, 1]; higher is better.")
+    explanation: str = Field(description="Brief justification.")
+
+
+class _MultiExample(BaseModel):
+    politician: str = Field(description="Name of the politician (name only).")
+    statement: str = Field(description="The statement, quoted verbatim.")
+    scores: List[_AttrScore] = Field(description="One entry per attribute that applies.")
+
+
+class MultiResult(BaseModel):
+    examples: List[_MultiExample]
+
+
+def _condense_prompt(text: str) -> str:
+    """Strip the few-shot 'Examples' block (token-heavy, and a testset-leakage
+    risk) and collapse blank lines, keeping the definition + scoring anchors."""
+    for marker in ("\nExamples (", "\nExamples:", "\nExample ("):
+        i = text.find(marker)
+        if i != -1:
+            text = text[:i]
+    return "\n".join(l.rstrip() for l in text.strip().splitlines() if l.strip())
+
+
+def build_combined_system(attrs: List[str], prompts_dir: Optional[str] = None) -> str:
+    """One system prompt covering every attribute's (condensed) rubric."""
+    blocks = []
+    for name in attrs:
+        blocks.append(f"### Attribute: {name}\n{_condense_prompt(load_prompt(name, prompts_dir))}")
+    preamble = (
+        "You are an expert analyst of New Zealand politics. From the text, find each "
+        "notable statement made by an individual NZ politician. For EACH statement, "
+        "score it on every attribute below that clearly applies (omit attributes that "
+        "don't apply to that statement). Each attribute is scored 0.0 (worst) to 1.0 "
+        "(best), higher = better. Quote statements verbatim. Skip organisations, "
+        "governments, and non-NZ figures.\n\nThe attributes and their rubrics:\n"
+    )
+    return preamble + "\n\n".join(blocks)
+
+
+_COMBINED_INSTRUCTION = (
+    "\n\nReturn ONLY a JSON array (no prose, no markdown fences). Each element is one "
+    'statement: {"politician": "<person\'s name ONLY — no party/title/honorific>", '
+    '"statement": "<verbatim quote>", "scores": [{"attribute": "<one of the attribute '
+    'ids above>", "score": <0.0-1.0>, "explanation": "<brief>"}]}. In "scores" include '
+    "ONLY the attributes that clearly apply to that statement; omit the rest. Only "
+    "include statements by an individual New Zealand politician. If nothing relevant "
+    "is present, return []."
+)
+
+
+def extract_all_attributes(
+    client: Optional[anthropic.Anthropic],
+    system: str,
+    article: dict,
+    valid_attrs: set,
+    model: str = DEFAULT_MODEL,
+    backend: str = DEFAULT_BACKEND,
+    max_tokens: int = 8192,
+) -> dict:
+    """Score every attribute for one article in a single call.
+
+    Returns {attribute_id: [Example, ...]} so callers can route each attribute's
+    examples exactly as the per-attribute path did.
+    """
+    out = defaultdict(list)
+    article_text = build_article_text(article)
+    if backend == "claude_cli":
+        text = claude_cli.call(system, article_text, model=model,
+                               instruction=_COMBINED_INSTRUCTION)
+        rows = claude_cli.parse_json_array(text)
+        for row in rows:
+            statement = str(row.get("statement", "")).strip()
+            politician = str(row.get("politician", "")).strip() or "Unknown"
+            for sc in row.get("scores", []) or []:
+                attr = str(sc.get("attribute", "")).strip().lower()
+                if attr not in valid_attrs:
+                    continue
+                ex = _example_from_row({"politician": politician, "statement": statement,
+                                        "score": sc.get("score"), "explanation": sc.get("explanation")})
+                if ex:
+                    out[attr].append(ex)
+        return out
+    response = client.messages.parse(
+        model=model, max_tokens=max_tokens,
+        system=[{"type": "text", "text": system + _COMBINED_INSTRUCTION}],
+        messages=[{"role": "user", "content": article_text}],
+        output_format=MultiResult,
+    )
+    for me in response.parsed_output.examples:
+        for sc in me.scores:
+            attr = sc.attribute.strip().lower()
+            if attr not in valid_attrs:
+                continue
+            out[attr].append(Example(
+                politician=me.politician.strip() or "Unknown",
+                statement=me.statement.strip(),
+                score=max(0.0, min(1.0, sc.score)),
+                explanation=sc.explanation.strip(),
+            ))
+    return out
 
 
 def _client(api_key: Optional[str] = None) -> anthropic.Anthropic:

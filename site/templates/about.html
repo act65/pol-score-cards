@@ -3,45 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About</title>
+    <title>About — NZ Politician Scorecards</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='card.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <a href="/"><h1>NZ Politician Scorecards</h1></a>
-    <p>This project aims to provide a fun, data-driven way to assess the performance of New Zealand politicians.</p>
-    <p>The scores are intended to reflect various aspects of their political behaviour, helping the public make more informed decisions.</p>
+    <header class="site-header">
+        <a href="/"><h1>NZ Politician Scorecards</h1></a>
+        <div class="top-right-link"><a href="/">Back to cards</a></div>
+    </header>
 
-    <h2>Motivation</h2>
+    <main class="about">
+        <p>NZ Politician Scorecards is a data-driven way to assess New Zealand politicians.
+           Every politician is scored on nine attributes, and <strong>every score links to the
+           actual statements behind it</strong> — click any stat on a card to read the quotes,
+           context, and the reasoning for that score.</p>
 
-    <p>It bugs me that politicians can get away with saying whatever they want, and there's no way to hold them accountable for their promises, predictions, lies, ... This project is my attempt to change that.</p>
+        <h2>Motivation</h2>
+        <p>It bugs me that politicians can say whatever they want with little accountability for
+           their promises, predictions, and claims. This is an attempt to make that behaviour
+           legible: to measure not <em>what</em> a politician believes, but <em>how</em> they
+           conduct themselves — honestly or evasively, rigorously or carelessly, civilly or not.</p>
 
-    <h2>Attributes</h2>
-    <p>The following attributes are currently being scored:</p>
-    <ul>
-        {% for attribute in attributes %}
-            <li>{{ attribute.name }}: {{ attribute.definition }}</li>
-        {% endfor %}
-    </ul>
+        <h2>The nine attributes</h2>
+        <p>All attributes are oriented so that <strong>higher is better</strong>, and are chosen to
+           be politically neutral — they measure conduct, not policy positions.</p>
+        <ul class="about-attrs">
+            {% for attribute in attributes %}
+            <li>
+                <span class="sc-icon">{% if attribute.svg %}{{ attribute.svg|safe }}{% else %}{{ attribute.symbol }}{% endif %}</span>
+                <span><b>{{ attribute.name }}</b> — {{ attribute.definition or attribute.blurb }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        <p>Together they answer one question: <em>when this politician talks, should I listen?</em></p>
 
-    <p>Together, these attributes answer the question:
-        when politician X talks, should I listen?
-    </p>
+        <h2>How the cards work</h2>
+        <p>Each stat is scored 0–100. A card's <b>rarity</b> (its corner stars: legendary, epic,
+           rare, uncommon, common) is the politician's overall rank by the <b>geometric mean</b> of
+           their nine attributes — so a single weak attribute drags the whole card down; you can't
+           be "legendary" by being lopsided. The rarest tiers are deliberately the smallest.</p>
+        <p>The front page features politicians with enough data to be meaningful (at least six of the
+           nine attributes scored). You can re-order the cards by overall rarity or by any single
+           attribute, and filter by party.</p>
 
-    <p>These attributes were chosen as they allow for a broad assessment of a politician's performance and accountability, while being politically neutral.</p>
-    <p>While we could extract data about other attributes related to the ... I want to keep this apolitical. </p>
+        <h2>Methodology</h2>
+        <p>We scrape public statements — party press releases, RNZ political reporting, Beehive
+           releases, and <b>Hansard</b> (the verbatim parliamentary record) — and use a large language
+           model (Claude) to find each politician's statements and score them against a rubric for
+           every attribute. Each score keeps the quoted statement, its context, and a short
+           explanation, which is what you see on the evidence pages.</p>
+        <p>We hold out a small labelled test set and measure how well the model's scores agree with
+           human judgement (mean error and rank correlation) — accuracy varies by attribute. Some
+           attributes (e.g. civility, specificity) are judgeable from the text alone and score
+           reliably; others (e.g. veracity) require external fact-checking that the model can't do on
+           its own, so those scores reflect <em>plausibility</em> and should be read with care.</p>
 
+        <h2>Please read this</h2>
+        <p>These scores are <b>automated estimates, not verified fact</b>. They are generated by an
+           imperfect model over an incomplete sample of statements, and a politician with little
+           coverage may be scored on very little evidence. Nothing here is an accusation of
+           wrongdoing — always click through to the underlying statements and judge for yourself.
+           This is a research and accountability tool, not the last word.</p>
 
-    <h2>Methodology</h2>
-    <p>The scores are calculated based on the analysis of public statements.</p>
-    <p>Our data scources are; Hansard, media reports, press releases.</p> 
-
-    <p>We use LLMs to extract the relevant information from the text, and then apply a set of rules to determine the score for each attribute.</p>
-    <p>For example, 
-        
-    </p>
-
-    <div class="back-link">
-        <a href="/">Back to Main Page</a>
-    </div>
+        <div class="back-link"><a href="/">← Back to the cards</a></div>
+    </main>
 </body>
 </html>

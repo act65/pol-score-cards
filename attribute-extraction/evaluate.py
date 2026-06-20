@@ -120,10 +120,14 @@ def evaluate_attribute(
         if gold is None or not statement:
             continue
         print(f"\r[{attribute}/{model}] scoring {i + 1}/{len(rows)}", end=" ", flush=True)
-        result = extract.score_statement(
-            client, prompt, statement, model=model, politician=row.get("politician"),
-            backend=backend,
-        )
+        try:
+            result = extract.score_statement(
+                client, prompt, statement, model=model, politician=row.get("politician"),
+                backend=backend,
+            )
+        except Exception as e:   # one statement failing shouldn't abort the run
+            print(f"\n  ! skipped row {i + 1} ({type(e).__name__}: {str(e)[:80]})")
+            continue
         preds.append(result.score)
         golds.append(gold)
         details.append(
