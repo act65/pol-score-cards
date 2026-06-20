@@ -3,6 +3,9 @@
 *A data-driven, evidence-linked way to hold New Zealand politicians accountable
 for how they conduct themselves — not what they believe.*
 
+**Live demo: <https://nz-politician-scorecards.onrender.com/>**
+*(free hosting — the first visit after a quiet period may take ~30s to wake up.)*
+
 ## The problem
 
 Politicians make promises, predictions, and claims with little systematic
@@ -58,8 +61,8 @@ things need investment:
 
 ## Try it
 
-The site runs locally in two commands on committed data (no API key, no setup
-beyond Python + Flask) — see the README. Source, methodology, and evaluation are
-all open.
+**Live: <https://nz-politician-scorecards.onrender.com/>** — click any score to see
+the statements behind it. The site also runs locally in two commands on committed
+data (no API key needed); source, methodology, and evaluation are all open.
 
 *Contact: [your name / email here]*

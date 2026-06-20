@@ -135,6 +135,11 @@ def attribute_detail(politician_id, attribute):
 def about():
     return render_template('about.html', attributes=attribute_descriptions)
 
+
+@app.route('/rules')
+def rules():
+    return render_template('rules.html', attributes=attribute_descriptions)
+
 # app.register_blueprint(game_bp) # Registered blueprint
 
 if __name__ == '__main__':

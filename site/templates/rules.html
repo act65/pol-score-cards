@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Card Game — NZ Politician Scorecards</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='card.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="site-header">
+        <a href="/"><h1>NZ Politician Scorecards</h1></a>
+        <div class="top-right-link"><a href="/">Back to cards</a></div>
+    </header>
+
+    {# Each attribute's role in battle, keyed by its id. #}
+    {% set roles = {
+        'Strength':     'Health — a politician\'s hit points are 10 + Strength. Getting things done makes you hard to knock down.',
+        'Rigor':        'Damage — a landed attack deals Rigor. A well-argued case hits harder.',
+        'Veracity':     'Armour — reduce incoming damage by half the defender\'s Veracity (round down). Credibility absorbs blows.',
+        'Divination':   'Initiative — each round, the highest Divination on the table acts first, then the next, and so on.',
+        'Specificity':  'Accuracy — to hit, roll a d10; if you roll above the attacker\'s Specificity, the attack is too vague and misses.',
+        'Authenticity': 'On target — if a hit connects, roll a d10; roll above the attacker\'s Authenticity and it strikes a random enemy instead — words not matching actions.',
+        'Precision':    'Riposte — when this card is attacked, the attacker takes Precision ÷ 3 damage back. Standing behind your record.',
+        'Charisma':     'Reinforcements — knock out an enemy with a Charisma-7-or-higher card and you may immediately deploy another politician from your hand.',
+        'Civility':     'Steady hand — while a Civility-8-or-higher card is on your bench, every one of your cards takes 1 less damage per hit. Constructive teamwork.'
+    } %}
+
+    <main class="about rules">
+        <h2 style="margin-top:6px">The Card Game</h2>
+        <p>A fast two-player battle played with the politician cards. Each card is a real NZ
+           politician, and <strong>their nine attribute scores are their battle stats</strong>. The
+           catch — and the point — is that a politician who misleads, dodges, and throws cheap shots
+           makes a genuinely <em>weak</em> card: easy to hit, quick to fold, no staying power. The
+           good cards are the ones who actually answer the question, argue in good faith, and keep
+           their word.</p>
+        <p><em>(A 1-player digital prototype of this game also lives in the project; these are the
+           rules for the physical version.)</em></p>
+
+        <h2>What you need</h2>
+        <ul>
+            <li>A stack of politician cards.</li>
+            <li>A ten-sided die (d10) — or a phone dice-roller.</li>
+            <li>Counters (coins, beads) or pen and paper to track Health.</li>
+        </ul>
+
+        <h2>Reading a card</h2>
+        <p>Every attribute is printed 0–100. In play, round each to the nearest ten and read the
+           tens digit as a <strong>rating from 0 to 10</strong> — so Veracity 78 is a rating of 8,
+           Civility 31 is a rating of 3. All the rules below use these 0–10 ratings.</p>
+
+        <h2>What each attribute does</h2>
+        <ul class="about-attrs rules-attrs">
+            {% for attribute in attributes %}
+            <li>
+                <span class="sc-icon">{% if attribute.svg %}{{ attribute.svg|safe }}{% else %}{{ attribute.symbol }}{% endif %}</span>
+                <span><b>{{ attribute.name }}</b> — {{ roles.get(attribute.id, attribute.definition) }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <h2>Setup</h2>
+        <ol>
+            <li>Shuffle the deck. Deal each player <strong>4 cards</strong> as their hand.</li>
+            <li>Each player secretly chooses <strong>3</strong> to bring to the table, then reveals
+                them together. These are your <em>bench</em>; the 4th stays in hand.</li>
+            <li>Set each card's <strong>Health to 10 + its Strength rating</strong> and track it with
+                counters.</li>
+        </ol>
+
+        <h2>Playing a round</h2>
+        <p>Work through every card on the table in <strong>Initiative order</strong> (highest
+           Divination first; break ties with a die roll). On a card's turn, it makes one attack:</p>
+        <ol>
+            <li><strong>Aim</strong> at any one enemy card.</li>
+            <li><strong>Accuracy.</strong> Roll a d10. Roll <em>above</em> the attacker's Specificity
+                rating and the attack is too vague — it misses, turn over.</li>
+            <li><strong>On target.</strong> Otherwise roll a d10 again. Roll <em>above</em> the
+                attacker's Authenticity rating and the attack lands on a <em>random</em> enemy card
+                instead of the one you aimed at.</li>
+            <li><strong>Damage.</strong> The hit deals the attacker's <strong>Rigor</strong>, minus
+                <strong>half the defender's Veracity</strong> (round down), minus <strong>1</strong>
+                if the defender's owner has a Civility-8+ card on the bench. Minimum 1 damage.</li>
+            <li><strong>Riposte.</strong> The attacker then takes the defender's <strong>Precision
+                ÷ 3</strong> in damage back.</li>
+            <li>A card reduced to <strong>0 Health</strong> is knocked out and discarded. If your
+                attacker had Charisma 7+, you may deploy your hand card to the bench.</li>
+        </ol>
+        <p>When every card has acted, the round ends. Players may deploy any benched-but-empty slots
+           from hand (you can hold a maximum of three cards on the bench), then a new round begins.</p>
+
+        <h2>Winning</h2>
+        <p>Knock out all of your opponent's politicians and you win. If both players run out of
+           cards in the same round, the player with the most total Health remaining takes it.</p>
+
+        <h2>Why the scores matter</h2>
+        <p>Strong cards aren't the loudest politicians — they're the ones who score well across the
+           board: durable (Strength), credible (Veracity), precise (Specificity), consistent
+           (Authenticity). A serial over-claimer with low Veracity has paper-thin armour; a vague
+           one misses constantly; a bully with low Civility drags their whole team down. Holding a
+           bad card and thinking <em>"how is this person an MP?"</em> is the game working as intended
+           — and every number traces back to <a href="/">the evidence on their scorecard</a>.</p>
+
+        <div class="back-link"><a href="/">← Back to the cards</a></div>
+    </main>
+
+    <footer class="site-footer">
+        <p><strong>Prototype.</strong> Scores are automated estimates from a sample of public
+           statements — not verified fact. Click any score to see the evidence behind it.
+           <a href="/about">About &amp; method →</a></p>
+    </footer>
+</body>
+</html>
