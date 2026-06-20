@@ -67,6 +67,20 @@ h1 {
     font-size: 0.9em;
 }
 
+/* Site-wide prototype disclaimer */
+.site-footer {
+    margin: 34px auto 40px;
+    max-width: 760px;
+    padding: 14px 20px 0;
+    border-top: 1px solid #e2e8f0;
+    color: #64748b;
+    font-size: 0.84em;
+    line-height: 1.5;
+    text-align: center;
+}
+.site-footer p { margin: 8px 0 0; }
+.site-footer a { color: #475569; white-space: nowrap; }
+
 /* About page */
 .about {
     max-width: 760px;
@@ -80,6 +94,11 @@ h1 {
 .about-attrs li { display: flex; align-items: center; gap: 11px; padding: 6px 0; }
 .about-attrs .sc-icon { flex: none; width: 1.7em; height: 1.7em; color: #7a611f; }
 .about .back-link { margin-top: 34px; font-weight: 600; }
+.about ol, .about ul { line-height: 1.6; }
+.about ol li, .about ul li { margin: 5px 0; }
+/* rule descriptions run long, so top-align the glyph instead of centring it */
+.rules-attrs li { align-items: flex-start; gap: 12px; }
+.rules-attrs .sc-icon { margin-top: 2px; }
 
 /* --- Trading-card design ------------------------------------------------ */
 .politician-card {
