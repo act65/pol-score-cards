@@ -151,6 +151,20 @@ def resolve_politician(name):
     return _slug(display), display, None
 
 
+def _load_articles(path):
+    """Load articles from either a JSON array (sources.py output) or JSONL
+    (hansard.py appends one record per line)."""
+    with open(path) as f:
+        text = f.read().strip()
+    if not text:
+        return []
+    try:
+        data = json.loads(text)
+        return data if isinstance(data, list) else [data]
+    except json.JSONDecodeError:
+        return [json.loads(line) for line in text.splitlines() if line.strip()]
+
+
 def _src_party(path):
     p = path.lower()
     return "Green" if "green" in p else ("National" if "national" in p else None)
@@ -172,9 +186,13 @@ def _context(art):
 
 
 def build(articles=None, out_dir=None, model=None, dry_run=False, min_examples=1,
-          backend="claude_cli", max_workers=None):
+          backend="claude_cli", max_workers=None, max_n=None, min_chars=500):
     """Run the pipeline. backend: 'claude_cli' (uses the Claude subscription, no
-    API credits — default) or 'anthropic' (uses API credits)."""
+    API credits — default) or 'anthropic' (uses API credits).
+
+    max_n     — cap the number of articles processed (controls quota spend).
+    min_chars — skip articles whose content is shorter than this (drops junk/
+                placeholder records so we don't waste extraction calls on them)."""
     articles_glob = articles or os.path.join("..", "data", "data", "live_*.json")
     out_dir = out_dir or os.path.join("..", "site", "static")
     model = model or extract.DEFAULT_MODEL
@@ -182,14 +200,25 @@ def build(articles=None, out_dir=None, model=None, dry_run=False, min_examples=1
         max_workers = 3 if backend == "claude_cli" else 6  # CLI calls are heavier
     files = sorted(glob.glob(articles_glob)) if isinstance(articles_glob, str) else list(articles_glob)
 
+    # collect articles, dropping junk/placeholder records and capping at max_n
+    arts = []
+    skipped = 0
+    for path in files:
+        for art in _load_articles(path):
+            if len(art.get("content", "")) < min_chars:
+                skipped += 1
+                continue
+            arts.append((path, art))
+    if max_n:
+        arts = arts[:int(max_n)]
+
     # one extraction task per (article, attribute)
     tasks = []
-    for path in files:
-        with open(path) as f:
-            for art in json.load(f):
-                for prompt_name, site_attr in PROMPT_TO_SITE_ATTR.items():
-                    tasks.append((path, _src_party(path), art, prompt_name, site_attr))
-    print(f"Backend: {backend}; articles: {len(files)} file(s); attributes: "
+    for path, art in arts:
+        for prompt_name, site_attr in PROMPT_TO_SITE_ATTR.items():
+            tasks.append((path, _src_party(path), art, prompt_name, site_attr))
+    print(f"Backend: {backend}; articles: {len(files)} file(s), {len(arts)} records "
+          f"({skipped} skipped < {min_chars} chars); attributes: "
           f"{len(PROMPT_TO_SITE_ATTR)}; {len(tasks)} calls (concurrency {max_workers})")
     if dry_run:
         for f in files:

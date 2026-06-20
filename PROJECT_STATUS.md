@@ -21,17 +21,25 @@ honest status for each. Updated 2026-06-19.
   higher = better), including the new `authenticity` prompt; fixed two empty + one
   unfinished; verified disjoint from the testsets. `prompts/<attribute>.txt`.
 - **Eval harness** `evaluate.py` (+ offline-tested metrics) → accuracies (see #2).
-- **Scrapers** (`data/scrapers/`): date-window filter (`is_recent`, tested) + a
-  fixed Py3.9 import bug. Live fetching of party sites + RNZ works (see #2);
-  the standalone BeautifulSoup scrapers still need debugging, and Hansard needs a
-  headless browser / its SPA API — full status in `data/LIVE_FETCH.md`.
+- **Scrapers** (`data/scrapers/sources.py`): one **paginating, date-windowed**
+  driver over **7 sources** — `scrape --source act --months 6` pulls newest-first
+  and stops at the cutoff, so you can grab any range.
+  - **HTTP, verified live:** Greens, National, **ACT** (clean headline/date/content;
+    pagination + window work; ISO dates; UTF-8 charset detection; unit-tested).
+  - **Browser path** (JS-rendered / Radware-walled): Labour, NZ First, RNZ,
+    Parliament press — route through Playwright (need a browser env).
+  - **Hansard** (`hansard.py`): the `networkidle` timeout is fixed (polls past the
+    Radware challenge) + stealth args + **auto-fallback to a visible browser** +
+    a one-liner: `python hansard.py recent <out.json> --months 1`.
+  - Full status `data/LIVE_FETCH.md`; browser-run guide `data/HANSARD_HOWTO.md`.
 
 ## 2. Raw datasets + extraction accuracies — ◐ growing
 
-- **Articles:** 323 across Beehive, Greens, National, RNZ — stats in
-  `data/DATASET_STATS.md` (regenerate with `data/dataset_stats.py`). Includes
-  fresh **live** June-2026 samples (`data/data/live_{greens,national,rnz}_2026-06.json`)
-  fetched directly from the sources.
+- **Articles:** **475** across Beehive, Greens, National, RNZ — stats in
+  `data/DATASET_STATS.md` (regenerate with `data/dataset_stats.py`). Includes a
+  fresh **3-month paginated pull** (`greens_3mo_2026.json` = 70 articles
+  Mar–Jun 2026; `national_3mo_2026.json` = 40) via the new paginating scrapers —
+  scraping is free, so widen with `--months 12` anytime.
 - **Extraction accuracies** (the social-science framing): held-out eval on
   `claude-opus-4-8` — **civility r=0.88** (MAE 0.13), **veracity r=0.73** (MAE
   0.14); methodology, the instructive misses, and trust caveats in

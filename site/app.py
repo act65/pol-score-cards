@@ -1,4 +1,5 @@
 from flask import Flask, render_template
+import math
 import random
 import json
 import os
@@ -24,7 +25,8 @@ def _load_attribute_icons():
         for cid, meta in raw.items():
             if cid.startswith("_"):
                 continue
-            entry = {"symbol": meta["symbol"], "blurb": meta.get("blurb", "")}
+            entry = {"symbol": meta["symbol"], "svg": meta.get("svg", ""),
+                     "blurb": meta.get("blurb", "")}
             for key in (cid, meta["name"], meta.get("site_id", "")):
                 if key:
                     table[key.lower()] = entry
@@ -37,7 +39,57 @@ _ICONS = _load_attribute_icons()
 for _a in attribute_descriptions:
     _entry = _ICONS.get(str(_a.get("id", "")).lower()) or _ICONS.get(str(_a.get("name", "")).lower()) or {}
     _a["symbol"] = _entry.get("symbol", "•")
+    _a["svg"] = _entry.get("svg", "")
     _a["blurb"] = _entry.get("blurb", "")
+
+# --- Rarity -----------------------------------------------------------------
+# A card's overall strength is the GEOMETRIC mean of its attribute scores (so a
+# single weak attribute drags the whole card down — you can't be "rare" by being
+# lopsided). Cards are then ranked across the whole roster and dropped into
+# exponentially-sized buckets: the very best card is legendary, the next 2 epic,
+# next 4 rare, next 8 uncommon, and everyone else common. Rarest = smallest bucket.
+RARITY_TIERS = [
+    ("legendary", "#b8860b"),   # dark goldenrod
+    ("epic",      "#6b21a8"),   # purple
+    ("rare",      "#1e5fa0"),   # blue
+    ("uncommon",  "#2f7d4f"),   # green
+    ("common",    "#4b5563"),   # slate
+]
+_RARITY_SIZES = [1, 2, 4, 8]    # exp buckets for the top tiers; common gets the rest
+
+
+def _geo_mean(scores):
+    vals = []
+    for v in (scores or {}).values():
+        try:
+            vals.append(max(float(v), 1.0))   # clamp at 1 so a 0 doesn't zero the product
+        except (TypeError, ValueError):
+            continue
+    if not vals:
+        return 0.0
+    return math.exp(sum(math.log(x) for x in vals) / len(vals))
+
+
+def _assign_rarity(items):
+    """Rank items by geometric-mean score and tag each with a rarity tier/colour."""
+    for it in items:
+        it["geo"] = _geo_mean(it.get("scores"))
+    ranked = sorted(items, key=lambda it: it["geo"], reverse=True)
+    # exponentially-sized buckets from the top; the last tier absorbs the remainder
+    counts, remaining = [], len(ranked)
+    for size in _RARITY_SIZES:
+        take = min(size, remaining)
+        counts.append(take)
+        remaining -= take
+    counts.append(remaining)   # common
+    idx = 0
+    for tier, count in enumerate(counts):
+        name, colour = RARITY_TIERS[tier]
+        for _ in range(count):
+            ranked[idx]["rarity"] = colour
+            ranked[idx]["rarity_name"] = name
+            idx += 1
+
 
 @app.route('/')
 def index():
@@ -45,6 +97,7 @@ def index():
     for politician in politicians:
         score = data_access_jsonl.get_scores(politician['id'])
         politician_data.append({"politician": politician, "scores": score})
+    _assign_rarity(politician_data)
     return render_template('index.html', politicians_data=politician_data, all_attributes=attribute_descriptions)
 
 @app.route('/attribute/<politician_id>/<attribute>')

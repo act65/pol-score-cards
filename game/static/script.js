@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (meta.site_id) ATTR_ICONS[meta.site_id.toLowerCase()] = meta;
                 if (legend) {
                     const li = document.createElement('li');
-                    li.innerHTML = `<span class="sc-icon">${meta.symbol}</span>` +
+                    li.innerHTML = `<span class="sc-icon">${meta.svg || meta.symbol}</span>` +
                         `<span><b>${meta.name}</b> — <span class="blurb">${meta.blurb || ''}</span></span>`;
                     legend.appendChild(li);
                 }
@@ -84,6 +84,9 @@ document.addEventListener('DOMContentLoaded', () => {
         cardDiv.dataset.instanceId = cardData.instance_id;
         cardDiv.dataset.name = cardData.name; // For identification in events/logs
         cardDiv.style.setProperty('--party', partyColour(cardData.party));
+        // Rarity is computed server-side over the whole deck (geometric mean +
+        // exponential buckets) and drives the banner colour.
+        cardDiv.style.setProperty('--rarity', cardData.rarity || '#4b5563');
 
         if (locationType === 'hand') {
             cardDiv.classList.add('hand-card');
@@ -96,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const statsHtml = Object.entries(cardData.attributes).map(([key, value]) => {
             const meta = ATTR_ICONS[key.toLowerCase()] || {};
-            const sym = meta.symbol || '•';
+            const sym = meta.svg || meta.symbol || '•';
             const name = meta.name || key;
             return `<div class="sc-stat" title="${name}: ${value}">` +
                    `<span class="sc-icon">${sym}</span>` +

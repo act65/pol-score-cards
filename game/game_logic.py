@@ -46,6 +46,7 @@ class PoliticianCard:
     current_hp: int = abs_field(init=False)
     attack_damage_base: int = abs_field(init=False)
     defense_base: int = abs_field(init=False)
+    rarity: str = "#4b5563"   # TCG rarity colour; assigned over the deck at load
 
     def __post_init__(self):
         self.instance_id = f"{self.id}_{random.randint(10000, 99999)}"
