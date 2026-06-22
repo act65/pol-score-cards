@@ -10,6 +10,10 @@
 # See CLOUD_SCRAPING.md for the full VM runbook.
 FROM mcr.microsoft.com/playwright/python:v1.49.0-jammy
 
+# Hansard's Blazor SPA only renders in a HEADFUL browser, so on this display-less
+# image we run it under xvfb-run (a virtual X display). Ensure xvfb is present.
+RUN apt-get update && apt-get install -y --no-install-recommends xvfb && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /data
 COPY requirements.txt .
 # Pin Playwright to the SAME version as the base image tag (v1.49.0). The image

@@ -19,6 +19,7 @@ source overwrites its file, so the backfill is resumable source-by-source.
 import argparse
 import datetime
 import os
+import shutil
 import subprocess
 import sys
 
@@ -63,8 +64,18 @@ def run_hansard(since, until, out_dir, max_n):
     # hansard.py works in months-from-now, not an explicit since; convert.
     months = _months_between(since, until)
     out = os.path.join(out_dir, "hansard.jsonl")
+    # Hansard's Blazor SPA only renders in a HEADFUL browser (headless clears
+    # Radware but stays on "Loading…" forever). On a machine with a display run
+    # it directly; on a headless VM wrap in xvfb-run (a virtual display — the
+    # Playwright image ships xvfb).
     cmd = [sys.executable, "hansard.py", "recent", out,
-           "--months", str(months), "--max_n", str(max_n)]
+           "--months", str(months), "--max_n", str(max_n), "--headless=False"]
+    if not os.environ.get("DISPLAY"):
+        if shutil.which("xvfb-run"):
+            cmd = ["xvfb-run", "-a"] + cmd
+        else:
+            print("  [hansard] WARNING: no DISPLAY and no xvfb-run — the headful "
+                  "browser will fail. Install xvfb (apt-get install -y xvfb).")
     print(f"\n══ hansard ══\n›› {' '.join(cmd)}  (≈{months} months)", flush=True)
     return subprocess.run(cmd, cwd=SCRAPERS).returncode == 0
 

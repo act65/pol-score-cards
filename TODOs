@@ -30,14 +30,40 @@ Scrapers (all run via `data/scrapers/sources.py scrape --source X`):
       runs on a VM via Dockerfile.scraper (see CLOUD_SCRAPING.md). DECIDED: small
       VM (Playwright for labour/nzfirst/rnz/parliament/hansard).
 
+(b) per-source gap status after the first VM run (2026-06-22):
+- [x] National — multi-URL-scheme bug fixed (matched only 1 of 3 slug formats);
+      now full term (838 → thousands).
+- [x] greens / top / tpm — datacenter IP 403 (Cloudflare); run locally (residential).
+- [x] The Spinoff — was 17 articles, all mis-dated to *today*. Next.js SPA: now
+      uses monthly post sitemaps (SpinoffSitemapAdapter) + slug date. Full archive.
+- [ ] RNZ — browser path works but listing caps ~44 pages (~3 months); no sitemap,
+      RSS recent-only. Deep archive unsolved (consider RNZ search API / date URLs).
+- [ ] Labour — JS SPA (Umbraco), no sitemap/RSS; browser fetch returns 0 links.
+      Needs a JS-aware listing wait (scroll/await render) or the Umbraco API.
+- [ ] NZ First — NationBuilder JS listing; sitemap lists slug pages but not
+      cleanly article-filterable. Unsolved.
+- [ ] Parliament press — Radware wall; needs the non-headless browser path.
+- [x] Hansard — WORKING (validated headful: 2026-05-28 → 8 sections). Two fixes:
+      (1) reuse ONE browser (`_Session`, recycle every 120) — the crash was
+      resource exhaustion from launch-per-page across 800+ days; (2) it must run
+      HEADFUL — headless clears Radware but the Blazor SPA stays on "Loading…"
+      forever. backfill.py runs hansard via `xvfb-run` (virtual display) when
+      there's no DISPLAY; Dockerfile.scraper installs xvfb. Desktop: --headless=False.
+      Writes incrementally + RESUMES (skips days/sections already in the output),
+      so a long interrupted run loses nothing — just re-run the same command.
+- [ ] Hansard efficiency: enumerates every weekday, polling each ~25–35s; recess
+      days are wasted (June 2026 was recess). Seed sitting days from Parliament's
+      calendar / the listing instead of brute-force enumeration.
+
 Understanding the raw dataset (no LLM, no network):
 - [x] `dataset_stats.py` — per-source article/word/date summary.
 - [x] `corpus_report.py` — per-politician article counts, source diversity, date
       coverage + noisy-surname flag, vs the roster (`mps_roster.json`).
-- [ ] A canonical, complete roster of the 123 sitting MPs (extend the KNOWN dict
-      in build_site_data.py → regenerate mps_roster.json) to measure "all MPs"
-      coverage. Currently 86 — derived from existing data, so it can't yet reveal
-      true gaps; complete it from the Parliament members list.
+- [x] Canonical roster of the 123 sitting MPs — `build_roster.py` scrapes the
+      Wikipedia 54th-Parliament tables (term-open = sitting), preserves curated
+      ids; `mps_roster.json` = 123. `analyse_corpus.py` + `filter_corpus.py` use it.
+- [ ] Sync the KNOWN dict in build_site_data.py to the 123 roster (extraction/site
+      pipeline still uses the older 86-entry KNOWN).
 - [ ] MP portrait scrape from parliament.nz/.../members-of-parliament/.
 
 Hosting the raw data for others — DECIDED: HuggingFace Datasets:

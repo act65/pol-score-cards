@@ -199,85 +199,136 @@ def parse_hansard_day(html: str, url: str = "", max_chars: int = 30000,
     return records
 
 
-def fetch_via_playwright(url: str, timeout_ms: int = 90000, headless: bool = True,
-                         settle_s: int = 75, wait_for: str = None) -> str:
-    """Render the Hansard SPA in a real browser engine and return the HTML.
+# Anti-automation flags + an init script that hides the obvious headless tells
+# (navigator.webdriver etc.). Radware's challenge often passes headless with
+# these; if not, use headless=False (a visible window passes far more reliably).
+_LAUNCH_ARGS = [
+    "--disable-blink-features=AutomationControlled",
+    "--no-sandbox",
+    "--disable-dev-shm-usage",
+    "--disable-gpu",  # GPU-less VMs crash in SwiftShader without this
+]
+_STEALTH = """
+    Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+    Object.defineProperty(navigator, 'languages', {get: () => ['en-NZ', 'en']});
+    Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
+    window.chrome = {runtime: {}};
+"""
 
-    Requires: pip install playwright && playwright install chromium
 
-    NOTE: do NOT wait for "networkidle" — the Radware challenge and the SPA keep
-    polling, so the network never goes idle and goto() times out (the common
-    failure). Instead we navigate on "domcontentloaded" and then *poll* the page
-    until the Radware challenge has cleared and the transcript has rendered.
+class _Session:
+    """A reusable headless-Chromium session for rendering many Hansard pages.
 
-    If a headless run is still blocked by the challenge, retry with headless=False
-    (a visible window passes the check far more reliably).
+    Launching a *fresh* browser per page (the old behaviour) leaks temp profiles
+    and child processes until Chromium can no longer start — "platform failed to
+    initialize", the crash that killed full enumerated runs (800+ sitting days ×
+    sections = thousands of launches). This reuses ONE browser, opens a new page
+    per URL, and recycles the browser every `recycle_every` renders to bound
+    memory. Use as a context manager: `with _Session() as s: s.render(url)`.
     """
-    try:
-        from playwright.sync_api import sync_playwright
-    except ImportError as e:
-        raise RuntimeError(
-            "Playwright not installed. Run: pip install playwright && playwright install chromium"
-        ) from e
-    import time
 
-    # Anti-automation flags + an init script that hides the obvious headless
-    # tells (navigator.webdriver etc.). Radware's challenge often passes headless
-    # with these; if it still doesn't, use headless=False (a visible window).
-    launch_args = [
-        "--disable-blink-features=AutomationControlled",
-        "--no-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",  # GPU-less VMs crash in SwiftShader without this
-    ]
-    stealth = """
-        Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-        Object.defineProperty(navigator, 'languages', {get: () => ['en-NZ', 'en']});
-        Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
-        window.chrome = {runtime: {}};
-    """
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=headless, args=launch_args)
-        context = browser.new_context(
+    def __init__(self, headless: bool = True, recycle_every: int = 120):
+        self.headless = headless
+        self.recycle_every = recycle_every
+        self._pw = self._browser = self._context = None
+        self._n = 0
+
+    def __enter__(self):
+        try:
+            from playwright.sync_api import sync_playwright
+        except ImportError as e:
+            raise RuntimeError(
+                "Playwright not installed. Run: pip install playwright && playwright install chromium"
+            ) from e
+        self._pw = sync_playwright().start()
+        self._launch()
+        return self
+
+    def _launch(self):
+        self._browser = self._pw.chromium.launch(headless=self.headless, args=_LAUNCH_ARGS)
+        self._context = self._browser.new_context(
             user_agent=UA, viewport={"width": 1366, "height": 900},
             locale="en-NZ", timezone_id="Pacific/Auckland")
-        context.add_init_script(stealth)
-        page = context.new_page()
-        try:
-            page.goto(url, wait_until="domcontentloaded", timeout=timeout_ms)
-        except Exception:
-            pass  # even domcontentloaded can race the challenge redirect; poll below
+        self._context.add_init_script(_STEALTH)
 
-        html = ""
-        deadline = time.time() + settle_s
-        reloaded = False
-        while time.time() < deadline:
-            page.wait_for_timeout(2500)
-            html = page.content()
-            low = html.lower()
-            if "verifying your browser" in low or "radware" in low:
-                # Radware sometimes sets a cookie then expects a reload before
-                # serving the real page — do that once, partway through.
-                if not reloaded and time.time() > deadline - settle_s * 0.6:
-                    reloaded = True
-                    try:
-                        page.reload(wait_until="domcontentloaded", timeout=timeout_ms)
-                    except Exception:
-                        pass
-                continue
-            # Break once the page we want has actually rendered. For a listing we
-            # wait for transcript links (`wait_for`); for a transcript page we wait
-            # for real speech content (not just the nav, which always says "Hansard").
-            if wait_for is not None:
-                if wait_for.lower() in low:
+    def _recycle(self):
+        try:
+            self._browser.close()
+        except Exception:
+            pass
+        self._launch()
+
+    def render(self, url: str, timeout_ms: int = 90000, settle_s: int = 75,
+               wait_for: str = None) -> str:
+        """Navigate, poll past the Radware challenge + SPA render, return the HTML.
+
+        We do NOT wait for "networkidle" — the challenge/SPA keep polling so the
+        network never idles and goto() would time out. We navigate on
+        "domcontentloaded" then poll until the challenge clears and the content
+        we want has rendered (`wait_for` substring, or real speech/paragraphs).
+        """
+        import time
+        if self.recycle_every and self._n and self._n % self.recycle_every == 0:
+            self._recycle()
+        self._n += 1
+        page = self._context.new_page()
+        try:
+            try:
+                page.goto(url, wait_until="domcontentloaded", timeout=timeout_ms)
+            except Exception:
+                pass  # domcontentloaded can race the challenge redirect; poll below
+            html, deadline, reloaded = "", time.time() + settle_s, False
+            while time.time() < deadline:
+                page.wait_for_timeout(2500)
+                try:
+                    html = page.content()
+                except Exception:
+                    continue  # page mid-navigation (challenge/SPA redirect) — re-poll
+                low = html.lower()
+                if "verifying your browser" in low or "radware" in low:
+                    # Radware sometimes sets a cookie then expects a reload.
+                    if not reloaded and time.time() > deadline - settle_s * 0.6:
+                        reloaded = True
+                        try:
+                            page.reload(wait_until="domcontentloaded", timeout=timeout_ms)
+                        except Exception:
+                            pass
+                    continue
+                if wait_for is not None:
+                    if wait_for.lower() in low:
+                        break
+                    continue
+                soup = BeautifulSoup(html, "html.parser")
+                if soup.select(".Speech, .speech, .Debate, .hansard-speech") or \
+                   sum(1 for p in soup.find_all("p") if len(p.get_text(strip=True)) > 40) >= 3:
                     break
-                continue
-            soup = BeautifulSoup(html, "html.parser")
-            if soup.select(".Speech, .speech, .Debate, .hansard-speech") or \
-               sum(1 for p in soup.find_all("p") if len(p.get_text(strip=True)) > 40) >= 3:
-                break
-        browser.close()
-        return html
+            return html
+        finally:
+            try:
+                page.close()
+            except Exception:
+                pass
+
+    def __exit__(self, *exc):
+        try:
+            if self._browser:
+                self._browser.close()
+        finally:
+            if self._pw:
+                self._pw.stop()
+
+
+def fetch_via_playwright(url: str, timeout_ms: int = 90000, headless: bool = True,
+                         settle_s: int = 75, wait_for: str = None) -> str:
+    """Render one Hansard SPA page and return the HTML (passes the Radware
+    challenge). This is a one-off browser session — for bulk runs use `_Session`
+    directly (recent() does) so we don't launch a browser per page.
+
+    Requires: pip install playwright && playwright install chromium
+    If headless is still blocked by the challenge, retry with headless=False.
+    """
+    with _Session(headless=headless, recycle_every=0) as s:
+        return s.render(url, timeout_ms=timeout_ms, settle_s=settle_s, wait_for=wait_for)
 
 
 def fetch_via_wayback(url: str) -> str | None:
@@ -345,6 +396,26 @@ def _append_record(record, save_to):
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
+def _saved_urls(save_to):
+    """URLs already written to `save_to` (JSONL), so a re-run can resume: skip
+    sections/days we've already fetched instead of re-doing them (and appending
+    duplicates). Records are written incrementally, so this is what's on disk."""
+    urls = set()
+    if os.path.exists(save_to):
+        with open(save_to, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    u = json.loads(line).get("url")
+                except Exception:  # noqa: BLE001 — tolerate a half-written last line
+                    continue
+                if u:
+                    urls.add(u)
+    return urls
+
+
 def _render(url, headless=True, wait_for=None, settle_s=75):
     """Render a Hansard page, auto-falling back from headless to a visible browser
     if the Radware challenge doesn't clear headless. `wait_for` is a substring the
@@ -401,6 +472,8 @@ def _enumerate_day_urls(months, ref_date=None):
     weekday from `ref_date` (today) back `months` months. Parliament sits on
     weekdays; non-sitting days simply render no sections and are skipped."""
     import datetime
+    if isinstance(ref_date, str):  # allow --ref_date 2026-05-28 from the CLI
+        ref_date = datetime.date.fromisoformat(ref_date)
     ref = ref_date or datetime.date.today()
     cutoff = ref - datetime.timedelta(days=30 * months)
     urls, d = [], ref
@@ -409,6 +482,11 @@ def _enumerate_day_urls(months, ref_date=None):
             urls.append(f"https://hansard.parliament.nz/hansard-transcript/{d.isoformat()}")
         d -= datetime.timedelta(days=1)
     return urls
+
+
+def _dump(save_to, tag, html):
+    with open(f"{save_to}.{tag}.html", "w", encoding="utf-8") as f:
+        f.write(html or "")
 
 
 def recent(save_to, months=1, max_n=40, headless=True, debug=False,
@@ -422,6 +500,15 @@ def recent(save_to, months=1, max_n=40, headless=True, debug=False,
     list renders without links — so by default we **enumerate** sitting-day pages
     (/hansard-transcript/<date>) across the window and harvest each day's sections.
     Pass --enumerate_days=False to instead scrape only what the landing page links.
+
+    All pages render through ONE reused browser (`_Session`) — enumerating a long
+    window is hundreds of renders, and a browser-per-page leaks until Chromium
+    can't start. If headless is blocked by Radware, re-run with --headless=False.
+
+    Writes incrementally (one record per section, flushed immediately) and
+    RESUMES: on start it reads the URLs already in `save_to` and skips those
+    days/sections, so an interrupted run loses nothing — just re-run the same
+    command and it continues where it left off (no re-fetching, no duplicates).
     """
     from utils import is_recent
 
@@ -429,66 +516,82 @@ def recent(save_to, months=1, max_n=40, headless=True, debug=False,
         m = _TX_DATE.search(u) or re.search(r"(\d{4}-\d{2}-\d{2})", u)
         return not (m and months and not is_recent(m.group(1), months))
 
-    if enumerate_days:
-        sections, days = [], _enumerate_day_urls(months, ref_date)
-        print(f"[hansard] enumerating {len(days)} weekday(s) over {months} month(s)")
-    else:
-        html = _render(listing, headless=headless, wait_for="/hansard-transcript/")
-        if debug:
-            with open(f"{save_to}.listing.html", "w", encoding="utf-8") as f:
-                f.write(html or "")
-            print(f"  [debug] listing -> {save_to}.listing.html ({len(html or '')} bytes)")
-        sections = [u for u in _transcript_links(html) if in_window(u)]
-        days = [u for u in _day_links(html) if in_window(u)]
-        print(f"[hansard] listing: {len(sections)} section link(s), {len(days)} day page(s)")
-    seen, fetched = set(), 0
+    fetched, seen = 0, _saved_urls(save_to)
+    if seen:
+        print(f"[hansard] resuming — {len(seen)} URL(s) already saved in {save_to}, will skip them")
+    with _Session(headless=headless) as sess:
+        def grab_section(u):
+            html = sess.render(u, wait_for=None, settle_s=75)
+            if debug:
+                _dump(save_to, "sec-" + re.sub(r"[^a-z0-9]+", "-", u.lower())[-40:], html)
+            rec = parse_hansard_html(html, u) if html else None
+            if rec:
+                _append_record(rec, save_to)
+                return True
+            return False
 
-    # 1) Any section links found directly on the listing — fetch each.
-    for u in sections:
-        if fetched >= max_n:
-            break
-        if u in seen:
-            continue
-        seen.add(u)
-        if fetch(u, save_to, headless=headless, debug=debug):
-            fetched += 1
-
-    # 2) Each day page: try to harvest its section links; if there are none, the
-    #    day URL IS (or redirects to) the day's transcript — parse it directly
-    #    (we've already rendered it, so no extra fetch).
-    for day in days:
-        if fetched >= max_n:
-            break
-        dm = re.search(r"(\d{4}-\d{2}-\d{2})", day)
-        wf = f"/hansard-transcript/{dm.group(1)}/" if dm else "/hansard-transcript/"
-        dhtml = _render(day, headless=headless, wait_for=wf, settle_s=35)
-        if debug:
-            with open(f"{save_to}.day-{dm.group(1) if dm else 'x'}.html", "w", encoding="utf-8") as f:
-                f.write(dhtml or "")
-        found = [u for u in _transcript_links(dhtml) if u not in seen and in_window(u)]
-        if found:
-            print(f"[hansard] day {dm.group(1) if dm else day}: {len(found)} section link(s)")
-            for u in found:
-                if fetched >= max_n:
-                    break
-                seen.add(u)
-                if fetch(u, save_to, headless=headless, debug=debug):
-                    fetched += 1
+        if enumerate_days:
+            sections, days = [], _enumerate_day_urls(months, ref_date)
+            print(f"[hansard] enumerating {len(days)} weekday(s) over {months} month(s)")
         else:
-            # No section links: the day page IS the combined transcript — split it
-            # into one record per section (Oral Questions, bills, ...).
-            records = parse_hansard_day(dhtml, day) if dhtml else []
-            if records:
-                kept = 0
-                for r in records:
+            lhtml = sess.render(listing, wait_for="/hansard-transcript/")
+            if debug:
+                _dump(save_to, "listing", lhtml)
+                print(f"  [debug] listing -> {save_to}.listing.html ({len(lhtml or '')} bytes)")
+            sections = [u for u in _transcript_links(lhtml) if in_window(u)]
+            days = [u for u in _day_links(lhtml) if in_window(u)]
+            print(f"[hansard] listing: {len(sections)} section link(s), {len(days)} day page(s)")
+
+        # 1) Any section links found directly on the listing — fetch each.
+        for u in sections:
+            if fetched >= max_n:
+                break
+            if u in seen:
+                continue
+            seen.add(u)
+            if grab_section(u):
+                fetched += 1
+
+        # 2) Each day page: harvest its section links; if there are none, the day
+        #    page IS the combined transcript — split it into per-section records.
+        for day in days:
+            if fetched >= max_n:
+                break
+            dm = re.search(r"(\d{4}-\d{2}-\d{2})", day)
+            tag = dm.group(1) if dm else day
+            if day in seen:  # combined-transcript day already saved — skip the render
+                continue
+            wf = f"/hansard-transcript/{dm.group(1)}/" if dm else "/hansard-transcript/"
+            dhtml = sess.render(day, wait_for=wf, settle_s=35)
+            if debug:
+                _dump(save_to, f"day-{tag}", dhtml)
+            all_links = _transcript_links(dhtml)
+            found = [u for u in all_links if u not in seen and in_window(u)]
+            if found:
+                print(f"[hansard] day {tag}: {len(found)} section link(s)")
+                for u in found:
                     if fetched >= max_n:
                         break
-                    _append_record(r, save_to)
-                    fetched += 1
-                    kept += 1
-                print(f"[hansard] day {dm.group(1) if dm else day}: {len(records)} section(s), kept {kept}")
+                    seen.add(u)
+                    if grab_section(u):
+                        fetched += 1
+            elif all_links:
+                # All of this day's sections are already saved (resume) — don't
+                # fall through to parse_hansard_day (which would duplicate the day).
+                print(f"[hansard] day {tag}: all {len(all_links)} section(s) already saved")
             else:
-                print(f"[hansard] day {dm.group(1) if dm else day}: nothing (likely no sitting)")
+                records = parse_hansard_day(dhtml, day) if dhtml else []
+                if records:
+                    kept = 0
+                    for r in records:
+                        if fetched >= max_n:
+                            break
+                        _append_record(r, save_to)
+                        fetched += 1
+                        kept += 1
+                    print(f"[hansard] day {tag}: {len(records)} section(s), kept {kept}")
+                else:
+                    print(f"[hansard] day {tag}: nothing (likely no sitting)")
 
     print(f"[hansard] fetched {fetched} transcript(s) -> {save_to}")
     if fetched == 0:

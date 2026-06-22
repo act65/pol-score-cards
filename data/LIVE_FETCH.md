@@ -12,15 +12,15 @@ works today and how the `live_*.json` datasets were produced.
 | National (`national.org.nz/news`) | server-rendered HTML | ✅ `sources.py --source national` (verified) |
 | ACT (`act.org.nz/news`) | server-rendered (NationBuilder/Framer) | ✅ `sources.py --source act` (verified) |
 | Beehive (`beehive.govt.nz`) | server-rendered | ✅ (batch in `beehive_media_releases.json`) |
-| Labour (`labour.org.nz/news`) | **JS-rendered listing** | 🌐 `sources.py --source labour` (browser path) |
-| NZ First (`nzfirst.nz/news`) | **JS-rendered** | 🌐 `sources.py --source nzfirst` (browser path) |
-| RNZ political (`rnz.co.nz/news/political`) | **now JS-rendered** (0 `<p>` in static HTML) | 🌐 `sources.py --source rnz` (browser path) |
-| **Hansard** (`hansard.parliament.nz`) | SPA **+ Radware anti-bot wall** | 🌐 `hansard.py recent` — see below |
+| Labour (`labour.org.nz/news`) | **JS SPA (Umbraco)**; listing renders client-side, no sitemap/RSS | ⬜ browser fetch returns 0 links — needs a JS-aware listing wait or the Umbraco data API. **Unresolved.** |
+| NZ First (`nzfirst.nz/news`) | **NationBuilder, JS-rendered listing** | ⬜ sitemap lists top-level slug pages but not cleanly article-filterable (no date in URL). **Unresolved.** |
+| RNZ political (`rnz.co.nz/news/political`) | JS-rendered; `?page=N` paginates | 🌐 `sources.py --source rnz` (browser) works but the listing caps ~44 pages (≈3 months); no sitemap, RSS is recent-only → **deep archive not yet solved**. |
+| **Hansard** (`hansard.parliament.nz`) | Blazor SPA **+ Radware**; renders **headful only** (headless clears Radware but stays on "Loading…") | ✅ `hansard.py recent --headless=False` (one reused browser); on a display-less VM the backfill wraps it in `xvfb-run`. Validated: 2026-05-28 → 8 sections. |
 | **Parliament press** (`parliament.nz/.../media-releases`) | **Radware anti-bot wall** | 🌐 `sources.py --source parliament` (browser) |
 | TOP (`opportunity.org.nz/news`) | server-rendered (NationBuilder) | ✅ `sources.py --source top` (verified) |
 | **Te Pāti Māori** (`maoriparty.org.nz/panui`) | server-rendered (NationBuilder, card listing) | ✅ `sources.py --source tpm` (verified). NB the old `maoriparty.org` is now a squatted spam domain — the live site is `.org.nz`. |
 | **Newsroom** (`newsroom.co.nz/category/politics`) | server-rendered; date in `/YYYY/MM/DD/` URL | ✅ `sources.py --source newsroom` (verified) |
-| **The Spinoff** (`thespinoff.co.nz/politics`) | server-rendered; date in `/DD-MM-YYYY/` URL | ✅ `sources.py --source spinoff` (verified) |
+| **The Spinoff** (`thespinoff.co.nz/politics`) | **Next.js SPA** — listing is infinite-scroll, but monthly post sitemaps (`/api/sitemap/posts/YYYY-MM.xml`) list the full archive back to 2014 | ✅ `sources.py --source spinoff` via `SpinoffSitemapAdapter`; date taken from the `/DD-MM-YYYY/` slug (the page `<time>` wrongly reads as *today*). |
 | Scoop (`scoop.co.nz`) | bot-walled (tiny response to a plain GET) | ⬜ not adapted |
 | NZ Herald / Stuff | paywall + ToS | ⬜ decision needed |
 
