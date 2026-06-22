@@ -20,6 +20,7 @@ Output is the standard schema: {headline, date, author, content, url}.
 
 from __future__ import annotations
 
+import datetime
 import re
 import time
 
@@ -355,14 +356,16 @@ class GenericAdapter:
         headline = next((c for c in candidates if c and len(c) > 10 and c != brand),
                         title_main or og_title or h1_title)
 
-        # Date, most-reliable first: <time datetime>, then meta, then a date in
-        # the *headline's* neighbourhood (NOT a page-wide text search, which can
-        # grab a sidebar "latest news" date — that bug made every article look
-        # recent and ran the scraper through the whole archive).
-        date = ""
-        t = soup.find("time")
-        if t and t.get("datetime"):
-            date = t["datetime"][:10]
+        # Date. The URL slug date is most authoritative when present — Newsroom
+        # (/YYYY/MM/DD/) and The Spinoff (/DD-MM-YYYY/) put the real publish date
+        # there, whereas their <time>/page text can be a "latest/updated" stamp
+        # (Spinoff's rendered <time> reads as *today*, mis-dating every article).
+        # Fall back to <time>, then meta, then a date near the article body.
+        date = _date_from_url(url)
+        if not date:
+            t = soup.find("time")
+            if t and t.get("datetime"):
+                date = t["datetime"][:10]
         if not date:
             m = soup.find("meta", property="article:published_time")
             if m and m.get("content"):
@@ -372,14 +375,54 @@ class GenericAdapter:
             dm = _DATE_TEXT.search(scope.get_text(" ", strip=True)) or \
                  _DATE_TEXT2.search(scope.get_text(" ", strip=True))
             date = _to_iso(dm.group(0)) if dm else ""
-        if not date:
-            date = _date_from_url(url)  # Newsroom/Spinoff carry the date in the URL
 
         paras = [p.get_text(" ", strip=True) for p in soup.find_all("p")]
         content = format_text("\n".join(p for p in paras if len(p) > 40 and p != headline))
         if not content:
             return None
         return {"headline": headline, "date": date, "author": "", "content": content, "url": url}
+
+
+class SpinoffSitemapAdapter(GenericAdapter):
+    """The Spinoff is a Next.js SPA: its /politics listing is infinite-scroll
+    (?page=N just re-serves page 1), so pagination can't reach the archive.
+    Instead we read the monthly post sitemaps (/api/sitemap/posts/YYYY-MM.xml),
+    which list every article URL — with the publish date in the slug — back to
+    2014. Articles are server-rendered, so plain HTTP still parses them.
+
+    Exposes `article_urls()`, which scrape() uses instead of pagination."""
+
+    def __init__(self):
+        super().__init__("spinoff", "https://thespinoff.co.nz", "/politics",
+                         r"/politics/\d{2}-\d{2}-20\d{2}/[^/?#]+/?$")
+
+    def article_urls(self, since_date, until_date, fetch):
+        urls, seen, dropped = [], set(), []
+        y, m = since_date.year, since_date.month
+        while (y, m) <= (until_date.year, until_date.month):
+            sm = f"{self.base}/api/sitemap/posts/{y:04d}-{m:02d}.xml"
+            xml = None
+            for attempt in range(3):  # the sitemap API throttles bursts -> retry
+                xml = fetch(sm)
+                if xml:
+                    break
+                time.sleep(2 * (attempt + 1))
+            if xml:
+                for loc in re.findall(r"<loc>([^<]+)</loc>", xml):
+                    d = _date_from_url(loc)
+                    if self.link_re.search(loc) and loc not in seen and \
+                            (not d or parse_date_loose(d) >= since_date):
+                        seen.add(loc)
+                        urls.append(loc)
+            else:
+                dropped.append(f"{y:04d}-{m:02d}")
+            time.sleep(0.4)  # be gentle between monthly sitemaps
+            m += 1
+            if m > 12:
+                m, y = 1, y + 1
+        if dropped:
+            print(f"  [spinoff] WARNING: no sitemap after retries for: {', '.join(dropped)}")
+        return urls
 
 
 ADAPTERS = {a.name: a for a in (
@@ -396,10 +439,8 @@ ADAPTERS = {a.name: a for a in (
     GenericAdapter("newsroom", "https://newsroom.co.nz", "/category/politics",
                    r"/20\d{2}/\d{2}/\d{2}/[^/]+/?$",
                    page_fmt="/category/politics/page/{n}/"),
-    # The Spinoff: /politics/DD-MM-YYYY/slug, WordPress /page/N pagination.
-    GenericAdapter("spinoff", "https://thespinoff.co.nz", "/politics",
-                   r"/politics/\d{2}-\d{2}-20\d{2}/[^/]+/?$",
-                   page_fmt="/politics/page/{n}/"),
+    # The Spinoff: Next.js SPA — archive via monthly post sitemaps, not paging.
+    SpinoffSitemapAdapter(),
     # Labour & NZ First — listings are JS-rendered, so browser path.
     GenericAdapter("labour", "https://www.labour.org.nz", "/news", r"/news/[^/?#]+$", needs_browser=True),
     GenericAdapter("nzfirst", "https://www.nzfirst.nz", "/news", r"/(news|column)/[^/?#]+$", needs_browser=True),
@@ -437,6 +478,28 @@ def scrape(source, months=3, out=None, max=None, ref_date=None, delay=1.0,
     n_undated = 0
     seen_urls = set()
     empty_streak = 0
+
+    # Sitemap-driven sources (e.g. The Spinoff) list their article URLs directly,
+    # so we fetch those instead of paginating a listing.
+    if hasattr(adapter, "article_urls"):
+        until = parse_date_loose(ref_date) or datetime.date.today()
+        lo = since_date or datetime.date(2000, 1, 1)
+        art_urls = adapter.article_urls(lo, until, fetch)
+        print(f"[{source}] {len(art_urls)} article URLs from sitemap")
+        for url in art_urls:
+            if len(results) >= runaway_cap:
+                break
+            ahtml = fetch(url)
+            rec = adapter.parse_article(ahtml, url) if ahtml else None
+            if not rec:
+                continue
+            results.append(rec)
+            print(f"  + {rec['date'] or '?':12} {rec['headline'][:55]}")
+            time.sleep(delay)
+        print(f"[{source}] collected {len(results)} articles")
+        if out:
+            save_to_json(results, out)
+        return results
 
     while page < adapter.start + max_pages and not stop:
         lhtml = fetch(adapter.listing_url(page))

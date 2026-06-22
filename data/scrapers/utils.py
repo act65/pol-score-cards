@@ -49,7 +49,9 @@ def make_request(url: str, delay_seconds: int = 1) -> requests.Response | None:
             'Accept-Language': 'en-NZ,en;q=0.9',
         }
         # print(f"Requesting {url}...") # Verbose, remove for production
-        response = requests.get(url, headers=headers, timeout=10)
+        # 25s, not 10s: some endpoints (e.g. The Spinoff's sitemap API under
+        # rapid sequential requests) are slow and were timing out, dropping data.
+        response = requests.get(url, headers=headers, timeout=25)
         response.raise_for_status()  # Raise an exception for bad status codes
         # print(f"Request to {url} successful.") # Verbose, remove for production
         return response
