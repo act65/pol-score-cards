@@ -228,6 +228,7 @@ def fetch_via_playwright(url: str, timeout_ms: int = 90000, headless: bool = Tru
         "--disable-blink-features=AutomationControlled",
         "--no-sandbox",
         "--disable-dev-shm-usage",
+        "--disable-gpu",  # GPU-less VMs crash in SwiftShader without this
     ]
     stealth = """
         Object.defineProperty(navigator, 'webdriver', {get: () => undefined});

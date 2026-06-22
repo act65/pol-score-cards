@@ -18,7 +18,11 @@ works today and how the `live_*.json` datasets were produced.
 | **Hansard** (`hansard.parliament.nz`) | SPA **+ Radware anti-bot wall** | 🌐 `hansard.py recent` — see below |
 | **Parliament press** (`parliament.nz/.../media-releases`) | **Radware anti-bot wall** | 🌐 `sources.py --source parliament` (browser) |
 | TOP (`opportunity.org.nz/news`) | server-rendered (NationBuilder) | ✅ `sources.py --source top` (verified) |
-| Te Pāti Māori | host unreachable from here | ⬜ not adapted |
+| **Te Pāti Māori** (`maoriparty.org.nz/panui`) | server-rendered (NationBuilder, card listing) | ✅ `sources.py --source tpm` (verified). NB the old `maoriparty.org` is now a squatted spam domain — the live site is `.org.nz`. |
+| **Newsroom** (`newsroom.co.nz/category/politics`) | server-rendered; date in `/YYYY/MM/DD/` URL | ✅ `sources.py --source newsroom` (verified) |
+| **The Spinoff** (`thespinoff.co.nz/politics`) | server-rendered; date in `/DD-MM-YYYY/` URL | ✅ `sources.py --source spinoff` (verified) |
+| Scoop (`scoop.co.nz`) | bot-walled (tiny response to a plain GET) | ⬜ not adapted |
+| NZ Herald / Stuff | paywall + ToS | ⬜ decision needed |
 
 ## `sources.py` — paginating, date-windowed scrapers
 

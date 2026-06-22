@@ -66,11 +66,18 @@ python extract_all.py "../data/data/*.json" all ./out      # batch
 python evaluate.py run all                                  # eval (writes eval_report.json)
 python -m pytest test_evaluate.py                           # offline metric tests (no key)
 
-# Dataset stats (run from data/, no key needed)
-cd data && python dataset_stats.py --out=DATASET_STATS.md
+# Dataset stats / coverage (run from data/, no key needed)
+cd data && python dataset_stats.py --out=DATASET_STATS.md       # per-source summary
+cd data && python corpus_report.py --out=CORPUS_REPORT.md       # per-politician coverage (uses mps_roster.json)
 
-# Scraping (run from data/)
-cd data && python scrapers/greens.py <output_dir> <N>
+# Scraping — unified driver (run from data/scrapers/); --since for the term window
+cd data/scrapers && python sources.py scrape --source tpm --since 2023-10-06 --out ../data/tpm.json
+# sources: greens national act top tpm labour nzfirst rnz newsroom spinoff parliament
+#          (browser-path, need Playwright: labour nzfirst rnz parliament; Hansard via hansard.py)
+
+# Full term backfill + publish (run on a VM with Playwright — see data/CLOUD_SCRAPING.md)
+cd data && python scripts/backfill.py --out corpus              # all in-scope sources, 2023-10-06 → 2026-11-07
+cd data && python publish_corpus.py --corpus corpus --repo you/nz-pol-statements --push   # → HuggingFace Dataset
 ```
 
 CLI tools (`extract.py`, `extract_all.py`, `evaluate.py`, `dataset_stats.py`, `scripts/scrape.py`) use [python-fire](https://github.com/google/python-fire) or simple argv, so args map to function parameters. Note `extract.py`/`evaluate.py` expose subcommands (`extract_file`, `run`) — name the subcommand first.

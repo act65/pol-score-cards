@@ -1,0 +1,61 @@
+#!/bin/bash
+# NZ Politician Scorecards — backfill VM startup script (rendered by Terraform).
+# Runs once on first boot: fetch code, build the scraper image, run the backfill,
+# package + (optionally) publish, ship the corpus to the bucket, power off.
+set -ux
+exec > /var/log/backfill.log 2>&1
+echo "=== backfill starting $(date -u) ==="
+
+BUCKET="${bucket}"
+SRC_OBJECT="${src_object}"
+
+# --- deps: docker + unzip (gsutil is preinstalled on Debian GCE images) --------
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get install -y docker.io unzip
+systemctl enable --now docker
+until docker info >/dev/null 2>&1; do sleep 2; done
+if ! command -v gsutil >/dev/null; then
+  apt-get install -y apt-transport-https ca-certificates gnupg curl
+  curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
+  echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" > /etc/apt/sources.list.d/google-cloud-sdk.list
+  apt-get update && apt-get install -y google-cloud-cli
+fi
+
+# --- fetch + unpack the scraper source -----------------------------------------
+mkdir -p /opt/scraper && cd /opt/scraper
+gsutil cp "gs://$BUCKET/$SRC_OBJECT" src.zip
+unzip -o src.zip
+
+# --- build image + run backfill (a single source failing must not abort) -------
+docker build -f Dockerfile.scraper -t pol-scraper .
+mkdir -p /opt/scraper/corpus
+
+ONLY_ARG=""
+[ -n "${only}" ] && ONLY_ARG="--only ${only}"
+SKIP_ARG=""
+[ -n "${skip}" ] && SKIP_ARG="--skip ${skip}"
+
+docker run --rm -v /opt/scraper/corpus:/data/corpus pol-scraper \
+  python scripts/backfill.py --out /data/corpus \
+  --since ${since} --until ${until} --delay ${delay} --hansard_max ${hansard_max} \
+  $ONLY_ARG $SKIP_ARG
+
+# --- package: manifest + dataset card (+ HuggingFace push if configured) -------
+HF_ARG=""
+HF_ENV=""
+if [ -n "${hf_repo}" ] && [ -n "${hf_token}" ]; then
+  HF_ARG="--repo ${hf_repo} --push"
+  HF_ENV="-e HF_TOKEN=${hf_token}"
+fi
+docker run --rm $HF_ENV -v /opt/scraper/corpus:/data/corpus pol-scraper \
+  python publish_corpus.py --corpus /data/corpus --since ${since} --until ${until} $HF_ARG
+
+# --- ship the corpus + logs back to the bucket ---------------------------------
+gsutil -m rsync -r /opt/scraper/corpus "gs://$BUCKET/corpus"
+echo "=== backfill done $(date -u) ==="
+gsutil cp /var/log/backfill.log "gs://$BUCKET/backfill.log"
+echo done | gsutil cp - "gs://$BUCKET/DONE"
+
+# --- power off (cheap to leave stopped; `terraform destroy` removes everything) -
+poweroff

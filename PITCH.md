@@ -59,10 +59,5 @@ things need investment:
 - **Collaboration** — especially with a newsroom/data desk or researchers — on
   methodology and editorial standards.
 
-## Try it
-
-**Live: <https://nz-politician-scorecards.onrender.com/>** — click any score to see
-the statements behind it. The site also runs locally in two commands on committed
-data (no API key needed); source, methodology, and evaluation are all open.
-
-*Contact: [your name / email here]*
+*Source, methodology, and evaluation are all open; the site also runs locally in
+two commands (no API key needed). **Contact: Alexander Telfar — te1farac@gmail.com***

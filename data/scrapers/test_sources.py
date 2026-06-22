@@ -97,9 +97,58 @@ def test_national_listing_and_article():
     assert "Labour challenged on costs" not in rec["content"].split("\n")[0] or True  # headline dropped from body
 
 
+TPM_LISTING = (
+    "<html><body>"
+    "<div class='card overflow-hidden layout-blog_post has-image--true'>"
+    "<a href='/government_hid_its_evidence'>Government Hid Its Evidence "
+    "Government Hid Its Evidence - Click to read more 11 Jun 2026 "
+    "The hearing was delayed until June 30, 2026 said the party.</a>"
+    "<div class='card-published-date ml-2'> 11 Jun 2026 </div></div>"
+    "</body></html>")
+
+TPM_ARTICLE = (
+    "<html><head><meta property='og:title' content='Government Hid Its Own Evidence on LNG'></head>"
+    "<body><p>The Government concealed its own advice on the proposed LNG import terminal, the party says.</p>"
+    "<p>© 2026 Te Pāti Māori Authorised by the Party Secretary.</p>"
+    "</body></html>")
+
+
+def test_tpm_listing_and_article():
+    t = sources.ADAPTERS["tpm"]
+    urls = t.parse_listing(TPM_LISTING)
+    assert urls == ["https://www.maoriparty.org.nz/government_hid_its_evidence"]
+    rec = t.parse_article(TPM_ARTICLE, urls[0])
+    assert rec["headline"] == "Government Hid Its Own Evidence on LNG"   # og:title, not the messy anchor
+    assert rec["date"] == "2026-06-11"          # the card date, NOT the excerpt's "June 30, 2026"
+    assert "LNG import terminal" in rec["content"]
+    assert "Authorised by" not in rec["content"]
+
+
+def test_date_from_url():
+    assert sources._date_from_url("https://newsroom.co.nz/2026/06/22/foo-bar/") == "2026-06-22"
+    assert sources._date_from_url("https://thespinoff.co.nz/politics/18-06-2026/baz") == "2026-06-18"
+    assert sources._date_from_url("https://x.nz/news/no-date-here") == ""
+
+
+SPINOFF_ARTICLE = (
+    "<html><head><title>Nicola Willis’s magic money tree | The Spinoff</title>"
+    "<meta property='og:title' content='Nicola Willis’s magic money tree'></head>"
+    "<body><h1>The Spinoff</h1>"   # logo h1 — must NOT win over og:title
+    "<p>" + ("A substantial paragraph about fiscal policy and the books. " * 2) + "</p>"
+    "</body></html>")
+
+
+def test_generic_headline_skips_site_brand():
+    a = sources.ADAPTERS["spinoff"]
+    rec = a.parse_article(SPINOFF_ARTICLE, "https://thespinoff.co.nz/politics/19-06-2026/magic-money-tree")
+    assert rec["headline"] == "Nicola Willis’s magic money tree"   # og:title beats the "The Spinoff" logo h1
+    assert rec["date"] == "2026-06-19"          # parsed from the DD-MM-YYYY URL
+    assert "fiscal policy" in rec["content"]
+
+
 def test_source_browser_flags():
     # HTTP-scrapeable (verified live)
-    for s in ("greens", "national", "act", "top"):
+    for s in ("greens", "national", "act", "top", "tpm", "newsroom", "spinoff"):
         assert sources.ADAPTERS[s].needs_browser is False, s
     # JS-rendered / Radware-walled -> browser path
     for s in ("rnz", "parliament", "labour", "nzfirst"):

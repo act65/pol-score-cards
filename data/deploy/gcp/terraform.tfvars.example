@@ -1,0 +1,17 @@
+# Copy to terraform.tfvars and fill in. Only `project` is required.
+project = "pol-score-cards"
+
+# Optional overrides (defaults shown):
+# region       = "australia-southeast1"      # Sydney, closest to NZ
+# zone         = "australia-southeast1-a"
+# machine_type = "e2-standard-2"
+# since        = "2023-10-06"
+# until        = "2026-11-07"
+# delay        = 1.0
+# hansard_max  = 3000                          # raise for fuller Hansard coverage
+# skip         = ""                            # e.g. "hansard,parliament" if Radware blocks headless
+
+# Optional: push straight to a public HuggingFace dataset when done.
+# (Leave blank to just collect the corpus from the bucket and push it yourself.)
+# hf_repo  = "your-hf-username/nz-pol-statements"
+# hf_token = "hf_xxx"                          # a write token; stored in VM metadata
