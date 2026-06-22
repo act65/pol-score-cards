@@ -55,6 +55,23 @@ def _to_iso(text: str) -> str:
     return f"{year}-{month:02d}-{int(day):02d}"
 
 
+# Some sites carry the publish date only in the article URL (Newsroom uses
+# /YYYY/MM/DD/slug, The Spinoff uses /section/DD-MM-YYYY/slug). Used as a
+# last-resort fallback so the date window still works for them.
+_URL_YMD = re.compile(r"/(20\d{2})/(\d{2})/(\d{2})/")
+_URL_DMY = re.compile(r"/(\d{2})-(\d{2})-(20\d{2})/")
+
+
+def _date_from_url(url: str) -> str:
+    m = _URL_YMD.search(url)
+    if m:
+        return f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
+    m = _URL_DMY.search(url)
+    if m:
+        return f"{m.group(3)}-{m.group(2)}-{m.group(1)}"
+    return ""
+
+
 def _http_fetch(url: str) -> str | None:
     resp = make_request(url, delay_seconds=0)
     if resp is None:
@@ -68,7 +85,13 @@ def _http_fetch(url: str) -> str | None:
 
 def _browser_fetch(url: str) -> str | None:
     import hansard  # reuse the Radware/SPA-aware Playwright fetcher
-    return hansard.fetch_via_playwright(url)
+    # A single page that crashes the browser (e.g. a Chromium segfault) must not
+    # abort the whole source — swallow it and move on.
+    try:
+        return hansard.fetch_via_playwright(url)
+    except Exception as e:  # noqa: BLE001
+        print(f"  [browser] failed {url}: {e}")
+        return None
 
 
 # --------------------------------------------------------------------------
@@ -120,10 +143,17 @@ class NationalAdapter:
     def listing_url(self, page):
         return f"{self.base}/news?page={page}"
 
+    # Any single-segment /news/<slug> is an article. National has used several
+    # slug schemes over time — 6-digit (260529-foo), 8-digit (20260521-foo) and
+    # bare (boost-for-law-and-order) — so we must NOT key off the date prefix, or
+    # whole pages of older articles look empty. Excludes /news, /news?page=, and
+    # nested paths like /news/category/x.
+    _article_href = re.compile(r"^/news/[^/?#]+$")
+
     def parse_listing(self, html):
         soup = BeautifulSoup(html, "html.parser")
         seen, urls = set(), []
-        for a in soup.find_all("a", href=re.compile(r"^/news/\d{6}-")):
+        for a in soup.find_all("a", href=self._article_href):
             href = a["href"]
             if href not in seen:
                 seen.add(href)
@@ -208,21 +238,83 @@ class TOPAdapter:
                 "content": content, "url": url}
 
 
+class NationBuilderAdapter:
+    """NationBuilder blog with card-style listings (e.g. Te Pāti Māori's
+    `/panui`). Like TOP, the publish date lives on the *listing* (each
+    `.layout-blog_post` card carries it) and articles are top-level slugs whose
+    own pages don't reliably show a date — so we carry date + title from the
+    listing and read the body from the article. Paginates with `?page=N`."""
+
+    needs_browser = False
+    start = 1
+
+    def __init__(self, name, base, listing_path):
+        self.name = name
+        self.base = base
+        self.listing_path = listing_path
+        self._meta = {}  # url -> (iso_date, title)
+
+    def listing_url(self, page):
+        sep = "&" if "?" in self.listing_path else "?"
+        return f"{self.base}{self.listing_path}{sep}page={page}"
+
+    def _abs(self, href):
+        return href if href.startswith("http") else self.base + ("" if href.startswith("/") else "/") + href
+
+    def parse_listing(self, html):
+        soup = BeautifulSoup(html, "html.parser")
+        urls = []
+        for card in soup.find_all(class_=re.compile(r"layout-blog_post")):
+            a = card.find("a", href=True)
+            if not a:
+                continue
+            url = self._abs(a["href"]).split("#")[0].split("?")[0]
+            # date from the card's own date element (its body text can mention
+            # other dates, e.g. an excerpt's "...until June 30, 2026").
+            de = card.find(class_=re.compile(r"card-published-date|card-date"))
+            date = _to_iso(de.get_text(" ", strip=True) if de else card.get_text(" ", strip=True))
+            self._meta[url] = date if date and date[0].isdigit() else ""
+            urls.append(url)
+        return urls
+
+    def parse_article(self, html, url):
+        soup = BeautifulSoup(html, "html.parser")
+        date = self._meta.get(url, "")
+        # The listing anchor wraps the whole card (title repeated + excerpt), so
+        # take the clean title from the article page's og:title.
+        og = soup.find("meta", property="og:title")
+        title = og["content"].strip() if og and og.get("content") else ""
+        paras = [p.get_text(" ", strip=True) for p in soup.find_all("p")]
+        paras = [p for p in paras if len(p) > 40 and not p.lstrip().startswith("©")
+                 and "Authorised by" not in p]
+        content = format_text("\n".join(paras))
+        if not content:
+            return None
+        return {"headline": title, "date": date, "author": "",
+                "content": content, "url": url}
+
+
 class GenericAdapter:
     """Configurable adapter for sites without bespoke selectors. Uses og:title (or
     <h1>) for the headline and the page's substantial <p>s for the body — robust
     to sites with unstable/auto-generated classes (e.g. NationBuilder, Framer).
     `needs_browser=True` routes through Playwright (JS-rendered / Radware-walled)."""
 
-    def __init__(self, name, base, listing_path, link_re, needs_browser=False, start=1):
+    def __init__(self, name, base, listing_path, link_re, needs_browser=False,
+                 start=1, page_fmt=None):
         self.name = name
         self.base = base
         self.listing_path = listing_path
         self.link_re = re.compile(link_re)
         self.needs_browser = needs_browser
         self.start = start
+        # Some sites paginate as a path segment (WordPress: /section/page/2/)
+        # rather than a ?page= query. `page_fmt` is a path template taking {n}.
+        self.page_fmt = page_fmt
 
     def listing_url(self, page):
+        if self.page_fmt and page > self.start:
+            return f"{self.base}{self.page_fmt.format(n=page)}"
         sep = "&" if "?" in self.listing_path else "?"
         return f"{self.base}{self.listing_path}{sep}page={page}"
 
@@ -245,17 +337,23 @@ class GenericAdapter:
 
     def parse_article(self, html, url):
         soup = BeautifulSoup(html, "html.parser")
-        # Prefer a real <h1> article title; fall back to og:title (which on some
-        # sites — e.g. ACT — is just the site name), then <title>.
-        h1 = soup.find("h1")
+        # Headline is the trickiest cross-site bit: the first <h1> is sometimes a
+        # logo ("The Spinoff") and og:title is sometimes just the site name (ACT).
+        # So derive the site "brand" from the <title> suffix and pick the first
+        # candidate — og:title, cleaned <title>, <h1> — that isn't the brand.
+        title_tag = soup.title.get_text(strip=True) if soup.title else ""
+        brand, title_main = "", title_tag
+        for sep in (" | ", " — ", " - "):
+            if sep in title_tag:
+                title_main, brand = (s.strip() for s in title_tag.rsplit(sep, 1))
+                break
         og = soup.find("meta", property="og:title")
-        if h1 and len(h1.get_text(strip=True)) > 10:
-            headline = h1.get_text(strip=True)
-        elif og and og.get("content"):
-            headline = og["content"]
-        else:
-            headline = soup.title.get_text(strip=True) if soup.title else ""
-        headline = headline.rsplit(" | ", 1)[0].strip()  # drop " | RNZ"-style suffix
+        og_title = og["content"].strip() if og and og.get("content") else ""
+        h1 = soup.find("h1")
+        h1_title = h1.get_text(strip=True) if h1 else ""
+        candidates = [c.rsplit(" | ", 1)[0].strip() for c in (og_title, title_main, h1_title)]
+        headline = next((c for c in candidates if c and len(c) > 10 and c != brand),
+                        title_main or og_title or h1_title)
 
         # Date, most-reliable first: <time datetime>, then meta, then a date in
         # the *headline's* neighbourhood (NOT a page-wide text search, which can
@@ -274,6 +372,8 @@ class GenericAdapter:
             dm = _DATE_TEXT.search(scope.get_text(" ", strip=True)) or \
                  _DATE_TEXT2.search(scope.get_text(" ", strip=True))
             date = _to_iso(dm.group(0)) if dm else ""
+        if not date:
+            date = _date_from_url(url)  # Newsroom/Spinoff carry the date in the URL
 
         paras = [p.get_text(" ", strip=True) for p in soup.find_all("p")]
         content = format_text("\n".join(p for p in paras if len(p) > 40 and p != headline))
@@ -289,6 +389,17 @@ ADAPTERS = {a.name: a for a in (
     GenericAdapter("act", "https://www.act.org.nz", "/news", r"/news/[^/?#]+$"),
     # TOP — NationBuilder; bespoke (date on listing, slug URLs).
     TOPAdapter(),
+    # Te Pāti Māori (maoriparty.org.nz/panui) — NationBuilder, card-style listing.
+    NationBuilderAdapter("tpm", "https://www.maoriparty.org.nz", "/panui"),
+    # News sources beyond RNZ. Server-rendered; date lives in the article URL.
+    # Newsroom: /YYYY/MM/DD/slug, WordPress /page/N pagination.
+    GenericAdapter("newsroom", "https://newsroom.co.nz", "/category/politics",
+                   r"/20\d{2}/\d{2}/\d{2}/[^/]+/?$",
+                   page_fmt="/category/politics/page/{n}/"),
+    # The Spinoff: /politics/DD-MM-YYYY/slug, WordPress /page/N pagination.
+    GenericAdapter("spinoff", "https://thespinoff.co.nz", "/politics",
+                   r"/politics/\d{2}-\d{2}-20\d{2}/[^/]+/?$",
+                   page_fmt="/politics/page/{n}/"),
     # Labour & NZ First — listings are JS-rendered, so browser path.
     GenericAdapter("labour", "https://www.labour.org.nz", "/news", r"/news/[^/?#]+$", needs_browser=True),
     GenericAdapter("nzfirst", "https://www.nzfirst.nz", "/news", r"/(news|column)/[^/?#]+$", needs_browser=True),
@@ -301,29 +412,48 @@ ADAPTERS = {a.name: a for a in (
 
 
 def scrape(source, months=3, out=None, max=None, ref_date=None, delay=1.0,
-           browser=False, max_pages=200):
+           browser=False, max_pages=200, since=None, max_empty_pages=2):
     """Paginate `source` newest-first, keeping articles within `months` (or up to
-    `max`), writing the standard schema to `out`."""
+    `max`), writing the standard schema to `out`.
+
+    `since` (ISO 'YYYY-MM-DD') gives an explicit lower bound and takes precedence
+    over `months` — use it for the fixed term window, e.g. --since 2023-10-06.
+
+    `max_empty_pages`: how many consecutive pages with no new links to tolerate
+    before stopping. >1 lets us skip a gap page (e.g. National's listing has an
+    empty page 4 but real articles on page 5+); a looping site (same links every
+    page) still stops after this many duplicates."""
     if source not in ADAPTERS:
         raise SystemExit(f"unknown source '{source}'. Choose: {', '.join(ADAPTERS)}")
     adapter = ADAPTERS[source]
     fetch = _browser_fetch if (browser or adapter.needs_browser) else _http_fetch
+    since_date = parse_date_loose(since) if since else None
     results, page, stop = [], adapter.start, False
     # Runaway guard: if a date window is requested but we never see an
     # out-of-window article (e.g. dates aren't parsing), don't crawl the whole
-    # archive — cap the haul unless the caller set an explicit --max.
-    runaway_cap = int(max) if max else (1000 if not months else 400)
+    # archive — cap the haul unless the caller set an explicit --max. A --since
+    # backfill can legitimately be large, so its guard is higher.
+    runaway_cap = int(max) if max else (5000 if since_date else 1000 if not months else 400)
     n_undated = 0
     seen_urls = set()
+    empty_streak = 0
 
     while page < adapter.start + max_pages and not stop:
         lhtml = fetch(adapter.listing_url(page))
         urls = [u for u in (adapter.parse_listing(lhtml) if lhtml else []) if u not in seen_urls]
         if not urls:
-            # No new links — pagination is exhausted or doesn't advance (some sites,
-            # e.g. ACT, return the same page for every ?page=N). Stop rather than loop.
-            print(f"[{source}] page {page}: no new links — stopping")
-            break
+            # No new links: the page is exhausted, a gap, or a site that returns
+            # the same links for every ?page=N (e.g. ACT). Tolerate a few such
+            # pages so we can step over a gap, but stop if it persists.
+            empty_streak += 1
+            print(f"[{source}] page {page}: no new links "
+                  f"(empty {empty_streak}/{max_empty_pages})")
+            if empty_streak >= max_empty_pages:
+                print(f"[{source}] stopping after {empty_streak} empty page(s)")
+                break
+            page += 1
+            continue
+        empty_streak = 0
         seen_urls.update(urls)
         print(f"[{source}] page {page}: {len(urls)} new links")
         for url in urls:
@@ -334,7 +464,9 @@ def scrape(source, months=3, out=None, max=None, ref_date=None, delay=1.0,
             d = parse_date_loose(rec.get("date"))
             if not d:
                 n_undated += 1
-            if months and d and not is_recent(rec["date"], months, ref_date):
+            out_of_window = (d < since_date) if (since_date and d) else \
+                (months and d and not is_recent(rec["date"], months, ref_date))
+            if out_of_window:
                 stop = True  # newest-first: first out-of-window article ends it
                 break
             results.append(rec)
@@ -355,5 +487,13 @@ def scrape(source, months=3, out=None, max=None, ref_date=None, delay=1.0,
     return results
 
 
+def _cli(source, months=3, out=None, max=None, ref_date=None, delay=1.0,
+         browser=False, max_pages=200, since=None, max_empty_pages=2):
+    """CLI entry. Wraps scrape() and returns None so python-fire doesn't dump the
+    whole article list to stdout (scrape already prints concise progress)."""
+    scrape(source, months=months, out=out, max=max, ref_date=ref_date, delay=delay,
+           browser=browser, max_pages=max_pages, since=since, max_empty_pages=max_empty_pages)
+
+
 if __name__ == "__main__":
-    fire.Fire({"scrape": scrape})
+    fire.Fire({"scrape": _cli})

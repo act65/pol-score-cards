@@ -1,1 +1,6 @@
+# Scraped article dumps are large + regenerable — keep them out of git.
 *.json
+# ...but the small committed configs/reports are tracked.
+!mps_roster.json
+corpus/
+corpus_relevant/

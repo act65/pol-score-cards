@@ -1,63 +1,138 @@
-data
-- scrape photos from https://www.parliament.nz/en/mps-and-electorates/members-of-parliament/
-- handsard! (supposedly an api is comming later this year)
-- a schema for the data
-- storage of raw scraped data in the cloud? (kind of a useful project for others? allow user pays downloads?)
+# TODOs — roadmap to the scaled version
 
-llm parsing / analysis
-- robust test sets for all 
-- no overlap between test set and prompt
-- plot accuracy utils
-- hyperparam tests, different models, different approaches?!
-- few-shot ablation: does each prompt's `Examples` block actually improve scoring
-  accuracy? The combined extractor strips them (extract._condense_prompt) to save
-  tokens; the blocks are preserved in prompts/fewshot_examples.md (and still inline
-  in prompts/*.txt). Test full vs condensed prompt on the scoring testsets via
-  evaluate.py. NB watch for leakage: some prompt examples may overlap the testsets.
-- set up pipeline to extract data
+GOAL (post-MVP): the website fully backed by real articles spanning the
+**2023-10-06 → 2026-11-07** parliamentary term, over **all politicians currently
+in Parliament** — a principled, evidence-based scoring pipeline ready for the
+November 2026 election.
 
-  -- sample / selection bias (the score is mean of statements the LLM CHOSE to
-     extract, not a representative sample) --
-- we evaluate SCORING (pre-isolated statements vs gold) but never SELECTION (which
-  statements get pulled). Build a selection eval: hand-label all attribute-relevant
-  statements in a few articles, measure extractor recall/precision.
-- missing-middle/salience bias: LLM extracts notable statements, so mean(extracted)
-  != mean(all said). Score-all-then-sample to estimate the skew.
-- source-mix confound: press releases (curated) vs Hansard (adversarial) vs RNZ
-  (newsworthy) systematically shift scores -> cross-politician comparison partly
-  measures WHERE we have data. Report/normalise by source mix.
-- separate frequency from severity (current mean-of-flagged conflates them); needs
-  the full denominator (rate x severity).
-- surface per-attribute n + confidence band; discount/flag thin (n=1) scores.
+Work is split into four tracks. We are currently working through **A**.
 
-  -- attribute-specific methodologies (food for thought, not implementing now) --
-- promises/predictions/factual claims (Strength, Divination, Veracity) can't be
-  scored from text alone -> build a longitudinal CLAIMS LEDGER instead. Extraction
-  shifts from "score" to "extract + structure": testable proposition, type, date
-  made, falsification condition, expected resolution date. A separate verification
-  pass (human review now, automated later) resolves each true/false/partial with
-  evidence. Score = fraction of RESOLVED claims that held true (real ground truth,
-  not LLM guess). Also defuses the "calling X a liar" legal worry (evidenced
-  verdict, not assertion). Seeds already exist: integrity.jsonl (contains_claim),
-  evasion.jsonl, promises.txt.
-- authenticity = consistency between RHETORIC and RECORD, not a per-statement score.
-  Build two corpora per politician (public rhetoric vs parliamentary voting/division
-  records + Hansard stances) and detect contradictions on the same topic. Needs
-  Parliament division/voting data linked by topic on top of Hansard text.
+================================================================================
+## A) The raw dataset  (scrape → understand → host)
+================================================================================
 
-game
-- how to have a two player game via the inet w flask? (two different computers each seeing different things but interacting in the same game instance)
-- move to hp bars
-- use arrows to show who's attacking who
-- get (small) deck, only get to draw cards if you discard
-- if a card dies, keep cards on playing field to show attack actions (then move to graveyard)
-- could use blockchain with the cards to make them actual owned assets which can be traded.
-- rarity of cards prop to exp(sum of attibutes)
-- discarding.
+Scrapers (all run via `data/scrapers/sources.py scrape --source X`):
+- [x] Greens, National, ACT, TOP        — server-rendered (requests), verified
+- [x] Labour, NZ First                  — Playwright (JS-rendered listings)
+- [x] RNZ, Parliament press             — Playwright (JS / Radware wall)
+- [x] Hansard (`hansard.py`)            — parse layer tested; run via Playwright
+- [x] Te Pāti Māori (maoriparty.org.nz/panui) — adapter added, verified + tested.
+      (NB the old maoriparty.org is now squatted spam; live site is .org.nz.)
+- [x] News beyond RNZ: Newsroom + The Spinoff — added, verified, unit-tested.
+      DECIDED scope: RNZ + Newsroom + Spinoff only (no Herald/Stuff: paywall+ToS;
+      Scoop deferred — bot-walled).
+- [ ] Scraper refinement: Newsroom/Spinoff bodies include comment-section +
+      subscribe boilerplate (extract.py trim_text strips the worst downstream, but
+      reader comments can cause false name attributions). Truncate body at the
+      comment/subscribe markers per site.
+- [ ] Run the full date-window pull (2023-10-06 → 2026-11-07) for every in-scope
+      source. Tooling READY: scripts/backfill.py (sources.py now takes --since),
+      runs on a VM via Dockerfile.scraper (see CLOUD_SCRAPING.md). DECIDED: small
+      VM (Playwright for labour/nzfirst/rnz/parliament/hansard).
 
-site
-- potential legal issues if we are publicly calling XXX a liar?
+Understanding the raw dataset (no LLM, no network):
+- [x] `dataset_stats.py` — per-source article/word/date summary.
+- [x] `corpus_report.py` — per-politician article counts, source diversity, date
+      coverage + noisy-surname flag, vs the roster (`mps_roster.json`).
+- [ ] A canonical, complete roster of the 123 sitting MPs (extend the KNOWN dict
+      in build_site_data.py → regenerate mps_roster.json) to measure "all MPs"
+      coverage. Currently 86 — derived from existing data, so it can't yet reveal
+      true gaps; complete it from the Parliament members list.
+- [ ] MP portrait scrape from parliament.nz/.../members-of-parliament/.
 
-other
-- 
-- you could even assign "classes" to politicians based on their primary focus or style (e.g., "The Lawmaker," "The Orator," "The Negotiator").
+Hosting the raw data for others — DECIDED: HuggingFace Datasets:
+- [x] `publish_corpus.py` — packages the corpus, writes a versioned manifest
+      (per-source counts, date range, sha256) + dataset card, pushes to a public
+      HF Dataset (CC-BY-4.0). Push behind --push (needs huggingface_hub + token).
+
+Cloud compute for scraping — DECIDED: small VM:
+- [x] `Dockerfile.scraper` (Playwright base image) + CLOUD_SCRAPING.md runbook;
+      scripts/backfill.py orchestrates all sources over the window.
+- [ ] (Later) GitHub Actions cron for weekly incremental top-ups once backfilled.
+
+Video sources — DECIDED: defer, spike next (after the article corpus is flowing):
+- [ ] Parliament TV / party YouTube channels / select-committee video → transcripts
+      → same {headline,date,author,content,url} schema, straight into the pipeline.
+- [ ] Transcript method: YouTube auto-captions (free) vs Whisper (compute cost).
+      Speaker attribution is the hard part — map utterances to MPs.
+
+================================================================================
+## B) Attribute extraction  (be evidence-based about it)
+================================================================================
+
+Make extraction strategy choices based on measured performance AND cost
+($ on LLM use). Stripping redundant text, fewer/shorter prompts, combined calls
+are all levers to evaluate — not assume.
+
+Test sets & evaluation:
+- [ ] Robust, human-labelled test sets for ALL nine attributes (we only have
+      civility + veracity scoring sets wired into evaluate.py).
+- [ ] No overlap between test-set statements and prompt few-shot examples.
+- [ ] Plot-accuracy utils; report MAE/RMSE/Pearson + cost per strategy.
+- [ ] Hyperparameter / model / approach sweep (Opus vs Haiku vs Sonnet; combined
+      vs per-attribute; with vs without few-shot; trimmed vs full input).
+- [ ] Few-shot ablation: does each prompt's `Examples` block actually improve
+      scoring accuracy? Combined extractor strips them (extract._condense_prompt)
+      to save tokens; blocks preserved in prompts/fewshot_examples.md (+ inline in
+      prompts/*.txt). Test full vs condensed on the scoring testsets. NB leakage:
+      some prompt examples may overlap the testsets.
+
+Sampling / selection bias (the score is the mean of statements the LLM CHOSE to
+extract, not a representative sample):
+- [ ] We evaluate SCORING (pre-isolated statements vs gold) but never SELECTION
+      (which statements get pulled). Build a selection eval: hand-label all
+      attribute-relevant statements in a few articles, measure extractor
+      recall/precision.
+- [ ] Missing-middle/salience bias: LLM extracts notable statements, so
+      mean(extracted) != mean(all said). Score-all-then-sample to estimate skew.
+- [ ] Source-mix confound: press releases (curated) vs Hansard (adversarial) vs
+      RNZ (newsworthy) systematically shift scores → cross-politician comparison
+      partly measures WHERE we have data. Report/normalise by source mix.
+- [ ] Separate frequency from severity (current mean-of-flagged conflates them);
+      needs the full denominator (rate × severity).
+- [ ] Surface per-attribute n + confidence band; discount/flag thin (n=1) scores.
+
+Attribute-specific methodologies (food for thought):
+- [ ] Promises/predictions/factual claims (Strength, Divination, Veracity) can't
+      be scored from text alone → build a longitudinal CLAIMS LEDGER: extract +
+      structure (testable proposition, type, date made, falsification condition,
+      expected resolution date). A separate verification pass (human now, automated
+      later) resolves each true/false/partial with evidence. Score = fraction of
+      RESOLVED claims that held true (real ground truth, not LLM guess). Also
+      defuses the "calling X a liar" legal worry (evidenced verdict, not assertion).
+      Seeds: integrity.jsonl (contains_claim), evasion.jsonl, promises.txt.
+- [ ] Authenticity = consistency between RHETORIC and RECORD, not a per-statement
+      score. Build two corpora per politician (public rhetoric vs parliamentary
+      voting/division records + Hansard stances) and detect contradictions on the
+      same topic. Needs Parliament division/voting data linked by topic.
+
+================================================================================
+## C) The site
+================================================================================
+- [ ] Single-politician page: one MP, all nine attributes, all their evidence,
+      coverage/confidence, trend over time.
+- [ ] Potential legal issues if we are publicly calling XXX a liar? (mitigated by
+      the claims-ledger "evidenced verdict" approach above.)
+- [ ] "Classes" for politicians by primary focus/style (The Lawmaker, The Orator,
+      The Negotiator, …).
+
+================================================================================
+## D) The game
+================================================================================
+- [ ] Online demo of the game (currently a local Flask prototype).
+- [ ] Two-player over the internet via Flask (two clients, one game instance).
+- [ ] HP bars; arrows showing who's attacking whom.
+- [ ] Small deck; only draw on discard; keep dead cards on field then → graveyard.
+- [ ] Rarity ∝ exp(sum of attributes) (currently geometric mean + exp buckets).
+- [ ] (Speculative) blockchain-owned, tradable cards.
+
+================================================================================
+## Decisions made (2026-06-22)
+================================================================================
+1. Data hosting: **HuggingFace Datasets** (public, free, versioned).
+2. Scrape compute: **small VM** (Docker, Playwright) for the historical backfill;
+   GitHub Actions cron for incremental top-ups later.
+3. Video: **defer** — spike right after the article corpus is flowing.
+4. News scope: **RNZ + Newsroom + The Spinoff** only (no Herald/Stuff; Scoop later).
+
+Next concrete step in A: run scripts/backfill.py on a VM, then publish_corpus.py.

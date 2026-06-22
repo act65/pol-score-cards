@@ -1,0 +1,30 @@
+# Scraper image for the historical backfill on a VM.
+# Built on Microsoft's Playwright image, which already ships Chromium + all the
+# system libs the browser-path sources (labour, nzfirst, rnz, parliament,
+# hansard) need. The plain-HTTP sources work here too.
+#
+#   docker build -f Dockerfile.scraper -t pol-scraper .
+#   docker run --rm -v "$PWD/corpus:/data/corpus" pol-scraper \
+#       python scripts/backfill.py --out /data/corpus
+#
+# See CLOUD_SCRAPING.md for the full VM runbook.
+FROM mcr.microsoft.com/playwright/python:v1.49.0-jammy
+
+WORKDIR /data
+COPY requirements.txt .
+# Pin Playwright to the SAME version as the base image tag (v1.49.0). The image
+# ships Chromium build 1148 + matching system libs for 1.49; an unpinned install
+# pulls Playwright 1.60 + Chromium 1223, which segfaults against jammy's libs.
+# huggingface_hub lets the same image also run publish_corpus.py --push.
+RUN pip install --no-cache-dir -r requirements.txt playwright==1.49.0 huggingface_hub
+
+# Ensure the matching Chromium is present (no-op if the base image already has it).
+RUN playwright install chromium
+
+COPY scrapers ./scrapers
+COPY scripts ./scripts
+COPY mps_roster.json corpus_report.py dataset_stats.py publish_corpus.py ./
+
+# Default: full-term backfill of every in-scope source into /data/corpus
+# (mount a volume there to keep the output).
+CMD ["python", "scripts/backfill.py", "--out", "/data/corpus"]
