@@ -8,6 +8,35 @@ November 2026 election.
 Work is split into four tracks. We are currently working through **A**.
 
 ================================================================================
+## v2.0 — Hansard-only, all current MPs  (in progress, 2026-06-28)
+================================================================================
+Decision: v2.0 scores ALL current MPs from **Hansard only** (removes the
+source-mix confound). Pipeline built & validated end-to-end:
+- [x] Hansard coverage verified complete — 190 sitting days, 54th term
+      (`data/hansard_coverage.py`, `HANSARD_COVERAGE.md`). Flagged gaps were all
+      genuine non-sitting days (live re-render).
+- [x] Efficiency: `hansard_prep.py` (speaker-attributed blocks, −18% procedural),
+      prompt caching, and the subscription-path win — `claude -p --json-schema`
+      gives structured output (closes the API quality gap); each CLI call carries
+      ~20k of Claude Code overhead, so efficiency = fewer/bigger windows +
+      parallelism (`extract_hansard.py --window_tokens --workers`).
+- [x] `prompts/strength.txt` added (9/9 attributes; Strength is an LLM-knowledge
+      guess for now — evidence-based verification deferred to v3.0).
+- [x] 2a stats (`hansard_dataset_stats.py`), 2b bias mitigation
+      (`bias_adjust.py` — empirical-Bayes shrinkage + n/CI/confidence), 2c bundler
+      (`build_v2_dataset.py` → site_data_v2/ + manifest).
+- [~] 1c extraction RUNNING: 3-month pilot (Opus 4.8, subscription) →
+      `attribute-extraction/hansard_scores_3mo.jsonl`. Then expand 6mo → full term.
+- [ ] ROSTER RECONCILIATION (blocks "all current MPs"): `mps_roster.json` is a
+      Wikipedia snapshot that misses mid-term churn. Departed (drop): David Parker,
+      James Shaw, Grant Robertson, Kelvin Davis, Tanya Unkovich (resigned 2025),
+      Adrian Rurawhe (resigned 2026). Current replacements (add, verify party):
+      Georgie Dansey (Lab, ←Rurawhe), Dan Rosewarne (Lab), Laura Trask (ACT),
+      Benjamin Doyle (Grn), Mike Davidson (Grn), Takutai Tarsh Kemp (TPM). Needs a
+      "current = sitting as of <date>" policy decision + per-MP date verification.
+- [ ] Upload site_data_v2 dataset (HuggingFace) + wire site/ to consume it.
+
+================================================================================
 ## A) The raw dataset  (scrape → understand → host)
 ================================================================================
 

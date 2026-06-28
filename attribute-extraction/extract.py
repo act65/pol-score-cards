@@ -152,18 +152,37 @@ def _condense_prompt(text: str) -> str:
     return "\n".join(l.rstrip() for l in text.strip().splitlines() if l.strip())
 
 
-def build_combined_system(attrs: List[str], prompts_dir: Optional[str] = None) -> str:
-    """One system prompt covering every attribute's (condensed) rubric."""
+def build_combined_system(attrs: List[str], prompts_dir: Optional[str] = None,
+                          examples: bool = True) -> str:
+    """One system prompt covering every attribute's rubric.
+
+    With ``examples`` (default), each attribute's full prompt — including its
+    few-shot ``Examples`` block — is kept. The combined system prompt is identical
+    across every call, so with prompt caching enabled (see ``extract_all_attributes``)
+    it is billed once and then read at the ~10% cache rate: a richer, example-laden
+    prompt is therefore almost free per call on the API backend. Set
+    ``examples=False`` to strip the few-shot blocks (the old token-saving behaviour,
+    relevant only when caching is unavailable, e.g. the claude_cli backend).
+    """
+    render = (lambda t: t) if examples else _condense_prompt
     blocks = []
     for name in attrs:
-        blocks.append(f"### Attribute: {name}\n{_condense_prompt(load_prompt(name, prompts_dir))}")
+        blocks.append(f"### Attribute: {name}\n{render(load_prompt(name, prompts_dir))}")
     preamble = (
         "You are an expert analyst of New Zealand politics. From the text, find each "
-        "notable statement made by an individual NZ politician. For EACH statement, "
-        "score it on every attribute below that clearly applies (omit attributes that "
-        "don't apply to that statement). Each attribute is scored 0.0 (worst) to 1.0 "
-        "(best), higher = better. Quote statements verbatim. Skip organisations, "
-        "governments, and non-NZ figures.\n\nThe attributes and their rubrics:\n"
+        "statement made by an individual NZ politician that is relevant to any "
+        "attribute below. For EACH statement, score it on every attribute that clearly "
+        "applies (omit attributes that don't apply to that statement). Each attribute "
+        "is scored 0.0 (worst) to 1.0 (best), higher = better. Quote statements "
+        "verbatim. Skip organisations, governments, and non-NZ figures.\n\n"
+        "IMPORTANT — representative sampling (avoid selection bias): extract EVERY "
+        "qualifying statement, including ordinary, mild, or routine ones — not only "
+        "the most striking, extreme, or quotable. The goal is a representative sample "
+        "of each politician's conduct over time, so a calm, on-topic answer is as "
+        "important to capture as a memorable attack. Do not skip a statement merely "
+        "because it is unremarkable. When the source identifies the speaker (e.g. a "
+        'Hansard "Hon NAME:" tag), attribute the statement to that exact person.\n\n'
+        "The attributes and their rubrics:\n"
     )
     return preamble + "\n\n".join(blocks)
 
@@ -176,6 +195,15 @@ _COMBINED_INSTRUCTION = (
     "ONLY the attributes that clearly apply to that statement; omit the rest. Only "
     "include statements by an individual New Zealand politician. If nothing relevant "
     "is present, return []."
+)
+
+# Semantic guidance only (no format spec) — the --json-schema flag enforces the
+# shape on the CLI structured-output path, so we don't redescribe the JSON here.
+_COMBINED_STRUCT_INSTRUCTION = (
+    "\n\nFor each statement by an individual NZ politician, populate `scores` with "
+    "ONLY the attributes that clearly apply (omit the rest). Use the person's name "
+    "only (no party, title, or honorific). Skip organisations, governments, and "
+    "non-NZ figures. If nothing relevant is present, return an empty examples list."
 )
 
 
@@ -196,10 +224,12 @@ def extract_all_attributes(
     out = defaultdict(list)
     article_text = build_article_text(article)
     if backend == "claude_cli":
-        text = claude_cli.call(system, article_text, model=model,
-                               instruction=_COMBINED_INSTRUCTION)
-        rows = claude_cli.parse_json_array(text)
-        for row in rows:
+        # Schema-enforced structured output via `claude -p --json-schema` — the
+        # subscription-path equivalent of the API's messages.parse.
+        result = claude_cli.call_structured(
+            system, article_text, MultiResult.model_json_schema(),
+            model=model, instruction=_COMBINED_STRUCT_INSTRUCTION)
+        for row in (result or {}).get("examples", []) or []:
             statement = str(row.get("statement", "")).strip()
             politician = str(row.get("politician", "")).strip() or "Unknown"
             for sc in row.get("scores", []) or []:
@@ -213,7 +243,13 @@ def extract_all_attributes(
         return out
     response = client.messages.parse(
         model=model, max_tokens=max_tokens,
-        system=[{"type": "text", "text": system + _COMBINED_INSTRUCTION}],
+        # The combined system prompt (all nine rubrics) is identical across every
+        # article, so cache it: after the first call the prefix is billed at the
+        # ~10% cache-read rate instead of full price. Over a multi-thousand-part
+        # Hansard run this is a large, free saving (cache TTL is ~5 min, kept warm
+        # by back-to-back calls). Only the per-article user message varies.
+        system=[{"type": "text", "text": system + _COMBINED_INSTRUCTION,
+                 "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": article_text}],
         output_format=MultiResult,
     )

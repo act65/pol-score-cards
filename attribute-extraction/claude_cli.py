@@ -58,16 +58,59 @@ def call(system: str, user: str, model: str = None, timeout: int = 180,
     raise RuntimeError(f"claude CLI failed after {retries} attempts: {last_err}")
 
 
+def call_structured(system: str, user: str, schema: dict, model: str = None,
+                    instruction: str = "", timeout: int = 300, retries: int = 2):
+    """Run `claude -p --json-schema <schema> --output-format json` and return the
+    validated ``structured_output`` object.
+
+    This is the subscription-path equivalent of the API's structured outputs
+    (``messages.parse``): the CLI enforces the JSON Schema on the model's answer
+    (via a forced tool call) and returns the parsed object in the result envelope,
+    so we don't fall back to brittle text parsing. Closes the quality gap that the
+    loose-JSON CLI path otherwise has vs the API.
+    """
+    prompt = f"{system}{instruction}\n\n=== TEXT TO ANALYSE ===\n{user}"
+    cmd = ["claude", "-p", prompt, "--json-schema", json.dumps(schema),
+           "--output-format", "json"]
+    if model:
+        cmd += ["--model", model]
+    last_err = ""
+    for attempt in range(retries + 1):
+        proc = None
+        try:
+            proc = subprocess.run(cmd, stdin=subprocess.DEVNULL,
+                                  capture_output=True, text=True, timeout=timeout)
+        except subprocess.TimeoutExpired:
+            last_err = f"timeout after {timeout}s"
+        if proc is not None and proc.returncode == 0 and proc.stdout.strip():
+            try:
+                env = json.loads(proc.stdout)
+            except json.JSONDecodeError:
+                env, last_err = None, "result envelope was not JSON"
+            if env is not None:
+                if env.get("is_error"):
+                    last_err = str(env.get("result", "cli error"))[:300]
+                elif env.get("structured_output") is not None:
+                    return env["structured_output"]
+                else:
+                    last_err = "no structured_output in envelope"
+        elif proc is not None:
+            last_err = (proc.stderr or proc.stdout or "").strip()[:300] or f"exit {proc.returncode}"
+        if attempt < retries:
+            time.sleep(2 ** attempt)
+    raise RuntimeError(f"claude --json-schema failed after {retries + 1} attempts: {last_err}")
+
+
 _FENCE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.S)
 
 
-def parse_json_array(text: str) -> list:
-    """Extract a JSON array from CLI output, tolerating ``` fences / stray prose."""
+def _extract_array(text: str):
+    """Return the parsed JSON array, or None if the text doesn't contain a
+    parseable array. None means PARSE FAILURE (distinct from a valid empty [])."""
     if not text:
-        return []
+        return None
     m = _FENCE.search(text)
     candidate = m.group(1) if m else text
-    # fall back to the outermost [...] if there's leading/trailing prose
     if not candidate.lstrip().startswith("["):
         s, e = candidate.find("["), candidate.rfind("]")
         if s != -1 and e != -1 and e > s:
@@ -75,5 +118,41 @@ def parse_json_array(text: str) -> list:
     try:
         data = json.loads(candidate)
     except json.JSONDecodeError:
-        return []
-    return data if isinstance(data, list) else []
+        return None
+    return data if isinstance(data, list) else None
+
+
+def parse_json_array(text: str) -> list:
+    """Extract a JSON array from CLI output, tolerating ``` fences / stray prose.
+    Returns [] on failure (lossy — prefer call_json_array, which retries)."""
+    data = _extract_array(text)
+    return data if data is not None else []
+
+
+# Without the API's structured outputs (messages.parse), the CLI returns free
+# text we parse best-effort — an occasional malformed reply would otherwise drop a
+# whole window's results silently. This re-asks the model (feeding back the
+# failure) until the output parses to a JSON array, recovering most of the
+# reliability the API gives for free.
+_REPAIR = ("\n\nYour previous reply did not parse as the required JSON array. "
+           "Return ONLY a valid JSON array (no prose, no markdown fences), "
+           "matching the schema exactly. If nothing relevant is present, return [].")
+
+
+def call_json_array(system: str, user: str, model: str = None,
+                    instruction: str = JSON_INSTRUCTION, retries: int = 3,
+                    timeout: int = 180) -> list:
+    """Call the CLI and return a parsed JSON array, retrying on parse failure.
+
+    A valid empty array (model genuinely found nothing) is accepted immediately;
+    only unparseable output triggers a retry with corrective feedback.
+    """
+    instr = instruction
+    for attempt in range(retries):
+        text = call(system, user, model=model, instruction=instr, timeout=timeout,
+                    retries=2)
+        rows = _extract_array(text)
+        if rows is not None:
+            return rows
+        instr = instruction + _REPAIR  # feed the failure back on the next try
+    return []
