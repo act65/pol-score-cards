@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NZ Politician Scorecards</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .ci { font-size: 0.7em; color: #6b7280; font-weight: 400; }
+        .conf { font-size: 0.6em; font-weight: 600; text-transform: uppercase;
+                letter-spacing: 0.04em; padding: 0.15em 0.5em; border-radius: 1em;
+                vertical-align: middle; margin-left: 0.4em; }
+        .conf-high { background: #d1fae5; color: #065f46; }
+        .conf-medium { background: #fef3c7; color: #92400e; }
+        .conf-low { background: #fee2e2; color: #991b1b; }
+    </style>
 </head>
 <body>
     <a href="/"><h1>NZ Politician Scorecards</h1></a>
@@ -14,10 +23,17 @@
     <div class="attribute-detail-container">
         <h2>{{ politician.name }}</h2>
         <p>Party: {{ politician.party }}</p>
-        <h3>{{ attribute_info.name }} Score: {{ score }}</h3>
+        <h3>{{ attribute_info.name }} Score: {{ score }}{% if meta and meta.ci is not none %}
+            <span class="ci">±{{ meta.ci }}</span>{% endif %}
+            {% if meta and meta.conf %}<span class="conf conf-{{ meta.conf }}">{{ meta.conf }} confidence</span>{% endif %}</h3>
         <p>Description: {{ attribute_info.definition }}</p>
-        <p class="aggregate-note">The score above is the average across the {{ examples|length }}
-           statement{{ '' if examples|length == 1 else 's' }} below.</p>
+        <p class="aggregate-note">
+           {% if meta and meta.n %}Based on <strong>{{ meta.n }}</strong> scored statement{{ '' if meta.n == 1 else 's' }}
+              from Hansard{{ ' — treat single-statement scores with caution' if meta.n == 1 else '' }}.
+              The headline number is a <em>bias-adjusted</em> estimate (empirical-Bayes): thin samples are pulled
+              toward the typical value for this attribute, and ± is the 95% confidence band. The raw per-statement
+              scores are shown below.
+           {% else %}The score above aggregates the statements below.{% endif %}</p>
         {% if examples %}
             <h4>Evidence — the statements behind this score:</h4>
             <ul class="evidence-list">

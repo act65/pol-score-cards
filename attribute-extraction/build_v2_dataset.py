@@ -33,7 +33,6 @@ ATTRIBUTES = [
     ("specificity", "Specificity", "The meaningfulness of the politician's statements (vague platitudes score low)."),
 ]
 ID2NAME = {a: n for a, n, _ in ATTRIBUTES}
-MAX_EXAMPLES_PER_PAIR = 5
 
 
 def _read(path):
@@ -49,19 +48,21 @@ def _read(path):
     return rows
 
 
-def _pick_examples(exs):
-    """A small, score-diverse set of examples per (MP, attribute): keep the
-    highest, lowest, and middle so the card shows the range, not just extremes."""
-    if len(exs) <= MAX_EXAMPLES_PER_PAIR:
-        return exs
-    s = sorted(exs, key=lambda e: e.get("score", 0.5))
-    idx = sorted(set(round(i * (len(s) - 1) / (MAX_EXAMPLES_PER_PAIR - 1))
-                     for i in range(MAX_EXAMPLES_PER_PAIR)))
-    return [s[i] for i in idx]
+def _pick_examples(exs, cap=0):
+    """Examples per (MP, attribute), ordered highest-score first. With cap<=0 (the
+    default) ALL extracted statements are kept — the score already uses them all,
+    so this just controls how much evidence the card displays. With cap>0, keep a
+    score-diverse spread (highest, lowest, middle) so the range is still visible."""
+    s = sorted(exs, key=lambda e: e.get("score", 0.5), reverse=True)
+    if cap <= 0 or len(s) <= cap:
+        return s
+    spread = sorted(s, key=lambda e: e.get("score", 0.5))
+    idx = sorted(set(round(i * (len(spread) - 1) / (cap - 1)) for i in range(cap)))
+    return [spread[i] for i in idx]
 
 
 def run(scores="hansard_scores_3mo.jsonl", out="site_data_v2",
-        corpus_label="Hansard 54th Parliament", min_n=1):
+        corpus_label="Hansard 54th Parliament", min_n=1, max_examples=0):
     R = Roster()
     rows = _read(scores)
     os.makedirs(out, exist_ok=True)
@@ -132,7 +133,7 @@ def run(scores="hansard_scores_3mo.jsonl", out="site_data_v2",
     n_ex = 0
     with open(os.path.join(out, "examples.jsonl"), "w", encoding="utf-8") as f:
         for key, exs in examples.items():
-            for e in _pick_examples(exs):
+            for e in _pick_examples(exs, cap=max_examples):
                 f.write(json.dumps(e) + "\n")
                 n_ex += 1
 
