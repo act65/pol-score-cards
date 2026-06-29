@@ -12,6 +12,12 @@ app = Flask(__name__)
 politicians = data_access_jsonl.get_all_politicians()
 attribute_descriptions = data_access_jsonl.get_all_attributes()
 
+# The canonical attribute names (= score keys). The v2 dataset also carries
+# per-attribute bias metadata under suffixed keys ("Civility_n", "_conf", "_ci"),
+# so anywhere we treat the scores dict as "attribute -> value" we must restrict to
+# these names, or the metadata would be miscounted as extra attributes/scores.
+ATTR_NAMES = {a["name"] for a in attribute_descriptions}
+
 
 def _load_attribute_icons():
     """Resolve attribute id/name -> stylized symbol from the shared icon map
@@ -60,7 +66,9 @@ _RARITY_SIZES = [1, 2, 4, 8]    # exp buckets for the top tiers; common gets the
 
 def _geo_mean(scores):
     vals = []
-    for v in (scores or {}).values():
+    for k, v in (scores or {}).items():
+        if k not in ATTR_NAMES:          # skip politician_id + bias-metadata keys
+            continue
         try:
             vals.append(max(float(v), 1.0))   # clamp at 1 so a 0 doesn't zero the product
         except (TypeError, ValueError):
@@ -98,7 +106,7 @@ MIN_ATTRIBUTES = 6
 
 
 def _n_attrs(score):
-    return len([k for k in (score or {}) if k != "politician_id"])
+    return len([k for k in (score or {}) if k in ATTR_NAMES])
 
 
 @app.route('/')
@@ -123,10 +131,16 @@ def attribute_detail(politician_id, attribute):
     attribute_info = data_access_jsonl.get_attribute_description(attribute)
     scores = data_access_jsonl.get_scores(politician_id) or {}
     score = scores.get(attribute, "N/A")
+    # bias-aware metadata (see bias_adjust.py): n statements, confidence tier, ±95% CI
+    meta = {"n": scores.get(f"{attribute}_n"),
+            "conf": scores.get(f"{attribute}_conf"),
+            "ci": scores.get(f"{attribute}_ci")}
 
     if politician:
         examples = data_access_jsonl.get_examples(politician_id, attribute)
-        return render_template('attribute_detail.html', politician=politician, attribute_info=attribute_info, examples=examples, score=score)
+        return render_template('attribute_detail.html', politician=politician,
+                               attribute_info=attribute_info, examples=examples,
+                               score=score, meta=meta)
     else:
         return "Politician not found", 404
 
