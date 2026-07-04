@@ -2,55 +2,61 @@
 
 Source scores: `hansard_scores_full.jsonl`  (since 2026-03-01)
 
-- windows processed: **365**
-- scored (attribute, statement) pairs: **30,585**
-- distinct statements: **15,026**
-- roster MPs with ≥1 score: **132/134**
+- windows processed: **566**
+- scored (attribute, statement) pairs: **47,344**
+- distinct statements: **23,322**
+- roster MPs with ≥1 score: **133/134**
 
 ## Per attribute
 
 | attribute | n | mean | histogram 0.0→1.0 |
 |---|---:|---:|---|
-| authenticity | 854 | 0.63 | 0 0 10 31 88 105 209 263 140 8 |
-| charisma | 2312 | 0.56 | 0 75 178 265 243 303 460 420 348 20 |
-| civility | 4673 | 0.51 | 20 213 453 771 933 674 304 297 709 299 |
-| divination | 775 | 0.50 | 0 2 7 45 229 323 134 29 5 1 |
-| forthrightness | 2696 | 0.46 | 26 293 454 380 307 281 208 306 347 94 |
-| rigor | 5154 | 0.53 | 0 87 322 716 753 905 1174 914 281 2 |
-| specificity | 7001 | 0.64 | 3 199 276 264 405 840 1343 1608 1657 406 |
-| strength | 1282 | 0.54 | 0 6 9 88 245 383 347 162 42 0 |
-| veracity | 5838 | 0.65 | 0 7 57 171 429 995 1362 1442 1153 222 |
+| authenticity | 1334 | 0.63 | 0 0 13 60 115 182 334 390 227 13 |
+| charisma | 3687 | 0.54 | 2 138 327 467 397 478 684 645 516 33 |
+| civility | 7270 | 0.50 | 31 338 721 1240 1421 1077 497 451 1064 430 |
+| divination | 1237 | 0.50 | 0 4 9 82 362 535 193 43 8 1 |
+| forthrightness | 3820 | 0.47 | 34 381 610 586 451 416 300 437 471 134 |
+| rigor | 7869 | 0.53 | 1 132 497 1099 1161 1396 1781 1392 408 2 |
+| specificity | 10848 | 0.65 | 3 300 416 414 574 1274 2112 2574 2525 656 |
+| strength | 2025 | 0.55 | 0 6 13 126 361 611 591 260 57 0 |
+| veracity | 9254 | 0.65 | 1 14 93 285 655 1557 2156 2321 1810 362 |
 
 ## Top politicians by statements scored
 
 | MP | party | statements | words spoken | mean civility | mean veracity |
 |---|---|---:|---:|---:|---:|
-| Nicola Willis | National | 1726 | 25,125 | 0.43 | 0.69 |
-| Christopher Luxon | National | 1465 | 23,332 | 0.41 | 0.58 |
-| Simeon Brown | National | 1065 | 20,144 | 0.41 | 0.63 |
-| David Seymour | ACT | 922 | 26,537 | 0.33 | 0.58 |
-| Chris Bishop | National | 874 | 24,683 | 0.46 | 0.65 |
-| Winston Peters | NZ First | 784 | 14,278 | 0.29 | 0.51 |
-| Duncan Webb | Labour | 714 | 23,441 | 0.58 | 0.67 |
-| Louise Upston | National | 677 | 16,019 | 0.49 | 0.64 |
-| Paul Goldsmith | National | 655 | 8,511 | 0.58 | 0.67 |
-| Erica Stanford | National | 508 | 9,848 | 0.55 | 0.66 |
-| Ginny Andersen | Labour | 467 | 8,383 | 0.54 | 0.65 |
-| Chlöe Swarbrick | Green | 442 | 0 | 0.53 | 0.68 |
-| Tama Potaka | National | 434 | 11,118 | 0.47 | 0.66 |
-| Deborah Russell | Labour | 434 | 19,221 | 0.66 | 0.70 |
-| Simon Watts | National | 411 | 5,115 | 0.50 | 0.67 |
-| Chris Hipkins | Labour | 410 | 10,183 | 0.53 | 0.65 |
-| Shane Jones | NZ First | 407 | 8,015 | 0.30 | 0.54 |
-| Barbara Edmonds | Labour | 398 | 14,898 | 0.58 | 0.64 |
-| Andy Foster | NZ First | 397 | 9,667 | 0.64 | 0.68 |
-| Julie Anne Genter | Green | 385 | 7,801 | 0.40 | 0.65 |
-| Megan Woods | Labour | 381 | 8,072 | 0.57 | 0.65 |
-| Willie Jackson | Labour | 353 | 17,855 | 0.39 | 0.57 |
-| Lawrence Xu-Nan | Green | 326 | 0 | 0.78 | 0.67 |
-| Karen Chhour | ACT | 324 | 2,080 | 0.56 | 0.63 |
-| Nicole McKee | ACT | 319 | 1,489 | 0.46 | 0.69 |
+| Nicola Willis | National | 2433 | 25,125 | 0.43 | 0.69 |
+| Christopher Luxon | National | 2311 | 23,332 | 0.40 | 0.58 |
+| Chris Bishop | National | 1428 | 24,683 | 0.48 | 0.67 |
+| Simeon Brown | National | 1335 | 20,144 | 0.42 | 0.64 |
+| Winston Peters | NZ First | 1288 | 14,278 | 0.31 | 0.53 |
+| David Seymour | ACT | 1251 | 26,537 | 0.34 | 0.59 |
+| Louise Upston | National | 961 | 16,019 | 0.50 | 0.64 |
+| Duncan Webb | Labour | 952 | 23,441 | 0.57 | 0.66 |
+| Paul Goldsmith | National | 926 | 8,511 | 0.58 | 0.68 |
+| Erica Stanford | National | 885 | 9,848 | 0.52 | 0.66 |
+| Chris Hipkins | Labour | 765 | 10,183 | 0.50 | 0.62 |
+| Ginny Andersen | Labour | 726 | 8,383 | 0.52 | 0.63 |
+| Tama Potaka | National | 671 | 11,118 | 0.49 | 0.67 |
+| Shane Jones | NZ First | 658 | 8,015 | 0.29 | 0.53 |
+| Chlöe Swarbrick | Green | 658 | 0 | 0.53 | 0.67 |
+| Deborah Russell | Labour | 626 | 19,221 | 0.63 | 0.69 |
+| Julie Anne Genter | Green | 604 | 7,801 | 0.40 | 0.64 |
+| Simon Watts | National | 602 | 5,115 | 0.51 | 0.67 |
+| Willie Jackson | Labour | 571 | 17,855 | 0.39 | 0.58 |
+| Andy Foster | NZ First | 565 | 9,667 | 0.67 | 0.69 |
+| Barbara Edmonds | Labour | 551 | 14,898 | 0.55 | 0.64 |
+| Casey Costello | NZ First | 529 | 7,800 | 0.60 | 0.63 |
+| Cameron Brewer | National | 514 | 3,951 | 0.43 | 0.69 |
+| Megan Woods | Labour | 508 | 8,072 | 0.55 | 0.64 |
+| Nicole McKee | ACT | 507 | 1,489 | 0.43 | 0.68 |
 
 ## Roster coverage gaps
 
-MPs with NO scores yet (2/134): Barbara Kuriger, Benjamin Doyle
+MPs with NO scores yet (1/134): Barbara Kuriger
+
+### Unresolved speakers (likely roster gaps — add to mps_roster.json)
+
+Names with scored statements that don't map to the 123-MP roster — mostly mid-term replacement MPs or departed members:
+
+- Bill English: 1 statements
