@@ -1,2 +1,2 @@
-stopped at 365/744 windows (partial — re-run overnight_run.py to continue).
+stopped at 566/744 windows (partial — re-run overnight_run.py to continue).
 site/static refreshed; site_data_full + dataset card ready to publish.
