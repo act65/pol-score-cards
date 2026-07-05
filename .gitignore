@@ -169,3 +169,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Portrait pipeline: isolated venv (~800MB) + regenerable rembg masks
+data/.venv-portraits/
+site/static/img/portraits/masks/

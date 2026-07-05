@@ -95,10 +95,10 @@ body {
     box-shadow: 0 6px 14px rgba(0,0,0,0.35);
     z-index: 10;
 }
-.card .sc-banner { min-height: 42px; padding: 7px 9px; }
-.card .sc-name { font-size: 0.92em; padding-right: 36px; }
+.card .sc-banner { padding: 6px 9px; }
+.card .sc-name { font-size: 0.92em; }
 .card .sc-party { font-size: 0.6em; margin-top: 3px; }
-.card .sc-portrait { width: 32px; height: 32px; top: 6px; right: 7px; }
+.card .sc-initials { font-size: 1.8em; }
 .card .sc-stats { gap: 3px 5px; padding: 7px 8px 8px; }
 .card .sc-icon { font-size: 0.9em; width: 1.1em; }
 .card .sc-val { font-size: 0.8em; }

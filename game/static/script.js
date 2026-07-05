@@ -111,8 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="sc-banner">
                 <h3 class="sc-name">${cardData.name}</h3>
                 <span class="sc-party">${cardData.party}</span>
-                <span class="sc-portrait sc-initials">${initials(cardData.name)}</span>
             </div>
+            <div class="sc-art"><span class="sc-initials">${initials(cardData.name)}</span></div>
             <div class="sc-hp">HP: ${cardData.current_hp}/${cardData.max_hp}</div>
             <div class="sc-stats">${statsHtml}</div>
             <div class="attack-target-indicator" style="display: none;"></div>

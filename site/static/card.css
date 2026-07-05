@@ -3,210 +3,185 @@
    Source of truth: shared/card.css. Synced into site/static/ and game/static/
    by shared/sync.py. Edit here, then run that script.
 
-   A card is markup of the form:
-     <div class="sc-card" style="--party:#D82A20;">
+   v3 look: a stylized-minimal playing card (5:7 aspect, like a real card), a
+   large black-and-white portrait as the art, and RARITY shown only by the outer
+   border colour (no stars). Monochrome ink on white; the only colour is the
+   party chip and a faint party-duotone wash over the portrait.
+
+   Markup:
+     <div class="sc-card" style="--party:#D82A20; --rarity:#b8860b;">
        <div class="sc-banner">
          <h3 class="sc-name">Name</h3>
          <span class="sc-party">Party</span>
-         <img class="sc-portrait" ...>            (or .sc-portrait.sc-initials)
        </div>
+       <div class="sc-art">
+         <img class="sc-portrait" ...>          (or <span class="sc-initials">CH</span>)
+       </div>
+       <div class="sc-hp">HP: 30/30</div>        (game only; site omits)
        <div class="sc-stats">
-         <div class="sc-stat"><span class="sc-icon">💪</span>
-           <span class="sc-val high">78</span></div>
-         ... one per attribute ...
+         <span class="sc-stat"><span class="sc-icon">…</span>
+           <span class="sc-val high">78</span></span>
+         … one per attribute …
        </div>
      </div>
-   The host card element may also carry the host's own classes (e.g. the game's
-   .card .field-card) for layout/interaction — those live in each app's own CSS.
    ========================================================================== */
 
 .sc-card {
     --party: #475569;            /* overridden per-card via inline style */
-    --rarity: #d4af37;           /* tinted per-card by average score (TCG rarity) */
+    --rarity: #4b5563;           /* the OUTER BORDER colour = card rarity */
     position: relative;
-    width: 250px;
-    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    width: 232px;
+    aspect-ratio: 5 / 7;         /* real playing-card proportion */
     overflow: hidden;
-    /* Aged-parchment stock: warm base + soft mottling blotches. */
-    background:
-        radial-gradient(60% 40% at 22% 18%, rgba(120, 92, 40, 0.10), transparent 60%),
-        radial-gradient(50% 45% at 84% 80%, rgba(120, 92, 40, 0.10), transparent 60%),
-        radial-gradient(120% 90% at 50% 0%, rgba(255, 252, 240, 0.6), transparent 55%),
-        linear-gradient(160deg, #f7f0db 0%, #efe4c4 55%, #e7d7af 100%);
-    border: 3px solid #d4af37;          /* gold trading-card frame */
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.30);
-    font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
-    color: #3a3024;                     /* ink on parchment */
+    background: #ffffff;
+    color: #14110d;
+    /* Rarity frame: a solid coloured border with a crisp inner hairline. */
+    border: 4px solid var(--rarity);
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
-
-/* Inner gold rule. */
+/* thin inner rule that separates the rarity frame from the content */
 .sc-card::before {
     content: "";
     position: absolute;
-    inset: 4px;
-    border: 1px solid rgba(150, 120, 40, 0.5);
-    border-radius: 10px;
+    inset: 0;
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    border-radius: 8px;
     pointer-events: none;
-    z-index: 4;
+    z-index: 6;
 }
 
-/* Four corner stars, coloured by the card's RARITY (the only rarity signal on
-   the card). The star shape is a CSS mask so its colour follows --rarity. */
-.sc-card::after {
-    content: "";
-    position: absolute;
-    inset: 3px;
-    pointer-events: none;
-    z-index: 5;
-    background-color: var(--rarity);
-    /* halo so the star reads on both the dark banner and the light parchment */
-    filter: drop-shadow(0 0 0.7px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 0.4px rgba(0, 0, 0, 0.35));
-    --sc-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 14 14'%3E%3Cpath d='M7 0 L8.7 5.3 L14 7 L8.7 8.7 L7 14 L5.3 8.7 L0 7 L5.3 5.3 Z' fill='%23000'/%3E%3C/svg%3E");
-    -webkit-mask: var(--sc-star), var(--sc-star), var(--sc-star), var(--sc-star);
-    mask: var(--sc-star), var(--sc-star), var(--sc-star), var(--sc-star);
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
-    -webkit-mask-position: 2px 2px, calc(100% - 2px) 2px, 2px calc(100% - 2px), calc(100% - 2px) calc(100% - 2px);
-    mask-position: 2px 2px, calc(100% - 2px) 2px, 2px calc(100% - 2px), calc(100% - 2px) calc(100% - 2px);
-}
-
-/* Neutral dark-walnut banner — the card is otherwise colourless; colour is
-   reserved for the party chip and the rarity corner-stars. */
+/* Title bar: name + party. Clean white, thin bottom rule. */
 .sc-banner {
     position: relative;
-    z-index: 1;
-    padding: 10px 12px;
-    min-height: 54px;
-    color: #f5efe2;
-    background: linear-gradient(135deg, #4a4036, #2e271f);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-    /* foil-stamp divider: a gilt rule under the banner with a thin highlight */
-    border-bottom: 2px solid #d4af37;
-    box-shadow: inset 0 -3px 6px -4px rgba(0, 0, 0, 0.5),
-                0 1px 0 rgba(255, 240, 200, 0.4);
+    z-index: 2;
+    flex: none;
+    padding: 8px 11px 7px;
+    background: #fff;
+    border-bottom: 1px solid #ececec;
 }
-
 .sc-name {
     margin: 0;
-    font-size: 1.12em;
-    font-weight: 700;
-    line-height: 1.15;
-    padding-right: 54px;         /* leave room for the corner portrait */
-    color: #fff;
+    font-size: 1.02em;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1.12;
+    color: #14110d;
 }
-
-/* Party identity lives here: a light chip whose text + outline are the party
-   colour (darkened a touch so even light party colours stay legible). */
+/* Party identity: a small chip in the party colour (the card's one accent). */
 .sc-party {
     display: inline-block;
-    margin-top: 5px;
-    padding: 1px 9px;
-    font-size: 0.68em;
+    margin-top: 4px;
+    padding: 1px 8px;
+    font-size: 0.62em;
     font-weight: 700;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.07em;
     text-transform: uppercase;
-    color: var(--party);
-    color: color-mix(in srgb, var(--party) 72%, #1a1a1a);
-    background: rgba(255, 255, 255, 0.92);
-    border: 1px solid var(--party);
+    color: color-mix(in srgb, var(--party) 78%, #111);
+    background: color-mix(in srgb, var(--party) 12%, #fff);
+    border: 1px solid color-mix(in srgb, var(--party) 45%, #fff);
     border-radius: 999px;
-    text-shadow: none;
 }
 
-/* Small circular portrait tucked in the top-right corner. */
+/* ----- Art: a big black-and-white portrait (the bulk of the card) ---------- */
+.sc-art {
+    position: relative;
+    z-index: 1;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    isolation: isolate;          /* keep the duotone blend local to the art */
+    background: #ece9e4;
+}
 .sc-portrait {
-    position: absolute;
-    top: 8px;
-    right: 10px;
-    width: 46px;
-    height: 46px;
-    border-radius: 50%;
+    display: block;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
     object-position: top center;
-    border: 2px solid #e8cf85;       /* gilt ring */
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(120, 90, 30, 0.35);
-    background: #e8ebef;
+    /* Portraits are pre-stylized to a greyscale ink-sketch offline
+       (data/stylize_portraits.py); grayscale here is just a belt-and-braces
+       guard so any un-processed image still renders monochrome. No party tint. */
+    filter: grayscale(1);
 }
-/* Initials avatar when there's no photo (e.g. game cards). */
-.sc-portrait.sc-initials {
+
+/* Initials monogram when there's no photo (game cards, or MPs without a portrait). */
+.sc-initials {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
-    font-size: 1em;
-    color: #fff;
-    background: rgba(255, 255, 255, 0.22);
+    width: 100%;
+    height: 100%;
+    font-weight: 800;
+    font-size: 2.6em;
+    letter-spacing: 0.02em;
+    color: #b9b3a8;
+    background: radial-gradient(120% 90% at 50% 0%, #f4f2ee, #e4e0d8);
 }
 
-/* Stats: a compact icon grid. Attribute names are NOT shown here — the icon
-   stands in for the name; see the legend (.sc-legend) for the key. */
+/* ----- Stats: compact 3x3 icon grid at the foot -------------------------- */
 .sc-stats {
     position: relative;
-    z-index: 1;
+    z-index: 2;
+    flex: none;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 6px 10px;
-    padding: 11px 12px 13px;
-    background: transparent;      /* let the parchment show through */
+    gap: 3px 8px;
+    padding: 8px 11px 9px;
+    background: #fff;
+    border-top: 1px solid #ececec;
 }
-
 .sc-stat {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
 }
-
-/* On the site each stat links to the evidence behind the score. */
 a.sc-stat {
     text-decoration: none;
     color: inherit;
     cursor: pointer;
-    border-radius: 5px;
-    padding: 1px 3px;
+    border-radius: 4px;
+    padding: 0 2px;
 }
-a.sc-stat:hover { background: rgba(150, 120, 40, 0.14); }
+a.sc-stat:hover { background: #f1efe9; }
 a.sc-stat:hover .sc-val { text-decoration: underline; }
-a.sc-stat:hover .sc-icon { color: #4a3a16; }   /* glyph darkens on hover */
 
-/* Heraldic glyph: engraved gold-brown line-icon (SVG) on the parchment.
-   Falls back to centring an emoji when no SVG is present. */
 .sc-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.4em;
-    height: 1.4em;
+    width: 1.3em;
+    height: 1.3em;
     line-height: 1;
-    font-size: 1.05em;
-    color: #6f5a2a;
-    filter: drop-shadow(0 1px 0 rgba(255, 250, 235, 0.6));  /* faint emboss */
+    font-size: 1em;
+    color: #3d372e;
 }
-.sc-icon svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
+.sc-icon svg { width: 100%; height: 100%; display: block; }
 
 .sc-val {
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    font-size: 0.95em;
+    font-size: 0.9em;
 }
-/* Monochrome ink ramp on the parchment: stronger score = darker & bolder. */
-.sc-val.low  { color: #b3a88f; font-weight: 600; }   /* < 40  — faint */
-.sc-val.mid  { color: #6f5d44; }                     /* 40-69 — mid ink */
-.sc-val.high { color: #2c2114; font-weight: 800; }   /* >= 70 — bold dark */
-.sc-val.na   { color: #b9ad96; font-weight: 400; }
+/* Monochrome ink ramp: stronger score = darker & bolder. */
+.sc-val.low  { color: #b7b1a6; font-weight: 600; }   /* < 40  — faint */
+.sc-val.mid  { color: #6a6255; }                     /* 40-69 — mid ink */
+.sc-val.high { color: #14110d; font-weight: 800; }   /* >= 70 — bold black */
+.sc-val.na   { color: #cfcabf; font-weight: 400; }
 
 /* Optional HP line (the game uses it; the site omits it). */
 .sc-hp {
     position: relative;
-    z-index: 1;
-    padding: 6px 12px 4px;
-    font-size: 0.8em;
+    z-index: 2;
+    flex: none;
+    padding: 5px 11px 0;
+    font-size: 0.78em;
     font-weight: 700;
     color: #9a1414;
-    background: transparent;
+    background: #fff;
 }
 
 /* ----- Legend / key -------------------------------------------------------- */
@@ -222,11 +197,11 @@ a.sc-stat:hover .sc-icon { color: #4a3a16; }   /* glyph darkens on hover */
     border-radius: 10px;
 }
 .sc-legend li { display: flex; align-items: center; gap: 8px; font-size: 0.9em; }
-.sc-legend .sc-icon { width: 1.5em; height: 1.5em; font-size: 1.1em; color: #7a611f; filter: none; flex: none; }
+.sc-legend .sc-icon { width: 1.5em; height: 1.5em; font-size: 1.1em; color: #3d372e; flex: none; }
 .sc-legend b { color: #0f172a; }
 .sc-legend span.blurb { color: #64748b; }
 
-/* ----- Rarity key (corner-star colours) ------------------------------------ */
+/* ----- Rarity key (now: border-colour swatches) ---------------------------- */
 .sc-rarity-key {
     display: flex;
     flex-wrap: wrap;
@@ -240,11 +215,12 @@ a.sc-stat:hover .sc-icon { color: #4a3a16; }   /* glyph darkens on hover */
 }
 .sc-rarity-key .rk-label { width: 100%; color: #64748b; margin-bottom: 2px; }
 .rk-item { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
-.rk-star {
-    width: 14px;
-    height: 14px;
+/* a little framed swatch that mirrors the card's rarity border */
+.rk-swatch {
+    width: 16px;
+    height: 22px;
     display: inline-block;
-    background-color: var(--rarity);
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M7 0 L8.7 5.3 L14 7 L8.7 8.7 L7 14 L5.3 8.7 L0 7 L5.3 5.3 Z' fill='%23000'/%3E%3C/svg%3E") center / contain no-repeat;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M7 0 L8.7 5.3 L14 7 L8.7 8.7 L7 14 L5.3 8.7 L0 7 L5.3 5.3 Z' fill='%23000'/%3E%3C/svg%3E") center / contain no-repeat;
+    border: 3px solid var(--rarity);
+    border-radius: 4px;
+    background: #fff;
 }

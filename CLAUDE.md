@@ -33,9 +33,13 @@ data/  ──scrape──▶  raw articles (JSON)  ──▶  attribute-extracti
 - The scoring metric convention is `S = 100 * positive / (positive + negative)`. `attribute-extraction/README.md` documents how trustworthy LLM scoring is per attribute (some need human verification).
 
 ### `site/` — public Flask website
-- `app.py` serves politician cards and per-attribute detail/example pages.
+- `app.py` serves politician cards, per-attribute detail/example pages, and a `/data` dataset-overview page (size, per-party, per-politician, per-source stats + download placeholders).
 - Two interchangeable data-access backends: `data_access_jsonl.py` (active, reads `static/*.jsonl`) and `data_access_sqlite.py` (stubbed/incomplete). `app.py` imports the jsonl one.
-- Display data lives in `static/`: `politicians.jsonl`, `attributes.jsonl`, `scores.jsonl`, `examples.jsonl`.
+- Display data lives in `static/`: `politicians.jsonl`, `attributes.jsonl`, `scores.jsonl`, `examples.jsonl`. The `/data` page reads a precomputed `static/dataset_stats.json` (regenerate with `python gen_data_stats.py`).
+- MP portraits: `data/scrape_portraits.py` fetches Commons-licensed Wikipedia infobox photos into `static/img/portraits/orig/<id>.jpg`, then `data/stylize_portraits.py` face-frames (whole face centred, no chin clipped), cuts the background with rembg (U²-Net) to clean white, and renders a **pure-greyscale** stylization to `static/img/portraits/<id>.jpg` (the served image; originals kept so you can re-stylize without re-scraping; masks cached in `masks/`). `app.py` resolves portraits by convention (no `image` field needed in the dataset); cards fall back to an initials monogram.
+  - Current default style **`lineart`** — an ML pencil-style line drawing (Informative Drawings, via `controlnet_aux` LineartDetector) that preserves likeness far better than tonal filters. Other styles: `lineart_coarse` (fewer/bolder ML lines), and the classical `posterize|vector|posterline|sketch|woodcut|wireframe|pencil|notan|ink`. Switch with `--style <name>`. `lineart` runs the model per-image (~2 min for 133 on CPU); the classical styles are ~15s.
+  - The stylize pipeline runs in an **isolated venv** `data/.venv-portraits` (gitignored) — rembg/torch/controlnet_aux need numpy≥2 etc. which conflict with the repo's other tools, so they're kept out of the global env. Recreate with `python -m venv data/.venv-portraits && data/.venv-portraits/bin/pip install -r data/requirements-portraits.txt`, then run `data/.venv-portraits/bin/python stylize_portraits.py --style <style>`. Model weights (rembg u2net, lineart) download to `~/.u2net` / the HF cache on first run.
+- Card design is the shared 5:7 minimal trading card in `shared/card.css` (rarity = outer border colour, pure-greyscale sketch portrait, no party tint); edit there and run `python shared/sync.py` to copy into `site/` and `game/`.
 
 ### `game/` — Flask card game
 - A 1-player (human vs AI) browser card game. `game_logic.py` is the pure, dependency-light engine; `app.py` is the Flask layer exposing `/api/start_game` and `/api/submit_round_actions`, with the UI in `templates/index.html` + `static/script.js`.

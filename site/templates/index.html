@@ -20,7 +20,7 @@
 
     <header class="site-header">
         <a href="/"><h1>NZ Politician Scorecards</h1></a>
-        <div class="top-right-link"><a href="/rules">The card game</a> &nbsp;·&nbsp; <a href="/about">About</a></div>
+        <div class="top-right-link"><a href="/data">The dataset</a> &nbsp;·&nbsp; <a href="/rules">The card game</a> &nbsp;·&nbsp; <a href="/about">About</a></div>
     </header>
 
     <details class="legend-wrap" open>
@@ -32,9 +32,9 @@
             {% endfor %}
         </ul>
         <div class="sc-rarity-key">
-            <span class="rk-label">Rarity (corner stars) — overall rank by the geometric mean of all nine attributes:</span>
+            <span class="rk-label">Rarity (the card's border colour) — overall rank by the geometric mean of all nine attributes:</span>
             {% for name, colour in rarity_tiers %}
-            <span class="rk-item"><span class="rk-star" style="--rarity: {{ colour }};"></span>{{ name|capitalize }}</span>
+            <span class="rk-item"><span class="rk-swatch" style="--rarity: {{ colour }};"></span>{{ name|capitalize }}</span>
             {% endfor %}
         </div>
     </details>
@@ -72,11 +72,13 @@
             <div class="sc-banner">
                 <h3 class="sc-name">{{ item.politician.name }}</h3>
                 <span class="sc-party">{{ item.politician.party }}</span>
+            </div>
+            <div class="sc-art">
                 {% if item.politician.image %}
                 <img class="sc-portrait" src="{{ url_for('static', filename=item.politician.image) }}"
                      alt="{{ item.politician.name }}" loading="lazy">
                 {% else %}
-                <span class="sc-portrait sc-initials">{{ item.politician.name.split()|map('first')|join|upper }}</span>
+                <span class="sc-initials">{{ item.politician.name.split()|map('first')|join|upper }}</span>
                 {% endif %}
             </div>
             <div class="sc-stats">

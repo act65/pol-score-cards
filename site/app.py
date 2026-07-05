@@ -109,10 +109,23 @@ def _n_attrs(score):
     return len([k for k in (score or {}) if k in ATTR_NAMES])
 
 
+_PORTRAIT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "img", "portraits")
+
+
+def _portrait_for(pid):
+    """Convention over config: if scrape_portraits.py fetched a photo for this MP,
+    use it; otherwise the card falls back to an initials avatar. Decouples portrait
+    availability from the dataset build (which doesn't carry an image field)."""
+    rel = f"img/portraits/{pid}.jpg"
+    return rel if os.path.exists(os.path.join(_PORTRAIT_DIR, f"{pid}.jpg")) else None
+
+
 @app.route('/')
 def index():
     politician_data = []
     for politician in politicians:
+        if not politician.get("image"):
+            politician["image"] = _portrait_for(politician["id"])
         score = data_access_jsonl.get_scores(politician['id'])
         politician_data.append({"politician": politician, "scores": score,
                                 "n_attrs": _n_attrs(score)})
@@ -143,6 +156,23 @@ def attribute_detail(politician_id, attribute):
                                score=score, meta=meta)
     else:
         return "Politician not found", 404
+
+
+def _load_dataset_stats():
+    """The precomputed /data overview (gen_data_stats.py). Loaded fresh per request
+    so a rebuild is reflected without restarting the app; it's a small file."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "dataset_stats.json")
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+@app.route('/data')
+def data():
+    return render_template('data.html', stats=_load_dataset_stats(),
+                           attributes=attribute_descriptions)
 
 
 @app.route('/about')
