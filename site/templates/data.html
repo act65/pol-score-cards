@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The dataset — NZ Politician Scorecards</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="site-header">
+        <a href="/"><h1>NZ Politician Scorecards</h1></a>
+        <div class="top-right-link"><a href="/">Back to cards</a></div>
+    </header>
+
+    <main class="data-page">
+        <h2>The dataset</h2>
+        {% if not stats %}
+        <p>Dataset stats haven't been generated yet. Run <code>python gen_data_stats.py</code>.</p>
+        {% else %}
+        {% set t = stats.totals %}
+        <p class="data-intro">Everything on this site is derived from a single source — the
+           <strong>Hansard</strong> record of the 54th New Zealand Parliament. Below is exactly how
+           much data sits behind the cards, and how it's distributed across politicians and parties.</p>
+
+        <section class="stat-cards">
+            <div class="stat-card"><span class="big">{{ '{:,}'.format(t.statements) }}</span><span class="lbl">evidence statements</span></div>
+            <div class="stat-card"><span class="big">{{ t.politicians }}</span><span class="lbl">politicians scored</span></div>
+            <div class="stat-card"><span class="big">{{ t.attributes }}</span><span class="lbl">attributes each</span></div>
+            <div class="stat-card"><span class="big">{{ t.windows_scored or '—' }}</span><span class="lbl">debate windows read</span></div>
+            {% if t.date_range %}
+            <div class="stat-card"><span class="big small">{{ t.date_range[0] }}<br>→ {{ t.date_range[1] }}</span><span class="lbl">date range</span></div>
+            {% endif %}
+        </section>
+
+        {% if stats.corpus %}
+        {% set c = stats.corpus %}
+        <h3>Raw source corpus</h3>
+        <p class="muted">The scored statements are extracted from the full raw debate transcripts:</p>
+        <ul class="corpus-facts">
+            <li><strong>{{ c.sitting_days }}</strong> sitting days</li>
+            <li><strong>{{ '{:,}'.format(c.transcript_parts) }}</strong> transcript parts</li>
+            <li><strong>~{{ '{:,}'.format(c.approx_words) }}</strong> words of debate</li>
+            <li><strong>{{ (c.bytes / 1048576)|round(1) }} MB</strong> of raw text</li>
+        </ul>
+        {% endif %}
+
+        <h3>By source</h3>
+        <table class="data-table">
+            <thead><tr><th>Source</th><th class="num">Statements</th><th class="num">Share</th></tr></thead>
+            <tbody>
+            {% for s in stats.per_source %}
+                <tr><td>{{ s.source }}</td><td class="num">{{ '{:,}'.format(s.statements) }}</td><td class="num">{{ s.share }}%</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <p class="muted">v2.0 is deliberately Hansard-only — every MP is measured in the same arena
+           (parliamentary debate), which removes the cross-source coverage bias. Other sources
+           (press releases, news) will return in a later version as a separate, clearly-labelled axis.</p>
+
+        <h3>By party</h3>
+        {% set maxp = stats.per_party[0].statements if stats.per_party else 1 %}
+        <table class="data-table">
+            <thead><tr><th>Party</th><th class="num">MPs</th><th class="num">Statements</th><th>Share</th></tr></thead>
+            <tbody>
+            {% for p in stats.per_party %}
+                <tr>
+                    <td>{{ p.party }}</td>
+                    <td class="num">{{ p.mps }}</td>
+                    <td class="num">{{ '{:,}'.format(p.statements) }}</td>
+                    <td class="barcell"><span class="bar" style="width: {{ (100 * p.statements / maxp)|round(1) }}%"></span></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <h3>By politician</h3>
+        <p class="muted">Evidence statements extracted per MP (across all nine attributes). Coverage is
+           uneven — an MP who speaks more, or more contentiously, generates more scored statements.
+           Read scores relative to their evidence base.</p>
+        <details class="pol-table-wrap">
+            <summary>Show all {{ stats.per_politician|length }} politicians</summary>
+            <table class="data-table">
+                <thead><tr><th>#</th><th>Politician</th><th>Party</th><th class="num">Statements</th><th class="num">Attrs</th></tr></thead>
+                <tbody>
+                {% for r in stats.per_politician %}
+                    <tr>
+                        <td class="muted">{{ loop.index }}</td>
+                        <td>{{ r.name }}</td>
+                        <td>{{ r.party }}</td>
+                        <td class="num">{{ '{:,}'.format(r.statements) }}</td>
+                        <td class="num">{{ r.n_attrs }}/9</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </details>
+
+        <h3>Download the data</h3>
+        <p class="muted">The full dataset will be published as an open, versioned HuggingFace dataset
+           (CC-BY-4.0). Links coming soon:</p>
+        <div class="downloads">
+            {% for d in stats.downloads %}
+            <span class="dl-btn disabled" title="Coming soon">
+                {{ d.label }} <em>· {{ d.note }}</em> <span class="soon">coming soon</span>
+            </span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="back-link" style="margin-top:34px"><a href="/">← Back to the cards</a></div>
+    </main>
+
+    <footer class="site-footer">
+        <p><strong>Prototype.</strong> Scores are automated estimates from a sample of public
+           statements — not verified fact. <a href="/about">About &amp; method →</a></p>
+    </footer>
+</body>
+</html>
