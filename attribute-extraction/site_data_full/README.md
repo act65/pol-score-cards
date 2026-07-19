@@ -12,8 +12,8 @@ D&D-style **conduct scores** for New Zealand MPs, derived from **Hansard only**
 (the 54th Parliament debate record, 2023-12-05 → 2026-05-28). Each MP is scored 0–100
 on nine attributes: Forthrightness, Strength, Veracity, Authenticity, Divination, Charisma, Civility, Rigor, Specificity.
 
-- **133 politicians**, **47,343 evidence statements**,
-  from **566 scored debate windows**.
+- **134 politicians**, **65,075 evidence statements**,
+  from **744 scored debate windows**.
 - Scores are produced by an LLM (Claude Opus) reading speaker-attributed Hansard
   speech; every score is backed by quoted statements linking to the transcript.
 
