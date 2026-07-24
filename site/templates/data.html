@@ -18,15 +18,17 @@
         <p>Dataset stats haven't been generated yet. Run <code>python gen_data_stats.py</code>.</p>
         {% else %}
         {% set t = stats.totals %}
-        <p class="data-intro">Everything on this site is derived from a single source — the
-           <strong>Hansard</strong> record of the 54th New Zealand Parliament. Below is exactly how
-           much data sits behind the cards, and how it's distributed across politicians and parties.</p>
+        <p class="data-intro">The scores are derived from two sources for the 54th New Zealand
+           Parliament: the <strong>Hansard</strong> debate record (every MP), and the transcripts of
+           the weekly <strong>post-Cabinet press conferences</strong> (the PM and senior ministers).
+           Statements from both are blended into each politician's scores; the breakdown below shows
+           exactly how much data sits behind the cards, and where it comes from.</p>
 
         <section class="stat-cards">
             <div class="stat-card"><span class="big">{{ '{:,}'.format(t.statements) }}</span><span class="lbl">evidence statements</span></div>
             <div class="stat-card"><span class="big">{{ t.politicians }}</span><span class="lbl">politicians scored</span></div>
             <div class="stat-card"><span class="big">{{ t.attributes }}</span><span class="lbl">attributes each</span></div>
-            <div class="stat-card"><span class="big">{{ t.windows_scored or '—' }}</span><span class="lbl">debate windows read</span></div>
+            <div class="stat-card"><span class="big">{{ t.windows_scored or '—' }}</span><span class="lbl">windows scored</span></div>
             {% if t.date_range %}
             <div class="stat-card"><span class="big small">{{ t.date_range[0] }}<br>→ {{ t.date_range[1] }}</span><span class="lbl">date range</span></div>
             {% endif %}
@@ -35,12 +37,14 @@
         {% if stats.corpus %}
         {% set c = stats.corpus %}
         <h3>Raw source corpus</h3>
-        <p class="muted">The scored statements are extracted from the full raw debate transcripts:</p>
+        <p class="muted">The scored statements are extracted from the full raw transcripts:</p>
         <ul class="corpus-facts">
-            <li><strong>{{ c.sitting_days }}</strong> sitting days</li>
-            <li><strong>{{ '{:,}'.format(c.transcript_parts) }}</strong> transcript parts</li>
-            <li><strong>~{{ '{:,}'.format(c.approx_words) }}</strong> words of debate</li>
-            <li><strong>{{ (c.bytes / 1048576)|round(1) }} MB</strong> of raw text</li>
+            <li><strong>Hansard:</strong> {{ c.sitting_days }} sitting days, {{ '{:,}'.format(c.transcript_parts) }} transcript parts,
+                ~{{ '{:,}'.format(c.approx_words) }} words ({{ (c.bytes / 1048576)|round(1) }} MB)</li>
+            {% if stats.presser_corpus %}{% set pc = stats.presser_corpus %}
+            <li><strong>Pressers:</strong> {{ pc.conferences }} press conferences,
+                ~{{ '{:,}'.format(pc.approx_words) }} words ({{ (pc.bytes / 1048576)|round(1) }} MB)</li>
+            {% endif %}
         </ul>
         {% endif %}
 
@@ -53,9 +57,11 @@
             {% endfor %}
             </tbody>
         </table>
-        <p class="muted">v2.0 is deliberately Hansard-only — every MP is measured in the same arena
-           (parliamentary debate), which removes the cross-source coverage bias. Other sources
-           (press releases, news) will return in a later version as a separate, clearly-labelled axis.</p>
+        <p class="muted">Hansard covers every MP; the pressers add the PM and senior ministers'
+           unscripted public statements, blended into the same scores. Because pressers are
+           government-only, they concentrate on frontbenchers — so a minister's score draws on both
+           arenas while a backbencher's is Hansard alone. Scoring each arena <em>separately</em> (to
+           show a debate-vs-public delta) is planned for a later version.</p>
 
         <h3>By party</h3>
         {% set maxp = stats.per_party[0].statements if stats.per_party else 1 %}

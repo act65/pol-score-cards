@@ -302,13 +302,18 @@ class GenericAdapter:
     `needs_browser=True` routes through Playwright (JS-rendered / Radware-walled)."""
 
     def __init__(self, name, base, listing_path, link_re, needs_browser=False,
-                 start=1, page_fmt=None):
+                 start=1, page_fmt=None, min_para=40):
         self.name = name
         self.base = base
         self.listing_path = listing_path
         self.link_re = re.compile(link_re)
         self.needs_browser = needs_browser
         self.start = start
+        # Min paragraph length for body extraction. Framer/NationBuilder party
+        # sites (Labour, NZ First) render a big sidebar of related-release
+        # HEADLINES as <p>s (~40-70 chars) with no <article> wrapper, so the
+        # default 40 sweeps them in; ~90 keeps only real prose body paragraphs.
+        self.min_para = min_para
         # Some sites paginate as a path segment (WordPress: /section/page/2/)
         # rather than a ?page= query. `page_fmt` is a path template taking {n}.
         self.page_fmt = page_fmt
@@ -377,7 +382,7 @@ class GenericAdapter:
             date = _to_iso(dm.group(0)) if dm else ""
 
         paras = [p.get_text(" ", strip=True) for p in soup.find_all("p")]
-        content = format_text("\n".join(p for p in paras if len(p) > 40 and p != headline))
+        content = format_text("\n".join(p for p in paras if len(p) > self.min_para and p != headline))
         if not content:
             return None
         return {"headline": headline, "date": date, "author": "", "content": content, "url": url}
@@ -442,8 +447,11 @@ ADAPTERS = {a.name: a for a in (
     # The Spinoff: Next.js SPA — archive via monthly post sitemaps, not paging.
     SpinoffSitemapAdapter(),
     # Labour & NZ First — listings are JS-rendered, so browser path.
-    GenericAdapter("labour", "https://www.labour.org.nz", "/news", r"/news/[^/?#]+$", needs_browser=True),
-    GenericAdapter("nzfirst", "https://www.nzfirst.nz", "/news", r"/(news|column)/[^/?#]+$", needs_browser=True),
+    GenericAdapter("labour", "https://www.labour.org.nz", "/news", r"/news/[^/?#]+/?$", needs_browser=True, min_para=90),
+    # NZ First puts articles at root-level long slugs (/news-…, /video-…, /nz_first_…),
+    # not under a /news/ path, so match any long root slug (excludes short nav links).
+    GenericAdapter("nzfirst", "https://www.nzfirst.nz", "/news",
+                   r"nzfirst\.nz/[a-z0-9][a-z0-9_-]{20,}/?$", needs_browser=True, min_para=90),
     # RNZ — now JS-rendered; Parliament — Radware-walled. Both browser path.
     GenericAdapter("rnz", "https://www.rnz.co.nz", "/news/political", r"/news/political/\d+/", needs_browser=True),
     GenericAdapter("parliament", "https://www.parliament.nz",

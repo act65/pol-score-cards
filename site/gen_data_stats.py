@@ -14,7 +14,9 @@ import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 STATIC = os.path.join(HERE, "static")
-CORPUS = os.path.join(os.path.dirname(HERE), "data", "corpus", "hansard.json")
+_CORPUS_DIR = os.path.join(os.path.dirname(HERE), "data", "corpus")
+CORPUS = os.path.join(_CORPUS_DIR, "hansard.json")
+PRESSERS = os.path.join(_CORPUS_DIR, "pressers.json")
 
 
 def _jsonl(name):
@@ -49,6 +51,22 @@ def _corpus_stats():
     }
 
 
+def _presser_corpus_stats():
+    """Raw post-Cabinet presser corpus size (JSON array of transcripts)."""
+    if not os.path.exists(PRESSERS):
+        return None
+    try:
+        recs = json.load(open(PRESSERS, encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    chars = sum(len(r.get("content", "")) for r in recs)
+    return {
+        "conferences": len(recs),
+        "approx_words": round(chars / 6),
+        "bytes": os.path.getsize(PRESSERS),
+    }
+
+
 def main():
     politicians = _jsonl("politicians.jsonl")
     attributes = _jsonl("attributes.jsonl")
@@ -60,8 +78,9 @@ def main():
 
     attr_names = {a["name"] for a in attributes}
 
-    # statements per politician (stream examples so we never hold 26MB in memory)
+    # statements per politician + per source (stream examples so we never hold 26MB)
     stmt_by_mp = collections.Counter()
+    by_source = collections.Counter()
     total_statements = 0
     epath = os.path.join(STATIC, "examples.jsonl")
     if os.path.exists(epath):
@@ -74,6 +93,7 @@ def main():
             except json.JSONDecodeError:
                 continue
             stmt_by_mp[e.get("politician_id")] += 1
+            by_source[e.get("source", "Hansard")] += 1
             total_statements += 1
 
     def n_attrs(mid):
@@ -105,11 +125,16 @@ def main():
             "windows_scored": manifest.get("windows_scored"),
             "date_range": manifest.get("date_range"),
         },
-        "per_source": [{"source": "Hansard (54th Parliament debates)",
-                        "statements": total_statements, "share": 100.0}],
+        "per_source": [
+            {"source": {"Hansard": "Hansard (54th Parliament debates)",
+                        "Pressers": "Post-Cabinet press conferences"}.get(s, s),
+             "statements": c,
+             "share": round(100.0 * c / max(1, total_statements), 1)}
+            for s, c in by_source.most_common()],
         "per_party": per_party,
         "per_politician": per_pol,
         "corpus": _corpus_stats(),
+        "presser_corpus": _presser_corpus_stats(),
         "downloads": [
             {"label": "Raw Hansard corpus (JSONL)", "note": "speaker transcripts, 54th term", "url": None},
             {"label": "Extracted attribute scores (JSONL)", "note": "scores + evidence statements", "url": None},

@@ -29,7 +29,7 @@
         <p>Description: {{ attribute_info.definition }}</p>
         <p class="aggregate-note">
            {% if meta and meta.n %}Based on <strong>{{ meta.n }}</strong> scored statement{{ '' if meta.n == 1 else 's' }}
-              from Hansard{{ ' — treat single-statement scores with caution' if meta.n == 1 else '' }}.
+              from Hansard debates and press conferences (each quote's source is shown below){{ ' — treat single-statement scores with caution' if meta.n == 1 else '' }}.
               The headline number is a <em>bias-adjusted</em> estimate (empirical-Bayes): thin samples are pulled
               toward the typical value for this attribute, and ± is the 95% confidence band. The raw per-statement
               scores are shown below.
