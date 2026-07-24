@@ -1,9 +1,13 @@
 {
   "dataset": "nz-pol-scorecards-v2",
-  "source": "Hansard 54th Parliament (Hansard only)",
-  "windows_scored": 744,
+  "source": "Hansard 54th Parliament + Post-Cabinet press conference",
+  "windows_scored": 856,
+  "examples_by_source": {
+    "Hansard": 65075,
+    "Pressers": 5419
+  },
   "date_range": [
-    "2023-12-05",
+    "2023-11-29",
     "2026-05-28"
   ],
   "politicians": 134,
@@ -18,7 +22,8 @@
     "Rigor",
     "Specificity"
   ],
-  "examples": 65075,
+  "examples": 70494,
+  "scoring": "all sources blended into one score per (politician, attribute); each quote tagged with its source",
   "bias_mitigation": "empirical-Bayes shrinkage per attribute; n + 95% CI + confidence surfaced",
   "unresolved_speakers": 2,
   "files": {
@@ -29,10 +34,10 @@
       "sha256_16": "f7ae7f660eed0170"
     },
     "scores.jsonl": {
-      "sha256_16": "7e7d9ac967655518"
+      "sha256_16": "8a222c0451ab4c9f"
     },
     "examples.jsonl": {
-      "sha256_16": "633eb744ee23e9a0"
+      "sha256_16": "5f5e94ee153b27bf"
     }
   }
 }
