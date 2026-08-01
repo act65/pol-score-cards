@@ -36,6 +36,7 @@ UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
 CDX_PATTERN = {
     "labour": "labour.org.nz/news/*",
     "nzfirst": "nzfirst.nz/*",
+    "act": "act.org.nz/news/*",
 }
 
 # Optional per-source article-URL regex that's tighter than the adapter's link_re,
@@ -47,21 +48,33 @@ ARTICLE_RE = {
 }
 
 
-def _get(url, timeout=45):
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read()
+def _get(url, timeout=45, retries=4):
+    """GET with backoff on web.archive.org's flaky 503/429 responses."""
+    for attempt in range(retries):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": UA})
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return r.read()
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 503) and attempt < retries - 1:
+                time.sleep(6 * (attempt + 1))
+                continue
+            raise
 
 
-def cdx_candidates(source, since):
+def cdx_candidates(source, since, cdx_json=None):
     """Unique {url: earliest_timestamp} matching the adapter's article regex and
-    first-archived on/after `since` (YYYYMMDD)."""
+    first-archived on/after `since` (YYYYMMDD). Reads a cached CDX json file when
+    given (avoids re-hitting the rate-limited CDX API)."""
     adapter = sources.ADAPTERS[source]
     art_re = ARTICLE_RE.get(source, adapter.link_re)
     since_ts = since.replace("-", "")
-    q = urllib.parse.urlencode({"url": CDX_PATTERN[source], "collapse": "urlkey",
-                                "fl": "original,timestamp", "output": "json"})
-    data = json.loads(_get(f"{CDX}?{q}", timeout=180))
+    if cdx_json and os.path.exists(cdx_json):
+        data = json.load(open(cdx_json))
+    else:
+        q = urllib.parse.urlencode({"url": CDX_PATTERN[source], "collapse": "urlkey",
+                                    "fl": "original,timestamp", "output": "json"})
+        data = json.loads(_get(f"{CDX}?{q}", timeout=180))
     rows = data[1:] if data and data[0] == ["original", "timestamp"] else data
     cands = {}
     for orig, ts in rows:
@@ -100,7 +113,7 @@ def _fetch_parse(adapter, url, ts):
     return None
 
 
-def run(source, since="2023-10-14", out=None, delay=0.4, limit=0):
+def run(source, since="2023-10-14", out=None, delay=0.4, limit=0, cdx_json=""):
     adapter = sources.ADAPTERS[source]
     out = out or os.path.join(HERE, "..", "corpus", f"{source}.json")
     out = out if os.path.isabs(out) else os.path.join(HERE, out)
@@ -109,7 +122,7 @@ def run(source, since="2023-10-14", out=None, delay=0.4, limit=0):
     done = {r["url"].rstrip("/") for r in records}
     print(f"[{source}] existing: {len(records)} records", flush=True)
 
-    cands = cdx_candidates(source, since)
+    cands = cdx_candidates(source, since, cdx_json=cdx_json or None)
     todo = [(u, ts) for u, ts in sorted(cands.items()) if u.rstrip("/") not in done]
     if limit:
         todo = todo[:limit]

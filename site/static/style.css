@@ -442,5 +442,28 @@ h1 {
     border: 1px solid #cbd5e1; background: #fff; color: #334155; font-size: 0.9em;
 }
 .dl-btn em { color: #64748b; font-style: normal; }
+a.dl-btn { text-decoration: none; transition: border-color 0.15s, background 0.15s; }
+a.dl-btn:hover { border-color: #3b82f6; background: #f0f6ff; color: #1e40af; }
 .dl-btn.disabled { opacity: 0.75; cursor: not-allowed; }
+
+/* date-range stat card shouldn't stretch to fill its own row */
+.stat-card.date-card { flex-grow: 0; }
+
+/* source detail blocks */
+.source-list { display: flex; flex-direction: column; gap: 14px; margin: 10px 0 6px; }
+.source-block { border-left: 3px solid #e2e8f0; padding: 1px 0 1px 14px; }
+.source-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
+.source-head a, .source-name { font-weight: 700; color: #0f172a; font-size: 1.03em; }
+.source-head a:hover { color: #1e40af; }
+.source-share { font-size: 0.85em; color: #64748b; font-variant-numeric: tabular-nums; }
+.share-pct { font-weight: 700; color: #334155; margin-left: 3px; }
+.source-desc { margin: 4px 0; color: #475569; font-size: 0.92em; line-height: 1.5; }
+.source-links { font-size: 0.85em; color: #64748b; margin: 2px 0 0; }
+.source-links a { color: #475569; }
+
+/* ridgeline distribution chart */
+.ridgeline { margin: 8px 0 10px; max-width: 780px; overflow-x: auto; }
+.ridgeline svg { display: block; }
+.ridgeline path { transition: fill-opacity 0.15s; }
+.ridgeline g:hover path { fill-opacity: 0.72; }
 .dl-btn .soon { font-size: 0.72em; text-transform: uppercase; letter-spacing: 0.04em; color: #fff; background: #94a3b8; padding: 2px 7px; border-radius: 999px; }

@@ -97,7 +97,8 @@ def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, date
 
 def run(scores="hansard_scores_full.jsonl", out="site_data_v2",
         corpus_label="Hansard 54th Parliament", min_n=1, max_examples=0,
-        presser_scores="", presser_label="Post-Cabinet press conference"):
+        presser_scores="", presser_label="Post-Cabinet press conference",
+        release_scores="", release_label="Party press release"):
     R = Roster()
     os.makedirs(out, exist_ok=True)
 
@@ -107,15 +108,35 @@ def run(scores="hansard_scores_full.jsonl", out="site_data_v2",
     dates = set()
     src_counts = collections.Counter()              # source -> #examples
 
-    # Hansard: URL built from the sitting date. Pressers: each record carries its
-    # own YouTube URL. Both blend into the same per-(mp, attribute) score pool.
+    # Hansard: URL from the sitting date. Pressers/releases: each record carries its
+    # own URL. All three blend into the same per-(mp, attribute) score pool.
     hansard_rows = _read(scores)
     presser_rows = _read(presser_scores) if presser_scores else []
+    release_rows = _read(release_scores) if release_scores else []
+
+    # Parties delete/restructure their sites, so some release URLs now 404. The
+    # liveness map (data/corpus/release_url_status.json, from check_release_urls.py)
+    # marks those; we point their evidence links at the Wayback snapshot instead,
+    # dated to the release, so a dead live URL still resolves.
+    _here = os.path.dirname(os.path.abspath(__file__))
+    _status_path = os.path.join(_here, "..", "data", "corpus", "release_url_status.json")
+    url_status = json.load(open(_status_path)) if os.path.exists(_status_path) else {}
+
+    def release_url(rec, date):
+        u = rec.get("url", "")
+        s = url_status.get(u)
+        if s and not s.get("live", True):
+            ts = (date.replace("-", "") + "120000") if date else ""
+            return f"https://web.archive.org/web/{ts}/{u}" if ts else f"https://web.archive.org/web/{u}"
+        return u
+
     _ingest(hansard_rows, corpus_label, "Hansard",
             lambda rec, date: f"https://hansard.parliament.nz/hansard-transcript/{date}",
             R, per_pair, examples, unresolved, dates, src_counts)
     _ingest(presser_rows, presser_label, "Pressers",
             lambda rec, date: rec.get("url", ""),
+            R, per_pair, examples, unresolved, dates, src_counts)
+    _ingest(release_rows, release_label, "Party releases", release_url,
             R, per_pair, examples, unresolved, dates, src_counts)
 
     adjusted = bias_adjust.adjust_scores(per_pair)
@@ -165,11 +186,12 @@ def run(scores="hansard_scores_full.jsonl", out="site_data_v2",
         return h.hexdigest()[:16]
 
     files = ["politicians.jsonl", "attributes.jsonl", "scores.jsonl", "examples.jsonl"]
-    sources = [corpus_label] + ([presser_label] if presser_scores else [])
+    sources = ([corpus_label] + ([presser_label] if presser_scores else [])
+               + ([release_label] if release_scores else []))
     manifest = {
         "dataset": "nz-pol-scorecards-v2",
         "source": " + ".join(sources),
-        "windows_scored": len(hansard_rows) + len(presser_rows),
+        "windows_scored": len(hansard_rows) + len(presser_rows) + len(release_rows),
         "examples_by_source": dict(src_counts),
         "date_range": [min(dates), max(dates)] if dates else None,
         "politicians": len(mp_ids),

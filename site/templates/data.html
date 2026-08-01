@@ -18,11 +18,12 @@
         <p>Dataset stats haven't been generated yet. Run <code>python gen_data_stats.py</code>.</p>
         {% else %}
         {% set t = stats.totals %}
-        <p class="data-intro">The scores are derived from two sources for the 54th New Zealand
-           Parliament: the <strong>Hansard</strong> debate record (every MP), and the transcripts of
-           the weekly <strong>post-Cabinet press conferences</strong> (the PM and senior ministers).
-           Statements from both are blended into each politician's scores; the breakdown below shows
-           exactly how much data sits behind the cards, and where it comes from.</p>
+        <p class="data-intro">The scores are derived from three sources for the 54th New Zealand
+           Parliament: the <strong>Hansard</strong> debate record (every MP), the transcripts of the
+           weekly <strong>post-Cabinet press conferences</strong> (the PM and senior ministers), and
+           the parties' <strong>press releases</strong>. Statements from all three are blended into
+           each politician's scores; the breakdown below shows exactly how much data sits behind the
+           cards, and where it comes from.</p>
 
         <section class="stat-cards">
             <div class="stat-card"><span class="big">{{ '{:,}'.format(t.statements) }}</span><span class="lbl">evidence statements</span></div>
@@ -30,54 +31,60 @@
             <div class="stat-card"><span class="big">{{ t.attributes }}</span><span class="lbl">attributes each</span></div>
             <div class="stat-card"><span class="big">{{ t.windows_scored or '—' }}</span><span class="lbl">windows scored</span></div>
             {% if t.date_range %}
-            <div class="stat-card"><span class="big small">{{ t.date_range[0] }}<br>→ {{ t.date_range[1] }}</span><span class="lbl">date range</span></div>
+            <div class="stat-card date-card"><span class="big small">{{ t.date_range[0] }} → {{ t.date_range[1] }}</span><span class="lbl">date range</span></div>
             {% endif %}
         </section>
 
-        {% if stats.corpus %}
-        {% set c = stats.corpus %}
-        <h3>Raw source corpus</h3>
-        <p class="muted">The scored statements are extracted from the full raw transcripts:</p>
-        <ul class="corpus-facts">
-            <li><strong>Hansard:</strong> {{ c.sitting_days }} sitting days, {{ '{:,}'.format(c.transcript_parts) }} transcript parts,
-                ~{{ '{:,}'.format(c.approx_words) }} words ({{ (c.bytes / 1048576)|round(1) }} MB)</li>
-            {% if stats.presser_corpus %}{% set pc = stats.presser_corpus %}
-            <li><strong>Pressers:</strong> {{ pc.conferences }} press conferences,
-                ~{{ '{:,}'.format(pc.approx_words) }} words ({{ (pc.bytes / 1048576)|round(1) }} MB)</li>
-            {% endif %}
-        </ul>
-        {% endif %}
 
-        <h3>By source</h3>
-        <table class="data-table">
-            <thead><tr><th>Source</th><th class="num">Statements</th><th class="num">Share</th></tr></thead>
-            <tbody>
+        <h3>The three sources</h3>
+        <div class="source-list">
             {% for s in stats.per_source %}
-                <tr><td>{{ s.source }}</td><td class="num">{{ '{:,}'.format(s.statements) }}</td><td class="num">{{ s.share }}%</td></tr>
+            <div class="source-block">
+                <div class="source-head">
+                    {% if s.url %}<a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.source }}</a>
+                    {% else %}<span class="source-name">{{ s.source }}</span>{% endif %}
+                    <span class="source-share">{{ '{:,}'.format(s.statements) }} statements
+                        <span class="share-pct">{{ s.share }}%</span></span>
+                </div>
+                <p class="source-desc">{{ s.desc }}</p>
+                {% if s.source == 'Party press releases' and stats.party_urls %}
+                <p class="source-links">Party news pages:
+                    {% for party, url in stats.party_urls.items() %}{% if url %}<a href="{{ url }}" target="_blank" rel="noopener">{{ party }}</a>{% if not loop.last %} · {% endif %}{% endif %}{% endfor %}</p>
+                {% endif %}
+            </div>
             {% endfor %}
-            </tbody>
-        </table>
-        <p class="muted">Hansard covers every MP; the pressers add the PM and senior ministers'
-           unscripted public statements, blended into the same scores. Because pressers are
-           government-only, they concentrate on frontbenchers — so a minister's score draws on both
-           arenas while a backbencher's is Hansard alone. Scoring each arena <em>separately</em> (to
-           show a debate-vs-public delta) is planned for a later version.</p>
+        </div>
+        <p class="muted">All three blend into the same scores. Different sources reach different people —
+           a minister draws on all three, a backbencher mostly on Hansard — so read a score alongside its
+           evidence base. (Party-release extraction is still rolling out across the parties.) Scoring each
+           source <em>separately</em> — to show a debate-vs-public delta — is planned for later.</p>
 
         <h3>By party</h3>
-        {% set maxp = stats.per_party[0].statements if stats.per_party else 1 %}
         <table class="data-table">
-            <thead><tr><th>Party</th><th class="num">MPs</th><th class="num">Statements</th><th>Share</th></tr></thead>
+            <thead><tr><th>Party</th><th class="num">MPs</th><th class="num">Statements</th>
+                <th class="num">Share</th><th class="num">Mean score</th></tr></thead>
             <tbody>
             {% for p in stats.per_party %}
                 <tr>
                     <td>{{ p.party }}</td>
                     <td class="num">{{ p.mps }}</td>
                     <td class="num">{{ '{:,}'.format(p.statements) }}</td>
-                    <td class="barcell"><span class="bar" style="width: {{ (100 * p.statements / maxp)|round(1) }}%"></span></td>
+                    <td class="num">{{ p.share }}%</td>
+                    <td class="num">{{ p.mean_score if p.mean_score is not none else '—' }}</td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
+
+        {% if stats.party_distribution_svg %}
+        <h3>Overall scores by party</h3>
+        <p class="muted">Each MP's <strong>overall score</strong> is the geometric mean of their nine
+           attributes (0–100) — the same measure the cards rank by, where one weak attribute drags the
+           whole score down. Below, the <em>distribution</em> of those scores within each party, worst
+           (left) to best (right); the dashed line marks each party's mean. Party means sit close
+           together — what differs is the <em>spread</em>. Only MPs with ≥6 attributes scored are shown.</p>
+        <div class="ridgeline">{{ stats.party_distribution_svg | safe }}</div>
+        {% endif %}
 
         <h3>By politician</h3>
         <p class="muted">Evidence statements extracted per MP (across all nine attributes). Coverage is
@@ -102,13 +109,15 @@
         </details>
 
         <h3>Download the data</h3>
-        <p class="muted">The full dataset will be published as an open, versioned HuggingFace dataset
-           (CC-BY-4.0). Links coming soon:</p>
+        <p class="muted">The scored dataset and the raw source corpora, free to reuse (CC-BY-4.0).
+           A versioned HuggingFace release is planned; these are the live files behind the site:</p>
         <div class="downloads">
             {% for d in stats.downloads %}
-            <span class="dl-btn disabled" title="Coming soon">
-                {{ d.label }} <em>· {{ d.note }}</em> <span class="soon">coming soon</span>
-            </span>
+            {% if d.url %}
+            <a class="dl-btn" href="{{ d.url }}" download>{{ d.label }} <em>· {{ d.note }}</em></a>
+            {% else %}
+            <span class="dl-btn disabled">{{ d.label }} <em>· {{ d.note }}</em> <span class="soon">coming soon</span></span>
+            {% endif %}
             {% endfor %}
         </div>
         {% endif %}
