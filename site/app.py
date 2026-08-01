@@ -175,6 +175,39 @@ def data():
                            attributes=attribute_descriptions)
 
 
+# Downloadable files: the served dataset (already in static/) and the raw corpora
+# (data/corpus/, not otherwise web-exposed). Party releases are zipped on the fly.
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_CORPUS = os.path.join(os.path.dirname(_HERE), "data", "corpus")
+_DOWNLOADS = {
+    "examples": os.path.join(_HERE, "static", "examples.jsonl"),
+    "scores": os.path.join(_HERE, "static", "scores.jsonl"),
+    "hansard": os.path.join(_CORPUS, "hansard.json"),
+    "pressers": os.path.join(_CORPUS, "pressers.json"),
+}
+_RELEASE_FILES = ["national", "labour", "act", "greens", "nzfirst", "tpm"]
+
+
+@app.route('/download/<key>')
+def download(key):
+    from flask import send_file, abort
+    if key == "releases":
+        import io, zipfile
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+            for name in _RELEASE_FILES:
+                p = os.path.join(_CORPUS, f"{name}.json")
+                if os.path.exists(p):
+                    z.write(p, f"party_releases/{name}.json")
+        buf.seek(0)
+        return send_file(buf, mimetype="application/zip", as_attachment=True,
+                         download_name="nz_party_press_releases.zip")
+    path = _DOWNLOADS.get(key)
+    if not path or not os.path.exists(path):
+        abort(404)
+    return send_file(path, as_attachment=True, download_name=os.path.basename(path))
+
+
 @app.route('/about')
 def about():
     return render_template('about.html', attributes=attribute_descriptions)
