@@ -133,7 +133,7 @@ def run(out="release_scores.jsonl", window_tokens=6000, workers=2,
     attrs = sorted(os.path.splitext(f)[0] for f in os.listdir(prompts_dir)
                    if f.endswith(".txt") and os.path.splitext(f)[0] not in NON_ATTRS)
     valid = set(attrs)
-    system = extract.build_combined_system(attrs, prompts_dir, examples=True)
+    system = extract.build_combined_system(attrs, prompts_dir)
     out = out if os.path.isabs(out) else os.path.join(HERE, out)
 
     releases = _load_releases()

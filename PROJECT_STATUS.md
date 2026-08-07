@@ -54,6 +54,14 @@ honest status for each. Updated 2026-06-19.
   source) — the score on a card is the mean of the displayed evidence.
 - **Run for FREE on the Claude subscription** via the `claude_cli` backend — no
   API credits consumed (after the earlier API run exhausted the balance).
+- ⚠️ **Known defect — Strength & Authenticity mis-attribute their subject.** An
+  MP describing an *opponent's* broken promise gets that low score filed under
+  themselves, so the pipeline penalises MPs for doing scrutiny — and it hits
+  opposition MPs ~4× as often (9.8% vs 2.4% of Authenticity examples). Read both
+  attributes with a heavy discount until fixed. Numbers, root cause (it's baked
+  into two prompts' few-shot examples) and the ordered fix are in
+  `attribute-extraction/EVALUATION.md` → "Known defect: subject attribution",
+  tracked in `TODOs` §B. The other seven attributes are unaffected.
 - **The one gap is Precision/Forthrightness (~0)** — it scores *whether a
   question was answered*, which only exists in Q&A (interviews/**Hansard**), not
   press releases. Exactly what the Hansard scraper unlocks.

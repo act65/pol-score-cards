@@ -1,17 +1,59 @@
-You are an expert at analysing political discourse to determine whether questions are answered directly. Read the text, find instances where a politician is asked a question, and score how forthrightly they answer.
+THE ONE QUESTION: Did the answer address the question that was asked?
 
-Forthrightness is the opposite of dodging: high forthrightness means the politician answers the question asked, in full and honestly; low forthrightness means they evade, change the subject, or answer a different question than the one asked.
+UNIT OF ANALYSIS: a question/answer PAIR. Evasion is a relation between a
+question and an answer — it cannot be seen in an isolated statement, which is
+why this attribute is scored over `corpus/oral_questions.jsonl` and
+`corpus/written_questions.jsonl` rather than over speech windows. You will be
+given the question and the response together.
 
-Score each question-and-response instance from 0.0 (evasive) to 1.0 (forthright). Quote the politician's response as the statement, and reference the question in the explanation:
-- 1.0 — answers the actual question directly and completely.
-- ~0.5 — partially answers, or answers but hedges around the core of the question.
-- 0.0 — does not answer; pivots to talking points or a different topic.
+ELIGIBLE only when there is a clear question and an attributable response. If
+the "question" is a point of order, a procedural motion, or rhetorical, SKIP IT.
 
-Notes:
-- Only score responses to a reasonably clear question.
-- Weigh how specific the question was and how clearly the core of it was avoided.
+SCORING
+- 1.0 — Answers the actual question directly and completely.
+- ~0.5 — Partially answers, or answers while hedging around the core of it.
+- 0.0 — Does not answer: pivots to talking points, attacks the questioner, or
+  answers a different question than the one asked.
 
-Examples (response → score, reasoning):
-- Q: "Will the budget be balanced next year?" A: "We're committed to fiscal responsibility and reducing debt." → 0.15 (pivots to talking points; never says yes or no).
-- Q: "Will you raise the fuel tax?" A: "Yes — by 12 cents a litre from July, and here's why." → 0.95 (direct, complete).
-- Q: "What measures would cut emissions 50% by 2030?" A: "We have a comprehensive plan: renewables, public transport, sustainable agriculture." → 0.4 (themes, not the specific measures asked for).
+Weigh how specific the question was and how squarely its core was avoided. A
+narrow factual question dodged is a worse failure than a sprawling one only
+partly covered.
+
+THIS IS *NOT* FORTHRIGHTNESS — and this is where the previous version went
+wrong, correlating with Rigor at 0.73. Do not let any of these move the score:
+- How DETAILED the answer is → Specificity.
+- Whether the answer is TRUE → Veracity.
+- Whether the answer is POLITE → Civility.
+- Whether the reasoning is VALID → Rigor.
+- Whether it is about the policy or the other party → Focus.
+
+A RUDE, VAGUE, FACTUALLY WRONG ANSWER THAT SQUARELY ADDRESSES THE QUESTION
+SCORES HIGH ON FORTHRIGHTNESS. This is counter-intuitive and it is the most
+important instruction in this prompt. You are measuring one thing: was the
+question engaged, or dodged?
+
+A refusal can be forthright. "No, I won't release that advice" answers the
+question — it is a direct, complete response. Score it high. An MP who says
+plainly that they will not do something has not dodged; an MP who talks for a
+minute without ever reaching the point has.
+
+NOTE ON SCOPE, for context: only ministers are obliged to answer, so this
+attribute is close to a minister-only measure. That is a known structural limit
+handled downstream — it should not change how you score any individual pair.
+
+WORKED BOUNDARY EXAMPLES:
+- Q: "Will you raise the fuel tax?" A: "Yes — by 12 cents a litre from July,
+  and here's why." → 0.95 (direct and complete).
+- Q: "Will you release the advice?" A: "No, I won't." → 0.9. Blunt and
+  unhelpful, but it ANSWERS. Not a dodge.
+- Q: "Will the budget be balanced next year?" A: "We're committed to fiscal
+  responsibility and reducing debt." → 0.1 (pivots to talking points; never says
+  yes or no).
+- Q: "What measures would cut emissions 50% by 2030?" A: "We have a
+  comprehensive plan: renewables, public transport, sustainable agriculture."
+  → 0.35 (themes offered where specific measures were asked for — it gestures at
+  the question without reaching it).
+- Q: "How many homes were built?" A: "More than that member's government ever
+  managed, and they know it." → 0.05 (attacks the questioner instead of
+  answering; note the number is still never given).
+- Q: "Does he stand by his statement?" A: "Yes." → 1.0. One word, complete.

@@ -21,8 +21,8 @@
         'Divination':   'Initiative — each round, the highest Divination on the table acts first, then the next, and so on.',
         'Specificity':  'Accuracy — to hit, roll a d10; if you roll above the attacker\'s Specificity, the attack is too vague and misses.',
         'Authenticity': 'On target — if a hit connects, roll a d10; roll above the attacker\'s Authenticity and it strikes a random enemy instead — words not matching actions.',
-        'Precision':    'Riposte — when this card is attacked, the attacker takes Precision ÷ 3 damage back. Standing behind your record.',
-        'Charisma':     'Reinforcements — knock out an enemy with a Charisma-7-or-higher card and you may immediately deploy another politician from your hand.',
+        'Forthrightness': 'Riposte — when this card is attacked, the attacker takes the defender\'s Forthrightness ÷ 3 in damage back. Answering straight puts the questioner on the back foot.',
+        'Focus':        'Concentration — stay on the same target and your attacks build: +1 damage for each consecutive turn you keep pressing, up to Focus ÷ 2. Switch target and it resets to zero.',
         'Civility':     'Steady hand — while a Civility-8-or-higher card is on your bench, every one of your cards takes 1 less damage per hit. Constructive teamwork.'
     } %}
 
@@ -78,16 +78,28 @@
             <li><strong>On target.</strong> Otherwise roll a d10 again. Roll <em>above</em> the
                 attacker's Authenticity rating and the attack lands on a <em>random</em> enemy card
                 instead of the one you aimed at.</li>
-            <li><strong>Damage.</strong> The hit deals the attacker's <strong>Rigor</strong>, minus
-                <strong>half the defender's Veracity</strong> (round down), minus <strong>1</strong>
-                if the defender's owner has a Civility-8+ card on the bench. Minimum 1 damage.</li>
-            <li><strong>Riposte.</strong> The attacker then takes the defender's <strong>Precision
-                ÷ 3</strong> in damage back.</li>
-            <li>A card reduced to <strong>0 Health</strong> is knocked out and discarded. If your
-                attacker had Charisma 7+, you may deploy your hand card to the bench.</li>
+            <li><strong>Damage.</strong> The hit deals the attacker's <strong>Rigor</strong>, plus
+                the attacker's <strong>Concentration bonus</strong> (below), minus <strong>half the
+                defender's Veracity</strong> (round down), minus <strong>1</strong> if the
+                defender's owner has a Civility-8+ card on the bench. Minimum 1 damage.</li>
+            <li><strong>Riposte.</strong> The attacker then takes the defender's
+                <strong>Forthrightness ÷ 3</strong> in damage back.</li>
+            <li>A card reduced to <strong>0 Health</strong> is knocked out and discarded.</li>
         </ol>
         <p>When every card has acted, the round ends. Players may deploy any benched-but-empty slots
            from hand (you can hold a maximum of three cards on the bench), then a new round begins.</p>
+
+        <h2>Concentration</h2>
+        <p>Each of your cards remembers who it attacked last turn. Attack the <strong>same enemy
+           card</strong> again and your <em>Concentration</em> rises by one, adding <strong>+1
+           damage per stack</strong>. Aim anywhere else — or get knocked out — and it drops straight
+           back to <strong>zero</strong>. A card can hold at most <strong>Focus ÷ 2</strong> stacks
+           (round down), so a Focus-9 card caps at +4 and a Focus-2 card at +1.</p>
+        <p>This is the game's one bit of long-term planning, and it is the attribute doing the work.
+           A high-Focus politician who keeps pressing the same argument becomes genuinely dangerous
+           by the third or fourth round. A low-Focus one lashes out at whoever is nearest and never
+           builds anything — which is exactly what the score measures: engaging the policy, rather
+           than swinging at the other team.</p>
 
         <h2>Winning</h2>
         <p>Knock out all of your opponent's politicians and you win. If both players run out of
@@ -96,10 +108,12 @@
         <h2>Why the scores matter</h2>
         <p>Strong cards aren't the loudest politicians — they're the ones who score well across the
            board: durable (Strength), credible (Veracity), precise (Specificity), consistent
-           (Authenticity). A serial over-claimer with low Veracity has paper-thin armour; a vague
-           one misses constantly; a bully with low Civility drags their whole team down. Holding a
-           bad card and thinking <em>"how is this person an MP?"</em> is the game working as intended
-           — and every number traces back to <a href="/">the evidence on their scorecard</a>.</p>
+           (Authenticity), disciplined (Focus). A serial over-claimer with low Veracity has
+           paper-thin armour; a vague one misses constantly; a bully with low Civility drags their
+           whole team down; one who only ever attacks the other party never builds Concentration and
+           spends the whole game hitting for chip damage. Holding a bad card and thinking
+           <em>"how is this person an MP?"</em> is the game working as intended — and every number
+           traces back to <a href="/">the evidence on their scorecard</a>.</p>
 
         <div class="back-link"><a href="/">← Back to the cards</a></div>
     </main>

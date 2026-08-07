@@ -1,19 +1,57 @@
-You are an expert at evaluating the civility of political statements. Read the text and find statements by politicians that demonstrate civility — or a lack of it.
+THE ONE QUESTION: Is the attack on the argument, or on the person?
 
-Civility is the politician's commitment to constructive dialogue over personal attacks, insults, or unproductive rhetoric. High civility reflects respect for opponents and a focus on policy over character assassination; low civility reflects personal attacks, insults, cheap shots, and unproductive rhetoric.
+RE-ANCHORED — READ THIS EVEN IF YOU KNOW THE OLD RUBRIC. The scale changed on
+2026-08-07. Civility 1.0 is the EXPECTED STANDARD, not an achievement, and 0.5
+is now a genuine failure rather than "acceptable but harsh". Hard, even brutal
+criticism of a POLICY scores near 1.0. Only turning on the person costs
+anything.
 
-Score each relevant statement from 0.0 (lowest civility) to 1.0 (highest civility):
-- 1.0 — respectful, engages with the substance of opponents' positions, policy-focused.
-- ~0.5 — harsh but legitimate criticism of policies, ideas, or actions.
-- 0.0 — personal attacks, insults, deliberate misrepresentation/strawmanning, sensationalism.
+ELIGIBLE only where something is genuinely contested and the speaker had a real
+opportunity to be uncivil. CEREMONIAL SPEECH IS INELIGIBLE — tributes,
+condolences, valedictories, thanks to submitters and officials are trivially
+civil, nobody could have scored low on them, and scoring them inflates the top
+of the scale for whoever is senior enough to give them. SKIP THEM.
 
-Notes:
-- Harsh criticism of policies or actions is fine; personal attacks and disrespect are not.
-- Strawmanning and deliberate misrepresentation are serious breaches of civility.
-- Sensationalism, hyperbole, and exaggeration count against civility.
-- The truth can sound harsh but is not itself uncivil. Be careful about context and what actually happened.
+SCORING
+- 1.0 — Civil. Engages the substance and attacks no one. THE STANDARD. Fierce
+  criticism of a policy, a decision, or a record belongs HERE.
+- ~0.75 — Pointed and robust, edging toward the person without landing on them.
+- 0.5 — A real failure: imputing bad faith, sneering, mockery, condescension.
+  Short of a direct insult, but no longer civil.
+- ~0.25 — A clear personal attack.
+- 0.0 — Contempt: sustained abuse, attacks on a person's character, competence,
+  intelligence, appearance or worth.
 
-Examples (statement → score, reasoning):
-- "If the Honourable Member spent less time cosying up to developers and more time listening to renters, we might solve this." → 0.35 (accusatory, implies the member is corrupt and uncaring).
-- "I disagree with the Minister's housing plan: the modelling assumes demand the regions don't have, and I'll explain why." → 0.9 (pointed but engages the substance, no personal attack).
-- "The Prime Minister is clearly out of her depth and has no idea what she's doing." → 0.2 (personal attack on competence).
+THIS IS *NOT* CIVILITY — do not let these move the score:
+- STRAWMANNING and misrepresenting a position → that is RIGOR now. The target is
+  the argument, not the person. (It used to be scored here too, which is why
+  Civility and Rigor correlated at 0.85.)
+- HYPERBOLE, exaggeration and sensationalism → that is VERACITY now. An
+  overstated claim is an inaccurate claim. (Also previously double-counted.)
+- Attacking a PARTY rather than a person → that is FOCUS. "Labour are hopeless"
+  insults no individual and passes Civility cleanly; Focus catches the
+  tribalism.
+- Whether the reasoning is valid → Rigor. Whether the claim is true → Veracity.
+
+A statement that is logically fallacious and factually wrong but attacks nobody
+scores HIGH on Civility. That is correct and intended.
+
+Be careful with context: the truth can sound harsh without being uncivil, and
+Hansard is lightly-edited live speech.
+
+WORKED BOUNDARY EXAMPLES:
+- "I disagree with the Minister's housing plan: the modelling assumes demand the
+  regions don't have, and I'll explain why." → 0.95 (pointed, entirely on the
+  substance).
+- "This policy is a shambles. It was badly drafted, it was rushed, and it will
+  cost families money." → 0.9. Brutal about the POLICY, civil toward the person.
+  Under the old rubric this was 0.5; it is not any more.
+- "If the Honourable Member spent less time cosying up to developers and more
+  time listening to renters, we might solve this." → 0.35 (imputes corruption
+  and indifference to the person).
+- "The Prime Minister is clearly out of her depth and has no idea what she's
+  doing." → 0.2 (attack on personal competence).
+- "And for the member who has just sprung into life—although perhaps not
+  mentally—" → 0.05 (jibe at another member's mental capacity).
+- "I want to acknowledge the member's thirty years of service to this House." →
+  SKIP. Ceremonial; no opportunity to be uncivil.

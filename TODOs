@@ -119,6 +119,111 @@ Make extraction strategy choices based on measured performance AND cost
 ($ on LLM use). Stripping redundant text, fewer/shorter prompts, combined calls
 are all levers to evaluate — not assume.
 
+SUBJECT ATTRIBUTION BUG — Strength & Authenticity (open, hits the live site).
+An MP describing an OPPONENT's broken promise / hypocrisy gets that low score
+filed under themselves, so we penalise MPs for doing scrutiny. 37% of low-score
+Authenticity examples and 7% of low-score Strength ones; opposition MPs flagged
+~4x as often as government MPs (9.8% vs 2.4% on Authenticity). Full write-up,
+numbers and root cause: attribute-extraction/EVALUATION.md "Known defect:
+subject attribution". Ordered fix:
+- [ ] Post-hoc filter in the builder (repairs the live site, no re-scoring):
+      drop examples whose judgement subject isn't the speaker. Regex triage now,
+      or a cheap Haiku pass over the ~8k Strength/Authenticity explanations.
+- [ ] Prompt fixes (cheap, needed regardless): delete strength.txt's "year after
+      year they promised to fix the hospital" few-shot (it teaches the bug);
+      change authenticity.txt's "signal about that opponent" note to "skip it —
+      do not score"; add "only score when the subject is the speaker, their own
+      party, or their own government" to both.
+- [ ] Add `subject: speaker|other|unclear` to the extraction schema and keep only
+      `speaker` at build time. This is the real fix — and `subject: other` is
+      exactly the field the PITCH.md claims ledger needs, so nothing is wasted.
+- [ ] Until fixed: mark Strength + Authenticity as low-confidence on the site.
+
+EVIDENCE-BASED STRENGTH & AUTHENTICITY (v3.0) — FULL PLAN: see V3_PLAN.md
+(root). Ground both attributes in the voting/legislative record instead of
+asking the LLM to guess, add `subject` to every scored statement, and make
+evaluation a first-class deliverable rather than a 14-row afterthought.
+
+DONE — the deterministic substrate (no LLM quota spent). See data/VOTES.md:
+- [x] 1. corpus/divisions.jsonl — 3,890 party votes parsed from Hansard.
+- [x] 1b. Fixed TWO Hansard scrape defects (short-<p> filter + max_sections=8
+      truncation losing 37% of the text); re-scraped to hansard_v2.json;
+      divisions 984 -> 4,122; 41 of 55 `unopposed` were wrong.
+- [x] 1c. corpus/strength_ledger.jsonl — bills in charge + ballot bills +
+      amendment papers; coverage 75 -> 121 of 135 MPs; no-evidence never zero;
+      amendment papers weighted by distinct bills; writes no score.
+- [x] 1d. corpus/manifestos.jsonl — coalition agreements + party platforms
+      (live + Wayback), the party-level promise side.
+
+REMAINING — all tracked in V3_PLAN.md, summarised here:
+- [x] Prompt fixes + `subject: speaker|other|unclear` in the extraction schema
+      (extract.py `_MultiExample`), wired into both output instructions and the
+      combined-system preamble. strength.txt's bug-teaching few-shot flipped to
+      subject="other"; authenticity.txt's "signal about that opponent" note now
+      says never lower the speaker's score. veracity/divination carry an explicit
+      GROUNDING CAVEAT (they stay text-only LLM guesses for v3.0).
+- [ ] Split extraction output into FOUR tables: examples (statement scores),
+      positions (Authenticity), promises (Strength), qa_pairs (Forthrightness).
+- [x] Proposition vocabulary: data/build_propositions.py -> corpus/propositions.jsonl
+      (212 propositions, party stance per proposition weighted so a third
+      reading outranks a first, plus stance_confidence). 10 tests.
+- [x] Hansard oral-question Q/A PAIR extraction: data/parse_questions.py ->
+      corpus/oral_questions.jsonl. 11,082 pairs over 186 question-time days,
+      both house styles (2025 numbered+portfolio, 2026 bare), interjections and
+      chair turns dropped, 99% of responders resolved. 16 tests.
+- [x] WRITTEN parliamentary questions: data/scrapers/written_questions.py ->
+      corpus/written_questions.jsonl. questions.parliament.nz has its OWN API
+      shape (searchTab/members/ministers, not the bills documentPreset one) and
+      IGNORES server-side filters, so we page newest-first and stop on leaving
+      the parliament. Full reply text is in the listing — no detail calls.
+      Pending questions carry a "Reply due: <date>" placeholder, which must not
+      be scored as a non-answer; `answered` and `attachment_only` capture that.
+      Deep pagination 500s at ~page 102, and dateFrom/dateTo only filter when
+      sent TOGETHER — so the fetch slices by month and appends per month
+      (an earlier buffer-then-write version lost 100,989 rows to that 500).
+      20 tests.
+- [ ] FORTHRIGHTNESS MUST SCORE DISTINCT QUESTION TEMPLATES, NOT RAW QUESTIONS.
+      180,939 written questions reduce to only 56,482 distinct templates (31.2%);
+      the top 20 templates are 18% of everything asked, and one Verrall template
+      was filed 1,763 times across 31 ministers. Raw counts would rank
+      bulk-filers as the most diligent MPs, and a minister's evasion rate would
+      be set by whichever portfolio got template-bombed. Same fix as Strength's
+      "distinct bills engaged": group by normalised question text, score the
+      group. Also makes the LLM pass affordable.
+- [x] HOUSEKEEPING (2026-08-01): tests moved to data/tests/ and
+      attribute-extraction/tests/ with conftest.py; root pytest.ini runs all
+      244 in one command. data/names.py now holds the ONLY copy of politician
+      name cleaning + roster lookup (six near-copies deleted; their differences
+      were bugs). Deleted ~200MB of caches, one-off extraction outputs, logs,
+      the presser caption cache and terraform provider downloads; removed
+      duplicate STATS/status files. Terraform STATE deliberately kept.
+- [x] LABELLING TOOL: attribute-extraction/label_testset.py — CSV round-trip
+      with validation (0-1 range, subject enum, --by annotator required).
+- [ ] EVALUATION — the main effort. Testsets to n>=100 with a three-way
+      dev/test/self-supervised split, leakage check enforced in CI,
+      subject-attribution testset, inter-annotator agreement on ~50
+      double-labelled items, and the free labels (hold out the vote;
+      coalition-agreement status). Always report vs the party-line baseline.
+- [ ] PROMPT REDESIGN PROTOCOL: iterate on `dev` only, touch `test` once, and
+      PRE-REGISTER the "is this worth a re-extraction" threshold before running.
+      Iterating against the testset and then reporting it is model selection on
+      the test set.
+- [ ] Bias checks re-run on new output (party / government-opposition /
+      insufficient-evidence rate). Authenticity + Forthrightness must be RATES
+      (per position extracted / per question faced), never counts — otherwise
+      talking more looks like being less authentic.
+- [ ] Pilot on 2025-10 (62 speakers, 146 divisions, median size) BEFORE the full
+      ~1,300-window run. NB 2026-05 looks richest but is 791 divisions from one
+      filibuster with only 42 speakers — atypical.
+
+SETTLED (V3_PLAN.md s5): Hansard is the ONLY conduct-scoring corpus — everything
+else is an evidence table joined against, which removes the source-mix confound
+rather than managing it. Re-extract all nine attributes (the 37%-missing-Hansard
+bias applies to all of them regardless of prompt quality).
+STILL OPEN: does a party-level Authenticity score belong on an individual MP
+card; how do the ungrounded attributes (Veracity, Divination) appear; are
+written PQs worth scraping this cycle.
+
 Test sets & evaluation:
 - [ ] Robust, human-labelled test sets for ALL nine attributes (we only have
       civility + veracity scoring sets wired into evaluate.py).

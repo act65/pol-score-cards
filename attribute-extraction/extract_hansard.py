@@ -1,34 +1,48 @@
-"""Run combined 9-attribute extraction over the Hansard corpus, efficiently.
+"""Run the combined window extraction over the Hansard corpus.
 
 Pipeline per sitting day:
-  corpus/hansard.json  --group by day-->  parts
+  corpus/hansard_v2.json  --group by day-->  parts
      --hansard_prep.prep_day-->  attributed member-speech blocks (procedural dropped)
      --re-batch to ~window_tokens-->  windows (each block prefixed "SPEAKER: …")
-     --extract.extract_all_attributes (ONE cached call, all 9 attributes)-->  examples
+     --extract.extract_all_attributes (ONE cached call)-->  examples
+     --quote gate + required-field checks-->  kept examples
      --append--> <out> JSONL  (resumable: skips windows already written)
 
-Why this shape (see HANSARD_EXTRACTION_PLAN.md):
-  * combined call = the article text is sent once, not once per attribute (9x);
+**This covers six of the nine attributes.** The four text-only ones (civility,
+rigor, specificity, focus) are scored here; veracity and divination are
+extracted here as resolver candidates, with a falsification criterion and no
+score. Forthrightness needs question/answer PAIRS — see `extract_questions.py`.
+Strength and Authenticity are joined to records deterministically. The split is
+declared in `attributes.py`; see `ATTRIBUTES.md` for why.
+
+Why this shape:
+  * one combined call sends the window text once, not once per attribute;
   * speaker-prep drops ~18% procedural/chrome AND gives every block a known
-    speaker, so scores are attributed, not guessed;
-  * prompt caching makes the shared 9-rubric system prompt ~free after call 1;
+    speaker, so scores are attributed rather than guessed;
+  * prompt caching makes the shared rubric block ~free after the first call;
   * re-batching keeps calls (and their fixed overhead) low.
 
-    # estimate cost of the full run WITHOUT spending anything:
-    python extract_hansard.py --dry_run
+    # estimate the run WITHOUT spending anything:
+    python extract_hansard.py --dry_run                                # full term
+    python extract_hansard.py --dry_run --since 2025-10-01 --until 2025-10
     # real run (subscription backend, no API credits):
-    python extract_hansard.py --backend claude_cli --out hansard_scores.jsonl
+    python extract_hansard.py --backend claude_cli --out hansard_scores_v3.jsonl
     # real run (API, with caching):
-    export ANTHROPIC_API_KEY=...; python extract_hansard.py --out hansard_scores.jsonl
+    export ANTHROPIC_API_KEY=...; python extract_hansard.py --out hansard_scores_v3.jsonl
+
+Prefer `overnight_run.py`, which stages the pilot before the full term, is
+time-bounded, and runs the instrument audits at the end.
 """
 
 import collections
 import json
 import os
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import fire
 
+import attributes
 import extract
 import hansard_prep
 
@@ -65,7 +79,10 @@ def _saved_ids(path):
     return ids
 
 
-def _load_by_day(corpus, since):
+def _load_by_day(corpus, since, until=""):
+    """Days in [since, until]. `until` is inclusive and may be a month prefix
+    ('2025-10'), which is what makes a single-month pilot expressible — using
+    --limit_days for that silently spilled into the following months."""
     by_day = collections.defaultdict(list)
     with open(corpus, encoding="utf-8") as f:
         for line in f:
@@ -73,35 +90,38 @@ def _load_by_day(corpus, since):
             if not line:
                 continue
             r = json.loads(line)
-            if r.get("date", "") >= since:
-                by_day[r["date"]].append(r)
+            date = r.get("date", "")
+            if date >= since and (not until or date[:len(until)] <= until):
+                by_day[date].append(r)
     return dict(sorted(by_day.items()))
 
 
 def run(out="hansard_scores.jsonl",
-        corpus="../data/corpus/hansard.json",
-        since="2023-10-14",
+        corpus="../data/corpus/hansard_v2.json",
+        since="2023-10-06",
+        until="",
         window_tokens=14000,
         workers=4,
         model=extract.DEFAULT_MODEL,
         backend=extract.DEFAULT_BACKEND,
         dry_run=False,
         limit_days=0,
-        examples=True,  # keep few-shot blocks in the (cached) system prompt
         # rough public list rates ($/Mtok) for the estimate only — verify current.
         in_rate=15.0, out_rate=75.0, cache_read_rate=1.5):
     prompts_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prompts")
-    # All nine scorecard attributes have a prompt and are scored here (Strength is
-    # an LLM-knowledge guess for now; evidence-based verification is a v3.0 goal).
-    # `true`/`promises` are helper prompts, not attributes — exclude them.
-    NON_ATTRS = {"true", "promises"}
-    attrs = sorted(os.path.splitext(f)[0] for f in os.listdir(prompts_dir)
-                   if f.endswith(".txt") and os.path.splitext(f)[0] not in NON_ATTRS)
+    # The attribute set comes from the registry, not from listing prompts/ — a
+    # denylist over filenames silently broke whenever a prompt was added.
+    # Windows produce the four text-only attributes (scored) plus veracity and
+    # divination (extracted with a falsification criterion, scored later by the
+    # resolver). Forthrightness needs question/answer PAIRS and is run over
+    # corpus/oral_questions.jsonl by extract_questions.py; Strength and
+    # Authenticity are joined to records deterministically.
+    attrs = sorted(attributes.EXTRACTED_IN_WINDOWS)
     valid = set(attrs)
-    system = extract.build_combined_system(attrs, prompts_dir, examples=examples)
+    system = extract.build_combined_system(attrs, prompts_dir)
     sys_tok = len(system) // 4
 
-    by_day = _load_by_day(corpus, since)
+    by_day = _load_by_day(corpus, since, until)
     days = list(by_day)
     if limit_days:
         days = days[:limit_days]
@@ -151,11 +171,20 @@ def run(out="hansard_scores.jsonl",
     todo = [p for p in plan if p[0] not in done]
     print(f"{len(todo)} windows to do (of {n_win}) with {workers} worker(s)")
 
+    # Gate statistics across the whole run. The quote-reject rate and the
+    # per-attribute firing rate are both targets in ATTRIBUTES.md, so they are
+    # collected live rather than reconstructed from the output afterwards.
+    gate = collections.Counter()
+    gate_lock = threading.Lock()
+
     def work(item):
         wid, date, text, _tok = item
+        local = collections.Counter()
         by_attr = extract.extract_all_attributes(
             client, system, {"date": date, "content": text}, valid,
-            model=model, backend=backend)
+            model=model, backend=backend, stats=local)
+        with gate_lock:
+            gate.update(local)
         return wid, date, by_attr
 
     # Each claude_cli call is an independent subprocess, so threads parallelise
@@ -182,6 +211,42 @@ def run(out="hansard_scores.jsonl",
             n = sum(len(v) for v in by_attr.values())
             print(f"[{written}/{len(todo)}] {wid}: {n} scored examples", flush=True)
     print(f"done: wrote {written} windows -> {out}")
+    _report_gate(gate, attrs)
+
+
+def _report_gate(gate, attrs):
+    """Show what the quality gates rejected, and why.
+
+    A silent gate is indistinguishable from no gate. If the quote-reject rate is
+    high the prompt is not being followed; if an attribute keeps almost nothing
+    its eligibility rule is too tight.
+    """
+    considered = gate.get("considered", 0)
+    if not considered:
+        return
+    kept = sum(v for k, v in gate.items() if k.startswith("kept:"))
+    print(f"\n=== quality gates ===\n{considered:,} statement-attribute pairs "
+          f"proposed, {kept:,} kept ({100 * kept / considered:.0f}%)")
+
+    quote = {k: v for k, v in gate.items() if k.startswith("quote:")}
+    if quote:
+        total = sum(quote.values())
+        print(f"\nrejected on quote fidelity: {total:,} "
+              f"({100 * total / considered:.1f}%)")
+        for k, v in sorted(quote.items(), key=lambda kv: -kv[1]):
+            print(f"  {k.split(':', 1)[1]:14} {v:6,}")
+
+    other = {k: v for k, v in gate.items()
+             if not k.startswith(("quote:", "kept:")) and k != "considered"}
+    if other:
+        print("\nrejected on required fields / scores:")
+        for k, v in sorted(other.items(), key=lambda kv: -kv[1]):
+            print(f"  {k:34} {v:6,}")
+
+    print("\nkept per attribute:")
+    for a in attrs:
+        n = gate.get(f"kept:{a}", 0)
+        print(f"  {a:16} {n:6,}  ({100 * n / considered:4.1f}% of proposals)")
 
 
 if __name__ == "__main__":

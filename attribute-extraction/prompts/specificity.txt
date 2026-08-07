@@ -1,17 +1,50 @@
-You are an expert at evaluating the specificity of political statements. Read the text and find statements by politicians, scoring how specific and meaningful each one is.
+THE ONE QUESTION: Is there checkable content in the statement?
 
-Specificity is the "meaningfulness" of a statement. Low specificity means vague platitudes or ambiguous statements; high specificity means clear, concise, detailed, and precise statements.
+ELIGIBLE only where the statement is trying to convey substance. Thanks,
+procedural courtesies, ceremonial remarks and pleasantries have no content to
+assess — SKIP THEM rather than scoring them low.
 
-Score each relevant statement from 0.0 (lowest specificity) to 1.0 (highest specificity):
-- 1.0 — concrete and precise: names figures, mechanisms, timeframes, or named policies.
-- ~0.5 — a direction with some detail but missing the how, how much, or by when.
-- 0.0 — vague platitudes, slogans, or ambiguous statements that commit to nothing.
+Specificity fired on 51% of the corpus in the previous version, which is far too
+much for an attribute that is supposed to distinguish anything. Be selective.
 
-Notes:
-- Judge specificity in context. "I will fix the economy" is vague in general, but specific if the surrounding text lays out a detailed plan — credit the statement for context the politician actually supplied.
-- Do not misquote or strip context to make a statement look vaguer than it is.
+SCORING
+- 1.0 — Concrete and precise: figures, mechanisms, timeframes, or named
+  policies. Someone could check it or act on it.
+- ~0.5 — A direction with some detail, but missing the how, the how much, or the
+  by when.
+- 0.0 — A platitude, slogan or ambiguous statement committing to nothing.
 
-Examples (statement → score, reasoning):
-- "We will lift the minimum wage to $25/hour by April 2026." → 0.95 (figure + date).
-- "We're committed to supporting hard-working families." → 0.1 (slogan, no mechanism or measure).
-- "We'll invest more in public transport, starting with the regional rail business case next year." → 0.6 (named action + rough timing, but no amounts).
+Judge in context. "I will fix the economy" is vague in isolation but specific if
+the surrounding text lays out the plan — credit the detail the speaker actually
+supplied nearby. Do not strip context to make a statement look vaguer than it is.
+
+THIS IS *NOT* SPECIFICITY — do not let these move the score:
+- Whether the content is TRUE → Veracity. A precise, checkable, completely false
+  claim ("unemployment is 40 percent") scores HIGH here.
+- Whether it ANSWERS THE QUESTION → Forthrightness. A blunt, direct "no" is
+  fully forthright and highly unspecific.
+- Whether the argument is VALID → Rigor.
+- What the statement is ABOUT → Focus. Focus asks policy-versus-party;
+  Specificity asks how much detail is carried. A statement squarely about a
+  policy can still be a platitude.
+
+KNOWN BIAS, and how to handle it. Specificity rewards figures, mechanisms and
+named policies — which is what a minister announcing a programme produces, and
+what an opposition MP asking why something has not happened does not. Do not
+give a statement extra credit merely for being an announcement. A precise
+question ("how many of the 1,000 homes are built?") is as specific as a precise
+answer.
+
+WORKED BOUNDARY EXAMPLES:
+- "We will lift the minimum wage to $25/hour by April 2026." → 0.95 (figure and
+  date).
+- "Unemployment has risen to 40 percent under this government." → 0.9 on
+  Specificity. It is precise and checkable. It is also false — Veracity's
+  problem, not this one.
+- "We'll invest more in public transport, starting with the regional rail
+  business case next year." → 0.6 (named action, rough timing, no amounts).
+- "We're committed to supporting hard-working families." → 0.05 (slogan).
+- "These steps are consistent with requiring our science system to be
+  productive, to be efficient, to be sustainable." → 0.1 (a string of generic
+  virtues; no figures, mechanisms or named steps).
+- "I thank the member for the question." → SKIP. Not trying to convey content.

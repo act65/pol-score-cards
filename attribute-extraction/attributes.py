@@ -1,0 +1,175 @@
+"""The nine attributes — one importable source of truth.
+
+Every other module used to work out the attribute set by listing `prompts/*.txt`
+and subtracting a denylist of helper prompts. That silently broke whenever a
+prompt file was added or renamed, and it could not express the thing v3.0 most
+needs to say: **not every attribute is scored the same way.**
+
+    from attributes import ATTRIBUTES, SCORED_IN_WINDOWS, tier_of
+
+Three tiers, defined in `ATTRIBUTES.md` (which is the contract — if this file
+disagrees with it, this file is the bug):
+
+* `text`   — the words are the evidence. The LLM scores them directly.
+* `record` — computed against a record we already hold. The LLM extracts a
+             position or a commitment; arithmetic assigns the score.
+* `search` — resolved against sources found at check time. The LLM extracts a
+             claim *and the criterion that would settle it*; the resolver scores
+             it afterwards.
+
+Only the `text` tier produces a score at extraction time. The others emit rows
+with `score=None`, which is a pending row — never a zero.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+
+@dataclass(frozen=True)
+class Attribute:
+    id: str
+    name: str
+    tier: str                    # text | record | search
+    question: str                # the one question the prompt must ask
+    definition: str              # card-facing, plain English
+    # Where the score comes from when the tier is not `text`.
+    evidence: str = ""
+    # Extra fields the model must emit for this attribute, beyond the standard
+    # {statement, explanation}. Enforced by the extraction schema.
+    requires: tuple = field(default_factory=tuple)
+    # Can this attribute ever describe SOMEONE ELSE's conduct?
+    #
+    # For manner-of-speaking attributes the answer is no, and getting this wrong
+    # silently deletes data: an MP hurling an insult is being uncivil *himself*,
+    # even though the insult is aimed at someone else. The first v3.0 smoke test
+    # produced exactly that — a Peters attack filed as subject="other", which
+    # the speaker-only aggregation filter would have dropped from his card.
+    #
+    # Only where a statement can REPORT another person's record does the
+    # distinction exist: an opponent's broken promise (Strength), an opponent's
+    # hypocrisy (Authenticity), or a claim/forecast the speaker is relaying
+    # rather than making (Veracity, Divination).
+    subject_can_be_other: bool = False
+
+
+ALL = (
+    Attribute(
+        "forthrightness", "Forthrightness", "record",
+        "Did the answer address the question that was asked?",
+        "How often the politician directly answers the question asked, rather "
+        "than dodging or changing the subject.",
+        evidence="corpus/oral_questions.jsonl, corpus/written_questions.jsonl",
+    ),
+    Attribute(
+        "strength", "Strength", "record",
+        "What did this politician commit to?",
+        "The politician's ability to turn stated commitments into law.",
+        evidence="corpus/strength_ledger.jsonl",
+        subject_can_be_other=True,
+    ),
+    Attribute(
+        "veracity", "Veracity", "search",
+        "Are the factual premises accurate?",
+        "How accurate and non-misleading the politician's factual claims are, "
+        "checked against sources.",
+        evidence="the resolver",
+        requires=("falsification_criterion",),
+        subject_can_be_other=True,
+    ),
+    Attribute(
+        "authenticity", "Authenticity", "record",
+        "What position did this politician state?",
+        "Whether stated positions match how the politician's party actually "
+        "voted. Party-level: an MP may personally disagree with a party vote.",
+        evidence="corpus/divisions.jsonl, corpus/propositions.jsonl",
+        subject_can_be_other=True,
+    ),
+    Attribute(
+        "divination", "Divination", "search",
+        "Did the prediction come true?",
+        "Whether the politician's predictions actually came true, checked "
+        "against what happened.",
+        evidence="the resolver",
+        requires=("falsification_criterion", "resolve_by"),
+        subject_can_be_other=True,
+    ),
+    Attribute(
+        "focus", "Focus", "text",
+        "Is this about the policy, or about the other team?",
+        "Whether the politician engages the policy question or simply attacks "
+        "the other party.",
+    ),
+    Attribute(
+        "civility", "Civility", "text",
+        "Is the attack on the argument, or on the person?",
+        "Commitment to constructive dialogue over personal attacks. Criticising "
+        "a policy hard is civil; turning on the person is not.",
+    ),
+    Attribute(
+        "rigor", "Rigor", "text",
+        "Does the conclusion follow from the premises?",
+        "Whether conclusions follow logically from their assumptions. Not a "
+        "fact-check — the accuracy of the assumptions is Veracity.",
+    ),
+    Attribute(
+        "specificity", "Specificity", "text",
+        "Is there checkable content in the statement?",
+        "The meaningfulness of the politician's statements (vague platitudes "
+        "score low).",
+    ),
+)
+
+BY_ID = {a.id: a for a in ALL}
+ATTRIBUTES = tuple(a.id for a in ALL)
+
+# Cut 2026-08-07: Charisma correlated with Civility at r=0.96 — one insult
+# counted twice, compounded by the geometric mean. Focus replaced it. Kept here
+# so old datasets can be read and reported on without crashing.
+RETIRED = ("charisma",)
+
+# What one pass over a speech window produces. The `record`-tier attributes are
+# excluded on purpose: Forthrightness needs question/answer pairs (a relation,
+# invisible in a lone statement), and Strength/Authenticity are joined to
+# records in a separate deterministic step.
+SCORED_IN_WINDOWS = tuple(a.id for a in ALL if a.tier == "text")
+EXTRACTED_IN_WINDOWS = SCORED_IN_WINDOWS + tuple(
+    a.id for a in ALL if a.tier == "search")
+
+# Scored over corpus/oral_questions.jsonl instead of over windows.
+PAIRWISE = tuple(a.id for a in ALL if a.id == "forthrightness")
+
+
+def tier_of(attribute: str) -> str:
+    a = BY_ID.get(attribute)
+    return a.tier if a else "unknown"
+
+
+def is_scored_at_extraction(attribute: str) -> bool:
+    """True when the model assigns the score itself.
+
+    False for the `search` tier — those rows carry a criterion and no score
+    until the resolver runs. Treating a pending row as 0.0 would invent a
+    failing grade out of an unfinished check.
+    """
+    return tier_of(attribute) == "text"
+
+
+def required_fields(attribute: str) -> tuple:
+    a = BY_ID.get(attribute)
+    return a.requires if a else ()
+
+
+def normalise_subject(attribute: str, subject: str | None) -> str:
+    """Force `speaker` where the attribute cannot describe anyone else.
+
+    Manner-of-speaking attributes measure how the SPEAKER conducted themselves.
+    The model reasonably but wrongly reports subject="other" when an insult is
+    aimed at someone else — and because aggregation keeps only speaker rows,
+    that quietly erases the incivility from the card of the person who committed
+    it. See `Attribute.subject_can_be_other`.
+    """
+    a = BY_ID.get(attribute)
+    if a and not a.subject_can_be_other:
+        return "speaker"
+    return subject if subject in ("speaker", "other", "unclear") else "speaker"

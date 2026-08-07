@@ -1,17 +1,52 @@
-You are an expert at evaluating the rigor of political reasoning. Read the text, find instances of a politician making an argument, and score the rigor of the reasoning.
+THE ONE QUESTION: Does the conclusion follow from the premises?
 
-Rigor is disciplined, evidence-based reasoning: avoiding logical fallacies, preferring evidence over emotional or illogical appeals, and maintaining clear logical entailment between premises and conclusions.
+Rigor is about the *thought process*, not the facts. You are asking whether the
+reasoning is valid GIVEN ITS ASSUMPTIONS. You are NOT fact-checking. Whether the
+assumptions are actually true is Veracity's job, and confusing the two is the
+single largest defect in the previous version of this instrument.
 
-Score each instance of reasoning from 0.0 (low rigor) to 1.0 (high rigor):
-- 1.0 — claims are backed by relevant evidence and the conclusion follows from the premises.
-- ~0.5 — a reasonable point, but leaning on an appeal (authority, emotion, popularity, tradition, anecdote) or with a gap in the logic.
-- 0.0 — built on logical fallacies (ad hominem, strawman, slippery slope, false dichotomy) or pure appeals with no evidence.
+ELIGIBLE only when the statement actually advances an argument — at minimum a
+premise and a conclusion, or a claim offered with a reason. If a statement makes
+a bare announcement, reports a fact, expresses a feeling, or issues a
+pleasantry, there is no inference to assess. SKIP IT. Do not score it 0.5.
 
-In the explanation, name any fallacy or appeal you identify (e.g. "slippery slope", "appeal to emotion").
+SCORING
+- 1.0 — the conclusion is genuinely supported by what was offered.
+- ~0.5 — a reasonable point, but leaning on an appeal, or with a real gap
+  between what was shown and what was concluded.
+- 0.0 — the conclusion does not follow: non-sequitur, strawman, false
+  dichotomy, slippery slope, circular reasoning, or a bare appeal to emotion,
+  popularity, tradition, authority, or anecdote.
 
-Common fallacies/appeals to watch for: ad hominem, strawman, slippery slope, false dichotomy; appeals to authority, emotion, popularity, tradition, novelty, common sense, anecdote, or analogy.
+Name the specific fallacy or appeal in the explanation.
 
-Examples (statement → score, reasoning):
-- "Crime is up 4% per the latest stats, and the three policies the report links to the rise are all ones this government cut." → 0.85 (evidence-based, conclusion follows).
-- "If we let them ban this, soon they'll ban everything." → 0.1 (slippery slope, no evidence).
-- "Everyone I talk to agrees with me, so the policy must be right." → 0.2 (appeal to popularity / anecdote).
+THIS IS *NOT* RIGOR — do not let these move the score:
+- Whether the premises are TRUE. That is Veracity. An argument can be perfectly
+  rigorous and built on false premises: score it HIGH here.
+- Whether the speaker was RUDE. That is Civility.
+- Whether the statement was VAGUE. That is Specificity.
+- Whether it answered the question. That is Forthrightness.
+- Whether it was about the policy or the other party. That is Focus.
+
+AD HOMINEM — a special case, and the reason Rigor and Civility used to
+correlate at 0.85. An insult is a Civility failure. It is a *Rigor* failure ONLY
+when the conclusion rests on it:
+- "The policy fails because the member is a fool." → LOW rigor (the conclusion
+  depends on the insult).
+- "The member is a fool, and the policy fails because the modelling assumes
+  demand the regions don't have." → rude, but the reasoning is sound. Score
+  rigor HIGH. Civility will handle the insult.
+
+WORKED BOUNDARY EXAMPLES (the ones that matter most):
+- "Unemployment is at 40 percent, so the labour market is in crisis." → 0.85.
+  The figure is wildly false, but IF it were true the conclusion would follow.
+  High rigor, low veracity. This is the distinction; get it right.
+- "Crime is up 4% per the latest stats, and the three policies the report links
+  to the rise are all ones this government cut." → 0.85 (evidence offered, the
+  conclusion tracks it).
+- "If we let them ban this, soon they'll ban everything." → 0.1 (slippery
+  slope; nothing offered to connect the two).
+- "Everyone I talk to agrees with me, so the policy must be right." → 0.15
+  (appeal to popularity and anecdote).
+- "The Minister opposed this in 2019 and supports it now." → SKIP. That is an
+  observation, not an argument. No inference to assess.

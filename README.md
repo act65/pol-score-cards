@@ -24,19 +24,32 @@ The goal is to (help) make politicians more accountable for their actions by pro
 
 ## Attributes
 
-| Metric         | Description                                                                                                                                                           |
-|----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Forthrightness** | Measures how often the politician directly answers the question asked, rather than dodging or changing the subject.                                                     |
-| **Strength**     | Indicates the politician's ability to translate their public rhetoric and promises into concrete policies and see them through to implementation.                       |
-| **Veracity**     | Assesses how often the politician has been observed to spout demonstrably false information or mislead the public with inaccurate claims.                                |
-| **Authenticity** | Evaluates the consistency between the politician's public statements and their actions, such as voting and speeches, within the parliamentary setting.                   |
-| **Divination**   | Tracks how often the politician's predictions about future events (economic, social, etc.) have proven to be accurate.                                                 |
-| **Charisma**     | Measures the politician's ability to persuade colleagues, build consensus, and work across party lines.                                                                 |
-| **Civility**     | Measures the politician's commitment to constructive dialogue over personal attacks, insults, or unproductive rhetoric. A high Civility score reflects respect for opponents and focus on policy over character assassination. |
-| **Rigor**        | Tracks how rigorously the politician avoids logical fallacies (e.g., strawman arguments, slippery slopes) and relies on evidence-based reasoning. A high Rigorousness score indicates disciplined, fallacy-free rhetoric. |
-| **Specificity**  | Measure the 'meaningfulness' of the politician's statements. A low Specificity score indicates vague platitudes and / or ambiguous statements.                             |
+Each attribute asks **one question** and is required to ignore the others. Where
+two would penalise the same thing, exactly one owns it — see `ATTRIBUTES.md` for
+the full contract, the ownership ledger, and the eligibility gates.
 
-For more indepth defitions, see `attribute-extraction/prompts`.
+| Attribute | The one question | How it is scored |
+|---|---|---|
+| **Forthrightness** | Did the answer address the question that was asked? | Over question/answer **pairs** from Hansard oral questions and written PQs. A blunt, vague, even false answer that squarely addresses the question scores high. |
+| **Strength** | What did this politician commit to? | Joined to the legislative record — bills in charge, ballot bills, amendment papers, resolved promises. No lever means *not applicable*, never zero. |
+| **Veracity** | Are the factual premises accurate? | Extracted with a falsification criterion, then resolved against sources. Not "does this look well-evidenced" — that is Rigor. |
+| **Authenticity** | What position did this politician state? | Joined to the division record: did the vote match the words? Party-level, so an MP may personally disagree with a vote they were counted in. |
+| **Divination** | Did the prediction come true? | Extracted with a criterion and a resolve-by date, then resolved against what happened. Not "was it plausible at the time". |
+| **Focus** | Is this about the policy, or about the other team? | Naming a specific policy, measure or outcome separates accountability from tribalism. Scrutiny of a named government failure scores **high** — that is the job. |
+| **Civility** | Is the attack on the argument, or on the person? | 1.0 is the expected standard. Fierce criticism of a *policy* is civil; turning on the person is not. |
+| **Rigor** | Does the conclusion follow from the premises? | Validity, not truth. An argument can be perfectly rigorous and built on false premises — high Rigor, low Veracity. |
+| **Specificity** | Is there checkable content in the statement? | Figures, mechanisms, timeframes, named policies. A precise but false claim still scores high here. |
+
+All nine are oriented so **higher is better** (see `design-decisions.md`).
+
+> **Charisma was cut on 2026-08-07.** It correlated with Civility at r=0.96 —
+> one insult counted twice, then compounded by the geometric mean used for card
+> rank. **Focus** replaced it, covering the gap Civility leaves: attacking a
+> *party* rather than a *person* passes Civility cleanly but is pure tribalism.
+> Measurements in `attribute-extraction/ATTRIBUTE_OVERLAP.md`.
+
+For the full rubrics see `attribute-extraction/prompts/`; for why each attribute
+is drawn where it is, `ATTRIBUTES.md`.
 
 ## Status (June 2026)
 

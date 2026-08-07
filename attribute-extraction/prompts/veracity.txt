@@ -1,20 +1,75 @@
-You are an expert at evaluating the veracity of political statements. Read the text, find factual claims made by politicians (statements presenting themselves as facts about the world, events, or data — not opinions, value statements, or conjecture), and score how truthful each claim is.
+THE ONE QUESTION: Are the factual premises accurate?
 
-Veracity is how accurate and non-misleading a claim is. High veracity means the claim is demonstrably true and not misleading; low veracity means it is demonstrably false or misleading.
+YOU DO NOT SCORE VERACITY. This changed on 2026-08-07. Your job is to EXTRACT a
+checkable claim and state what evidence would settle it. A separate resolver
+then searches for that evidence and assigns the score. Leave `score` empty.
 
-Score each factual claim from 0.0 (false/misleading) to 1.0 (accurate):
-- 1.0 — accurate and supported by evidence.
-- ~0.5 — partly true, or true but missing context that changes its meaning.
-- 0.0 — demonstrably false, or technically true but deliberately misleading.
+Why: the old prompt asked you to score how well-evidenced a claim *looked* and
+to "prefer ~0.5" when you could not verify it. That is a judgement about
+reasoning, not about fact — it is Rigor wearing a fact-check label, it made
+Veracity correlate with Rigor at 0.83, and it filled the dataset with
+uninformative 0.5s across 41% of the corpus. Do not reproduce it.
 
-Notes:
-- Reach your own conclusion from evidence and data; do not score based on what people believe to be true.
-- Only score verifiable/falsifiable claims. Skip jokes, rhetorical questions, opinions, and value statements.
-- A quote can be a fact ("X said Y"); score the embedded claim, not the act of saying it.
-- Hyperbole and exaggeration are misleading — score them low.
-- Assume the article quotes the politician accurately.
+ELIGIBLE only when ALL of these hold:
+1. The statement asserts a FACT about the world — events, data, records, what
+   someone did or said. Not an opinion, not a value statement, not a promise.
+2. It is a claim about the PRESENT OR PAST. Predictions belong to Divination.
+3. YOU CAN STATE A FALSIFICATION CRITERION: concretely, what evidence would show
+   this true, and what would show it false.
 
-Examples (statement → score, reasoning):
-- "Unemployment has fallen to 3.2%." → 0.95 if official statistics confirm it; lower if the real figure differs.
-- "This bill will create 10 million jobs in its first year." → 0.3 (unsubstantiated; models predict far fewer).
-- "Our state cut unemployment 15% since I took office." → 0.8 (official data shows ~12% — directionally true, slightly overstated).
+If you cannot state that criterion, the claim is not checkable and YOU MUST EMIT
+NOTHING. Do not guess, do not hedge at 0.5, do not emit it with a vague
+criterion. Expect to emit far fewer veracity items than you would have before —
+that is the point, and it is what makes the resolver affordable.
+
+WHAT TO EMIT
+- `statement` — the claim, quoted verbatim.
+- `falsification_criterion` — REQUIRED. What would settle it, specifically
+  enough that someone else could go and check. Name the source if you can:
+  "Stats NZ HLFS unemployment rate for the quarter stated", "the division record
+  for the third reading of the Bill named". A criterion like "check if it is
+  true" is useless — do not emit the claim at all if that is the best you have.
+- `explanation` — what exactly is being asserted, disambiguated. NOT a verdict.
+- `score` — LEAVE EMPTY. The resolver decides.
+- `prior_score` — your best guess from your own knowledge ALONE, 0.0 (false) to
+  1.0 (accurate), written AFTER the criterion. This is recorded so we can
+  measure whether searching actually beats guessing; it is never published as
+  the score. Guess honestly, not defensively: a confident 0.05 or 0.95 is more
+  useful than a hedged 0.5. If you genuinely do not know, 0.5 is correct.
+
+STATE THE CRITERION BEFORE FORMING ANY VIEW OF THE ANSWER. Fixing what would
+count as proof, before looking, is the whole defence against confirmation bias.
+
+THIS IS *NOT* VERACITY:
+- Whether the CONCLUSION FOLLOWS from the claim → Rigor. An argument can be
+  valid and built on false premises.
+- Whether the claim is PRECISE → Specificity.
+- Whether it was RUDELY expressed → Civility.
+
+HYPERBOLE AND EXAGGERATION belong here now (they used to also count against
+Civility). An overstated claim is an inaccurate claim. But only extract it if it
+is checkable — rhetorical flourish that nobody could verify is not a veracity
+item, it is just rhetoric.
+
+SPOKEN LANGUAGE — READ THIS CAREFULLY. Hansard is lightly-edited live speech,
+full of inversions, self-corrections and half-finished sentences. A word-order
+slip is NOT a false claim. This project has already had to publicly withdraw one
+example for exactly this error. If the literal reading is false but the intended
+reading is obviously true from the surrounding sentences, SKIP IT.
+
+WORKED EXAMPLES:
+- "Unemployment has fallen to 3.2 percent." → EMIT. criterion: "Stats NZ
+  Household Labour Force Survey unemployment rate for the quarter referenced;
+  true if 3.2% ± rounding, false if materially different."
+- "The Māui dolphin doesn't exist — it was a contrivance." → EMIT. criterion:
+  "DOC and peer-reviewed taxonomy on whether Māui dolphin is a recognised
+  subspecies of Hector's dolphin; true if not recognised, false if recognised."
+- "That member voted against this bill at its second reading." → EMIT.
+  criterion: "the division record for the second reading of the named bill."
+- "This is the worst housing crisis in our history." → SKIP. No stateable
+  criterion; "worst" is not operationalised.
+- "I believe this policy is wrong." → SKIP. Opinion.
+- "Inflation will fall next year." → SKIP. Prediction — that is Divination.
+- "Fifty percent of Māori are in jails at the moment." → SKIP. In context this
+  is a word-order slip for "fifty percent of people in jail are Māori"; the
+  surrounding sentences make the intent plain. Do not score a slip as a lie.

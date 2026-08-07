@@ -1,7 +1,8 @@
 """Sample-bias mitigation for the presented attribute scores (task 2b).
 
 A raw scorecard value is the *mean of the statements the LLM chose to extract*
-for one MP on one attribute. Two biases threaten cross-MP comparison:
+for one MP on one attribute. Three biases threaten cross-MP comparison; this
+module addresses the first two only:
 
   1. Thin-sample noise. An MP with n=1 civility statement at 0.2 should not be
      ranked below an MP with n=40 averaging 0.55 — the n=1 value is mostly noise.
@@ -9,8 +10,18 @@ for one MP on one attribute. Two biases threaten cross-MP comparison:
      (see extract.build_combined_system), but mean(extracted) still need not equal
      mean(all said), so a raw mean over-trusts a handful of flagged lines.
 
-(Hansard-only v2.0 removes the *source-mix* confound — every MP is measured in the
-same adversarial chamber — so that bias, the worst one, is gone by construction.)
+  3. Source-mix confound. NOT MITIGATED, and probably the worst of the three.
+     An early Hansard-only build did remove it by construction — every MP was
+     measured in the same adversarial chamber — but the served dataset now blends
+     65,075 Hansard, 23,935 party-release and 5,419 presser statements into one
+     pool per (MP, attribute). Scores differ substantially by source (party
+     releases run ~+18 on Forthrightness and ~-7 to -9 on Civility/Rigor/
+     Specificity relative to Hansard), the mix differs by party (~45% releases for
+     ACT vs ~17% for NZ First), and pressers are government-only. Nothing below
+     corrects for any of that: shrinkage is fit over the pooled scores and cannot
+     see which source a statement came from. Fixing it means either scoring per
+     source and reweighting to a common mix, or going back to Hansard-only for
+     cross-MP comparison.
 
 Mitigation = hierarchical (empirical-Bayes) shrinkage toward the per-attribute
 population mean, plus an explicit n and 95% credible interval. An MP's adjusted

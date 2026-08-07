@@ -81,7 +81,7 @@ def run(out="presser_scores.jsonl",
     attrs = sorted(os.path.splitext(f)[0] for f in os.listdir(prompts_dir)
                    if f.endswith(".txt") and os.path.splitext(f)[0] not in NON_ATTRS)
     valid = set(attrs)
-    system = extract.build_combined_system(attrs, prompts_dir, examples=True)
+    system = extract.build_combined_system(attrs, prompts_dir)
 
     corpus = corpus if os.path.isabs(corpus) else os.path.join(HERE, corpus)
     out = out if os.path.isabs(out) else os.path.join(HERE, out)

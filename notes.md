@@ -1,1 +1,0 @@
-might not have much data on some politicians?

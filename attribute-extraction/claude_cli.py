@@ -101,6 +101,51 @@ def call_structured(system: str, user: str, schema: dict, model: str = None,
     raise RuntimeError(f"claude --json-schema failed after {retries + 1} attempts: {last_err}")
 
 
+def call_structured_searching(system: str, user: str, schema: dict,
+                              model: str = None, instruction: str = "",
+                              timeout: int = 600, retries: int = 2):
+    """Like ``call_structured``, but with web search and fetch enabled.
+
+    Used by the resolver, which has to look evidence up rather than recall it.
+    Tools are off by default in ``claude -p``, so they are requested explicitly;
+    the timeout is much longer because each call does several round-trips to the
+    open web before it answers.
+    """
+    prompt = f"{system}{instruction}\n\n=== ITEMS TO RESOLVE ===\n{user}"
+    cmd = ["claude", "-p", prompt,
+           "--allowedTools", "WebSearch", "WebFetch",
+           "--json-schema", json.dumps(schema), "--output-format", "json"]
+    if model:
+        cmd += ["--model", model]
+    last_err = ""
+    for attempt in range(retries + 1):
+        proc = None
+        try:
+            proc = subprocess.run(cmd, stdin=subprocess.DEVNULL,
+                                  capture_output=True, text=True, timeout=timeout)
+        except subprocess.TimeoutExpired:
+            last_err = f"timeout after {timeout}s"
+        if proc is not None and proc.returncode == 0 and proc.stdout.strip():
+            try:
+                env = json.loads(proc.stdout)
+            except json.JSONDecodeError:
+                env, last_err = None, "result envelope was not JSON"
+            if env is not None:
+                if env.get("is_error"):
+                    last_err = str(env.get("result", "cli error"))[:300]
+                elif env.get("structured_output") is not None:
+                    return env["structured_output"]
+                else:
+                    last_err = "no structured_output in envelope"
+        elif proc is not None:
+            last_err = (proc.stderr or proc.stdout or "").strip()[:300] or \
+                f"exit {proc.returncode}"
+        if attempt < retries:
+            time.sleep(2 ** attempt)
+    raise RuntimeError(f"searching claude call failed after {retries + 1} "
+                       f"attempts: {last_err}")
+
+
 _FENCE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.S)
 
 

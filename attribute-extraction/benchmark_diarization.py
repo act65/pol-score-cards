@@ -46,7 +46,7 @@ def _attrs_system():
     non = {"true", "promises"}
     attrs = sorted(os.path.splitext(f)[0] for f in os.listdir(prompts_dir)
                    if f.endswith(".txt") and os.path.splitext(f)[0] not in non)
-    system = extract.build_combined_system(attrs, prompts_dir, examples=True)
+    system = extract.build_combined_system(attrs, prompts_dir)
     return attrs, set(attrs), system
 
 
