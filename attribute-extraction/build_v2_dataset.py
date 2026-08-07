@@ -20,18 +20,13 @@ import fire
 import bias_adjust
 from roster import Roster, is_probably_mp_name
 
-# Canonical attribute id -> (display name, definition). Definitions from README.
-ATTRIBUTES = [
-    ("forthrightness", "Forthrightness", "How often the politician directly answers the question asked, rather than dodging or changing the subject."),
-    ("strength", "Strength", "The politician's ability to translate public rhetoric and promises into concrete policies and see them through to implementation."),
-    ("veracity", "Veracity", "How accurate and non-misleading the politician's factual claims are."),
-    ("authenticity", "Authenticity", "Consistency between the politician's public statements and their actions, votes, and speeches."),
-    ("divination", "Divination", "How often the politician's predictions about future events have proven accurate."),
-    ("charisma", "Charisma", "The politician's ability to persuade colleagues, build consensus, and work across party lines."),
-    ("civility", "Civility", "Commitment to constructive dialogue over personal attacks, insults, or unproductive rhetoric."),
-    ("rigor", "Rigor", "How rigorously the politician avoids logical fallacies and relies on evidence-based reasoning."),
-    ("specificity", "Specificity", "The meaningfulness of the politician's statements (vague platitudes score low)."),
-]
+import attributes as attribute_registry
+
+# The attribute set and its card-facing definitions come from the registry
+# (attributes.py), which is the single source of truth shared with the
+# extractor. They used to be duplicated here, which is how the site kept
+# describing Charisma after it was cut.
+ATTRIBUTES = [(a.id, a.name, a.definition) for a in attribute_registry.ALL]
 ID2NAME = {a: n for a, n, _ in ATTRIBUTES}
 
 

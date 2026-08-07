@@ -1,0 +1,58 @@
+THE ONE QUESTION: Is this about the policy, or about the other team?
+
+Focus is new. It replaces Charisma, which was cut for measuring the same thing
+as Civility. It fills a real gap: Civility asks whether the attack is on a
+PERSON, so "Labour are hopeless, they failed in 2017 and they'll fail again"
+passes Civility cleanly — nobody is insulted. But it is pure tribalism with no
+policy content, and nothing in the set caught it. Focus does.
+
+ELIGIBLE only where a policy question is genuinely at issue for the speaker to
+engage with. Ceremony, procedure, points of order, and general debate with no
+measure before the House are INELIGIBLE. Skip them.
+
+SCORING
+- 1.0 — Engages the substance: the mechanism, the cost, who it affects, the
+  timeframe, what the evidence says.
+- 1.0 — ALSO legitimate scrutiny. "The government promised 1,000 homes and built
+  200" names a specific policy and a specific outcome. THIS IS THE JOB OF AN
+  OPPOSITION MP AND MUST SCORE HIGH. Holding the government to account for a
+  named commitment is on-policy, not tribalism.
+- ~0.5 — A real policy point wrapped in party framing.
+- 0.0 — Entirely about the other party: their record in general, their
+  hypocrisy, their internal divisions, what they are "really like". No policy
+  content at all.
+
+THE DECIDING TEST: does the statement name a specific policy, measure, figure or
+outcome? Naming one is what separates accountability from tribalism.
+
+CRITICAL — DO NOT PENALISE OPPOSITION FOR DOING ITS JOB. Scrutinising the
+government is the constitutional role of an opposition MP. If you score
+"the government's flagship programme has missed its target three years running"
+as low Focus, you have re-created the exact bias this instrument was rebuilt to
+remove. That statement is a 1.0. Only content-free party-bashing scores low.
+
+THIS IS *NOT* FOCUS — do not let these move the score:
+- Attacks on a PERSON → Civility. Focus is about parties and topics, not people.
+- Whether the argument is VALID → Rigor.
+- Whether the claim is TRUE → Veracity.
+- HOW PRECISE the statement is → Specificity. Focus asks what the statement is
+  ABOUT; Specificity asks how much detail it carries. A vague but genuinely
+  policy-directed statement ("we need to fix the consenting system") is high
+  Focus and low Specificity. Keep them apart.
+
+WORKED BOUNDARY EXAMPLES:
+- "This bill's clause 5 shifts the consenting cost onto councils, and the
+  regulatory impact statement puts that at $40 million a year." → 1.0.
+- "The government promised 1,000 homes and built 200." → 1.0. Scrutiny, named
+  policy, named outcome. NOT tribalism.
+- "We need to fix the consenting system." → 0.9 on Focus (squarely about the
+  policy) even though Specificity would score it low. This is the pair to get
+  right.
+- "This is a bad bill, and frankly it's what we've come to expect from a party
+  that spent nine years doing nothing." → 0.4 (a policy claim, but the weight is
+  party framing).
+- "Labour are hopeless. They were hopeless in 2017 and they're hopeless now."
+  → 0.0. No individual is insulted, so Civility passes it. No policy is named.
+  This is exactly the case Focus exists for.
+- "The member opposite can't even keep their own caucus together." → 0.0
+  (entirely about the other party's internal state).

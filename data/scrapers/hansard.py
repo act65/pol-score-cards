@@ -44,6 +44,11 @@ DATE_RE = re.compile(r"(\d{1,2})\s+(January|February|March|April|May|June|July|A
                      r"September|October|November|December)\s+(\d{4})", re.I)
 _URL_TITLE = re.compile(r"/hansard-transcript/(\d{4}-\d{2}-\d{2})/([^/?#]+)")
 
+# Hansard wraps transcript text in its own span classes (HpsItem, HpsNormal,
+# CharacterBoldCentred, ...). Page chrome does not, which is what lets us keep
+# genuinely short transcript lines like a division's "Ayes 83".
+_TRANSCRIPT_SPAN = "[class^=Hps], [class*=Character]"
+
 
 def _title_from_url(url: str) -> str:
     """'/hansard-transcript/2026-06-18/oral-question-2-prime-minister' ->
@@ -174,7 +179,14 @@ def parse_hansard_day(html: str, url: str = "", max_chars: int = 30000,
             head, paras = el.get_text(" ", strip=True), []
         else:
             t = el.get_text(" ", strip=True)
-            if len(t) > 40:           # substantial -> transcript, not nav chrome
+            # Length alone is the wrong test. Hansard prints a division result as
+            # a run of *short* paragraphs — "Ayes 83", "New Zealand Labour 34.",
+            # "Motion agreed to." — and a >40-char filter silently deleted the
+            # labels, the totals, and any tally line for a small party. That
+            # corrupted the vote record (a 34-strong Noes read as "unopposed").
+            # Transcript paragraphs carry Hansard's own span markup; page chrome
+            # does not, so keep short paragraphs that have it.
+            if len(t) > 40 or (t and el.select_one(_TRANSCRIPT_SPAN)):
                 paras.append(t)
     flush()
 

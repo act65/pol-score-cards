@@ -1,3 +1,10 @@
+> **Out of date as of v3.0 (2026-08-07).** Charisma was cut from the scorecard
+> (it correlated with Civility at r=0.96) and replaced by **Focus**. The *site's*
+> paper rules at `site/templates/rules.html` have been updated — Focus drives a
+> new **Concentration** mechanic, and the riposte stat is named correctly as
+> Forthrightness. This file and the Python engine (`game_logic.py`) still use
+> the old nine and are deliberately left for v4. See `ATTRIBUTES.md`.
+
 Core Concept: Players will play cards representing politicians, who will battle against each other using their political attributes as strengths in combat.
 
 Core Traits

@@ -1,20 +1,57 @@
-You are an expert at evaluating the authenticity of politicians. Read the text and find statements where you can judge the consistency between what the politician says and what they (or their party/government) actually do.
+THE ONE QUESTION: What position did this politician state?
 
-Authenticity is the consistency between a politician's public statements and their actions — voting, record, and prior positions. High authenticity means words match deeds and positions are held consistently; low authenticity means hypocrisy, flip-flops, or saying one thing while doing another.
+YOU DO NOT SCORE AUTHENTICITY. This changed in v3.0. Authenticity is computed by
+joining a stated position to the division record (`corpus/divisions.jsonl`) via
+the proposition vocabulary (`corpus/propositions.jsonl`): did the vote match the
+words? Your job is to EXTRACT the position. Leave `score` empty.
 
-Score each relevant statement from 0.0 (inconsistent / hypocritical) to 1.0 (consistent / principled):
-- 1.0 — the statement is backed by, or consistent with, the speaker's actions and prior positions.
-- ~0.5 — a stated value or position with no visible action either way, or a defensible shift in position.
-- 0.0 — contradicts the speaker's own record, votes, or earlier statements; classic "do as I say, not as I do".
+Why: judging consistency from a single passage means guessing at a record you
+cannot see. It also produced the subject-attribution bug — an MP attacking an
+opponent's hypocrisy had the low score filed against themselves, and this hit
+opposition MPs 4.1 times as often as government ones.
 
-In the explanation, name the specific tension (what was said vs what was done / previously said).
+ELIGIBLE only when the speaker states a position FOR or AGAINST something
+identifiable — a bill, a motion, a policy, a proposition. Not general values, not
+neutral factual claims.
 
-Notes:
-- Like Veracity, a full Authenticity score ideally cross-references voting records and the historical record; from a single article, score the consistency signal you can actually see (self-contradiction within the text, a claim that clashes with a well-known action, or a position reversal).
-- Only score statements where a consistency judgement is genuinely possible; skip neutral factual claims with no words-vs-actions angle.
-- Attacking an opponent's hypocrisy is itself a (low-authenticity) signal about that opponent, not the speaker.
+WHAT TO EMIT
+- `statement` — the position, quoted verbatim.
+- `explanation` — what proposition is being supported or opposed, stated plainly
+  enough to match against a bill or motion. Name the bill if you can. If you can
+  see a tension in the text itself (a reversal, a self-contradiction within the
+  passage), name it — but do NOT convert it into a score.
+- `score` — LEAVE EMPTY.
 
-Examples (statement → score, reasoning):
-- "We will always stand up for renters" — said by an MP whose party just voted down renter protections → 0.15 (words contradict the vote).
-- "I campaigned on cutting this tax, and today I delivered exactly that." → 0.9 (action matches the prior commitment).
-- "I've consistently supported public transport investment" — where the record is mixed/unclear → 0.5 (plausible but unverified from the text).
+SUBJECT — THE CRITICAL FIELD. Set subject="speaker" only when the position is
+the speaker's own, or their own party's. When the statement is about SOMEONE
+ELSE's inconsistency — an opponent's hypocrisy, another party's flip-flop — set
+subject="other" and name them. Holding others to account is the job, not a
+character flaw, and it must never lower the speaker's score.
+
+THE PARTY-LEVEL CAVEAT, so you understand what you are feeding. New Zealand
+votes are cast per party, so the join measures how a member's WORDS align with
+their PARTY's VOTES. An individual may personally disagree with a vote they were
+counted in. Extract the position as stated; the caveat is handled downstream.
+Where the record shows an individual — a conscience vote or a named dissent —
+that is stronger evidence, so note it if the text makes it plain.
+
+DISTINGUISH:
+- A POSITION on a proposition → here.
+- A COMMITMENT to the speaker's own future action → Strength.
+- A CLAIM about a fact → Veracity.
+
+WORKED EXAMPLES:
+- "We will always stand up for renters, and this bill does not do that." →
+  EMIT, subject="speaker". explanation: opposes the named bill on renter
+  protection grounds. The join checks the party's vote.
+- "I campaigned on cutting this tax, and today I delivered exactly that." →
+  EMIT, subject="speaker". A position plus a claimed action.
+- "That member said one thing to the media and voted the other way." → EMIT,
+  subject="other", subject_name=that member. A claim about THEM. Never a mark
+  against the speaker.
+- "The National Party position on the Treaty Principles Bill has been very
+  clear, but we had a compromise in an MMP environment." → EMIT,
+  subject="speaker". Position plus an explanation for a shift — exactly what the
+  vote join should test.
+- "I've always cared deeply about the environment." → SKIP. A value, not a
+  position on anything identifiable.

@@ -1,111 +1,181 @@
-"""Time-bounded overnight full-term extraction.
+"""Time-bounded overnight v3.0 extraction.
 
-Resumes the full 54th-term Hansard extraction (skipping windows already done),
-runs for at most MAX_HOURS, then STOPS itself and finalizes — bundles the dataset,
-refreshes the live site, and regenerates the dataset card from whatever was
-completed. Designed so it cannot run past the time budget the user gave.
+Resumes the extraction (skipping windows already done), runs for at most
+MAX_HOURS, then stops itself and reports. Designed so it cannot run past the
+time budget it was given, and so killing it at any moment loses nothing.
 
-    nohup python3 overnight_run.py 10 > overnight.log 2>&1 &   # run for 10 hours
+    cd attribute-extraction
+    python overnight_run.py --hours 10 --stage pilot      # 2025-10 only, start here
+    nohup python overnight_run.py --hours 10 > overnight.log 2>&1 &
+    python overnight_run.py --status                      # progress, no work done
 
-Safe to kill anytime (resumable). On exit (deadline OR completion OR kill) the
-partial corpus on disk is intact and re-runnable.
+Three stages, in the order they should be run:
+
+  pilot     2025-10 only (~40 windows). Cheap. Run this first, read the gate
+            report, and only continue if the quotes and firing rates look right.
+  windows   the full term — the four text-only attributes scored, plus veracity
+            and divination extracted as resolver candidates.
+  questions Forthrightness over Hansard oral Q/A pairs (~920 calls).
+
+**It deliberately does NOT publish.** v3.0 scores are not comparable with v2.0 —
+Civility was re-anchored and Charisma was replaced by Focus — so the site must
+not be refreshed until the evaluation pass has run. Publishing is a separate,
+manual step after labelling.
+
+Written parliamentary questions are NOT included by default: 85,136 distinct
+(template, minister) pairs is ~7,100 calls, several times the whole Hansard run.
+Run `extract_questions.py run --source written` explicitly if you want them.
 """
 
+from __future__ import annotations
+
+import json
 import os
 import subprocess
 import sys
 import time
 
+import fire
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 PY = sys.executable
-SCORES = "hansard_scores_full.jsonl"
-SINCE = "2023-10-14"
-WINDOW = "14000"
+
+# v3.0 output. Deliberately a NEW file: the v2.0 scores used a different
+# Civility scale and a retired attribute, so appending to them would silently
+# blend two instruments.
+SCORES = "hansard_scores_v3.jsonl"
+QA_SCORES = "forthrightness_scores_v3.jsonl"
+
+SINCE = "2023-10-06"
+PILOT_MONTH = "2025-10"
+WINDOW_TOKENS = "14000"
 WORKERS = "4"
-TARGET = 744
+MODEL = "claude-opus-4-8"
+BACKEND = "claude_cli"
+
 BACKOFF = 75 * 60          # session-cap backoff
-SHORT_SLEEP = 60           # brief pause between productive passes
+SHORT_SLEEP = 60
 
 
-def _count():
-    p = os.path.join(HERE, SCORES)
+def _count(path: str) -> int:
+    p = os.path.join(HERE, path)
     if not os.path.exists(p):
         return 0
     with open(p, encoding="utf-8") as f:
         return sum(1 for line in f if line.strip())
 
 
-def _seed():
-    """Seed the full-term file from the completed 3-month run (identical per-day
-    window ids) so March isn't re-extracted."""
-    dst = os.path.join(HERE, SCORES)
-    src = os.path.join(HERE, "hansard_scores_3mo.jsonl")
-    if os.path.exists(dst) or not os.path.exists(src):
-        return
-    with open(src, encoding="utf-8") as f:
-        data = f.read()
-    with open(dst, "w", encoding="utf-8") as f:
-        f.write(data)
-
-
-def _run_pass(timeout_s):
-    """One resumable extraction pass, hard-capped at timeout_s so it can't run
-    past the overnight deadline. Killing it mid-pass loses nothing (resumable)."""
+def _plan_size(stage: str, model: str, backend: str) -> int:
+    """Ask the extractor how many windows the stage contains, without spending."""
+    cmd = [PY, "extract_hansard.py", "--dry_run",
+           "--since", f"{PILOT_MONTH}-01" if stage == "pilot" else SINCE,
+           "--until", PILOT_MONTH if stage == "pilot" else "",
+           "--window_tokens", WINDOW_TOKENS, "--model", model,
+           "--backend", backend]
     try:
-        subprocess.run(
-            [PY, "extract_hansard.py", "--since", SINCE, "--window_tokens", WINDOW,
-             "--workers", WORKERS, "--backend", "claude_cli",
-             "--model", "claude-opus-4-8", "--out", SCORES],
-            cwd=HERE, timeout=max(30, timeout_s))
+        proc = subprocess.run(cmd, cwd=HERE, capture_output=True, text=True,
+                              timeout=300)
+        for line in proc.stdout.splitlines():
+            if "windows (=API calls):" in line:
+                return int(line.split("windows (=API calls):")[1].split()[0])
+    except Exception:  # noqa: BLE001
+        pass
+    return 0
+
+
+def _pass(stage: str, timeout_s: float, model: str, backend: str) -> None:
+    """One resumable pass, hard-capped so it cannot outlive the deadline."""
+    if stage == "questions":
+        cmd = [PY, "extract_questions.py", "run", "--source", "oral",
+               "--out", QA_SCORES, "--workers", WORKERS,
+               "--model", model, "--backend", backend]
+    else:
+        cmd = [PY, "extract_hansard.py",
+               "--since", f"{PILOT_MONTH}-01" if stage == "pilot" else SINCE,
+               "--until", PILOT_MONTH if stage == "pilot" else "",
+               "--window_tokens", WINDOW_TOKENS, "--workers", WORKERS,
+               "--backend", backend, "--model", model, "--out", SCORES]
+    try:
+        subprocess.run(cmd, cwd=HERE, timeout=max(30, timeout_s))
     except subprocess.TimeoutExpired:
-        print("  pass hit the overnight deadline — stopping", flush=True)
+        print("  pass hit the deadline — stopping cleanly (resumable)", flush=True)
 
 
-def _finalize():
-    print(f"=== finalizing at {_count()}/{TARGET} windows ===", flush=True)
-    subprocess.run([PY, "hansard_dataset_stats.py", "--scores", SCORES,
-                    "--out", "STATS_full-term.md"], cwd=HERE)
-    subprocess.run([PY, "build_v2_dataset.py", "--scores", SCORES,
-                    "--out", "site_data_full"], cwd=HERE)
-    subprocess.run([PY, "build_v2_dataset.py", "--scores", SCORES,
-                    "--out", "../site/static"], cwd=HERE)          # refresh live site
-    subprocess.run([PY, "publish_v2_dataset.py", "--bundle", "site_data_full"], cwd=HERE)
-    with open(os.path.join(HERE, "FULL_TERM_STATUS.txt"), "w") as f:
-        done = _count()
-        f.write(f"stopped at {done}/{TARGET} windows "
-                f"({'COMPLETE' if done >= TARGET else 'partial — re-run overnight_run.py to continue'}).\n"
-                f"site/static refreshed; site_data_full + dataset card ready to publish.\n")
-    print("=== done finalizing ===", flush=True)
+def _audit(stage: str) -> None:
+    """Run the label-free instrument audits over whatever was produced.
+
+    These are the checks that decide whether the prompt rewrite worked, so they
+    belong at the end of the run rather than in a follow-up someone forgets.
+    """
+    if stage == "questions" or not _count(SCORES):
+        return
+    print("\n=== instrument audits ===", flush=True)
+    subprocess.run([PY, "attribute_overlap.py", "run", "--scores", SCORES,
+                    "--out", "ATTRIBUTE_OVERLAP_v3.md"], cwd=HERE)
+    subprocess.run([PY, "check_quotes.py", "run", "--scores", SCORES,
+                    "--n", "800", "--out", "QUOTE_AUDIT_v3.md"], cwd=HERE)
+    print("\nTargets to check (ATTRIBUTES.md):", flush=True)
+    print("  max pairwise r < 0.65   veracity/rigor < 0.55")
+    print("  statements with 2+ attributes < 60%   specificity firing < 30%")
+    print("  quotes not found = 0 (the gate enforces this)")
 
 
-def main():
-    max_hours = float(sys.argv[1]) if len(sys.argv) > 1 else 10.0
-    deadline = time.time() + max_hours * 3600
-    _seed()
-    print(f"overnight run: up to {max_hours}h, deadline in {max_hours*3600:.0f}s, "
-          f"starting at {_count()}/{TARGET}", flush=True)
+def status() -> None:
+    """Progress across all stages. Spends nothing."""
+    print(f"windows scored:       {_count(SCORES):,}  ({SCORES})")
+    print(f"Q/A pairs scored:     {_count(QA_SCORES):,}  ({QA_SCORES})")
+    for name in ("ATTRIBUTE_OVERLAP_v3.md", "QUOTE_AUDIT_v3.md"):
+        p = os.path.join(HERE, name)
+        print(f"{name}: {'present' if os.path.exists(p) else 'not yet generated'}")
 
-    while _count() < TARGET and time.time() < deadline:
-        before = _count()
-        _run_pass(deadline - time.time())
-        after = _count()
-        print(f"[{after}/{TARGET}] (+{after - before} this pass, "
-              f"{(deadline - time.time())/3600:.1f}h left)", flush=True)
-        if after >= TARGET or time.time() >= deadline:
+
+def run(hours: float = 10.0, stage: str = "pilot", model: str = MODEL,
+        backend: str = BACKEND, target: int = 0) -> None:
+    """Run one stage until it completes or the time budget runs out."""
+    if stage not in ("pilot", "windows", "questions"):
+        raise SystemExit("--stage must be pilot | windows | questions")
+
+    out_file = QA_SCORES if stage == "questions" else SCORES
+    deadline = time.time() + hours * 3600
+    target = target or _plan_size(stage, model, backend)
+
+    def done() -> int:
+        return _count(out_file)
+
+    label = f"{done():,}" + (f"/{target:,}" if target else "")
+    print(f"=== v3.0 {stage}: up to {hours}h, {model} via {backend}, "
+          f"starting at {label} ===", flush=True)
+
+    while (not target or done() < target) and time.time() < deadline:
+        before = done()
+        _pass(stage, deadline - time.time(), model, backend)
+        after = done()
+        left = (deadline - time.time()) / 3600
+        print(f"[{after:,}{f'/{target:,}' if target else ''}] "
+              f"(+{after - before} this pass, {left:.1f}h left)", flush=True)
+        if (target and after >= target) or time.time() >= deadline:
             break
-        if after == before:                      # session cap — back off, but not past deadline
+        if after == before:
+            # No progress: almost always the subscription session cap. Back off,
+            # but never past the deadline the user set.
             nap = min(BACKOFF, max(0, deadline - time.time()))
             if nap <= 0:
                 break
-            print(f"  session cap — backing off {nap/60:.0f} min", flush=True)
+            print(f"  no progress — backing off {nap / 60:.0f} min", flush=True)
             time.sleep(nap)
         else:
             time.sleep(min(SHORT_SLEEP, max(0, deadline - time.time())))
 
-    _finalize()
-    reason = "complete" if _count() >= TARGET else "deadline reached"
-    print(f"=== overnight run finished ({reason}) at {_count()}/{TARGET} ===", flush=True)
+    _audit(stage)
+    finished = "complete" if target and done() >= target else "deadline reached"
+    print(f"\n=== {stage} finished ({finished}) at {done():,} ===", flush=True)
+    print("\nNOTHING WAS PUBLISHED. v3.0 scores are not comparable with v2.0 "
+          "(Civility re-anchored, Charisma replaced by Focus), so the site is "
+          "refreshed only after the evaluation pass.", flush=True)
+    if stage == "pilot":
+        print("\nNext: read ATTRIBUTE_OVERLAP_v3.md and QUOTE_AUDIT_v3.md. If the "
+              "targets hold, run --stage windows.", flush=True)
 
 
 if __name__ == "__main__":
-    main()
+    fire.Fire({"run": run, "status": status})
