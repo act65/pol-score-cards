@@ -176,3 +176,6 @@ cython_debug/
 # Portrait pipeline: isolated venv (~800MB) + regenerable rembg masks
 data/.venv-portraits/
 site/static/img/portraits/masks/
+
+# v3 build output — regenerate with build_v2_dataset.py --out site_data_v3
+attribute-extraction/site_data_v3/
