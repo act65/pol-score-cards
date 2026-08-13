@@ -1,14 +1,34 @@
-"""Round-trip the labelling pool through a spreadsheet.
-
-Hand-editing 120 JSONL rows × 9 attributes is miserable and error-prone, so this
-exports the pool to CSV (one column per attribute), you label it in whatever
-spreadsheet you like, and it imports back with validation.
+"""Round-trip the labelling pool through a browser page.
 
     cd attribute-extraction
-    python label_testset.py export                    # -> testsets/pool_v3.csv
-    #   ... fill in the score columns in a spreadsheet, save as CSV ...
-    python label_testset.py import_csv --by alex      # -> updates pool_v3.jsonl
+    python label_testset.py add_context               # attach each window ONCE
+    python label_testset.py export_html --split dev   # -> testsets/pool_v3.html
+    #   ... open it, label, click "Download labels" ...
+    python label_testset.py import_json --path pool_v3_labels.jsonl --by alex
     python label_testset.py status                    # how far through you are
+
+**Why this is not a spreadsheet any more.** The first design exported one
+sentence per row and asked for a score. But the extractor judges a statement
+inside a ~3,000-token window, and stripped of that window many statements are
+simply not judgeable — "That's the start of the period and the thinking at the
+time" says nothing on its own. The labeller was being given a harder task than
+the model, on less evidence, and a disagreement could not be attributed: model
+error, or a human denied the context? `add_context` rebuilds the exact windows
+from the same corpus and the same packing, so both now answer the same question.
+
+A 3,000-token window does not fit in a spreadsheet cell, hence the page. It
+shows one item at a time with the statement highlighted in its debate, keeps the
+rubric on screen, and saves to the browser's local storage as you go.
+
+**Three kinds of answer, and the last two matter as much as the score:**
+
+| answer | meaning |
+|---|---|
+| a score | the attribute applies and this is its value |
+| `n/a` | the attribute does not apply here — so if the model scored it, that is a **false positive**, which a score-only testset cannot detect |
+| `can't tell` | not judgeable even with the window. If a human says this often, the question is unanswerable and the model's confidence is the defect |
+
+The old CSV path (`export` / `import_csv`) still works and still round-trips.
 
 **Only five columns are worth your time.** An isolated statement can only
 support a human gold label for the text-only attributes plus subject
@@ -38,6 +58,7 @@ skipped; a guessed 0.5 becomes gold that the model is measured against.
 
 from __future__ import annotations
 
+import collections
 import csv
 import json
 import os
@@ -151,6 +172,66 @@ def _save(rows: list[dict], path: str) -> None:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
 
+# How much of the original window to show the labeller. The extractor saw a
+# ~3,000-token window; showing the same text is the whole point, so this is a
+# safety cap for pathological days rather than a trim.
+MAX_CONTEXT_CHARS = 14000
+
+
+def _norm(text: str) -> str:
+    return " ".join((text or "").split())
+
+
+def add_context(pool: str = DEFAULT_POOL,
+                corpus: str = "../data/corpus/hansard_v2.json",
+                window_tokens: int = 3000) -> None:
+    """Attach to each pool item the window the MODEL was shown.
+
+    **This is the fix for the original labelling design.** The pool held a lone
+    sentence, so a labeller was asked to judge "That's the start of the period
+    and the thinking at the time" with no idea what period, what thinking, or
+    what was being debated. The model, meanwhile, saw ~3,000 tokens around it.
+
+    Two people doing different tasks cannot be compared. Any disagreement was
+    uninterpretable: model error, or a human denied the evidence? Rebuilding the
+    same windows — from the same corpus, the same prep, the same packing — means
+    the labeller and the model finally answer the same question.
+    """
+    import hansard_prep
+    import extract_hansard
+
+    rows = _load(pool)
+    dates = sorted({r["date"] for r in rows})
+    by_day = extract_hansard._load_by_day(corpus, dates[0], dates[-1])
+
+    found = 0
+    cache: dict[str, list] = {}
+    for r in rows:
+        if r["date"] not in cache:
+            parts = by_day.get(r["date"]) or []
+            cache[r["date"]] = (extract_hansard._windows(
+                hansard_prep.prep_day(parts), window_tokens) if parts else [])
+        target = _norm(r["statement"])
+        for i, w in enumerate(cache[r["date"]]):
+            if target in _norm(w):
+                r["window"] = w[:MAX_CONTEXT_CHARS]
+                r["window_id"] = f"{r['date']}#{i}"
+                found += 1
+                break
+        else:
+            # No window means no context, and no context means the item is not
+            # labellable. Better to know that than to ship it blind.
+            r["window"] = None
+            r["window_id"] = None
+
+    _save(rows, pool)
+    print(f"{found}/{len(rows)} items matched to their window "
+          f"({100 * found / len(rows):.0f}%)")
+    if found < len(rows):
+        print(f"{len(rows) - found} could not be located and will be flagged "
+              f"as unlabellable in the export.")
+
+
 def export(pool: str = DEFAULT_POOL, out: str = DEFAULT_CSV,
            split: str | None = None) -> None:
     """Write the pool to CSV for labelling. Existing labels are pre-filled.
@@ -203,6 +284,216 @@ def _guide_text() -> str:
               "against sources. Labelling any of them by eye here would not "
               "evaluate how they are actually scored.", ""]
     return "\n".join(parts)
+
+
+# --- HTML labelling page ------------------------------------------------------
+#
+# CSV was the wrong medium once context came back: a spreadsheet cell cannot
+# hold 3,000 tokens of debate, and the labeller ends up scrolling a wall of
+# quoted text with the statement lost inside it. The page below shows one item
+# at a time, highlights the target statement inside its window, and keeps the
+# rubric for the attribute being judged on screen.
+#
+# Two answers matter as much as the scores:
+#   n/a        — this attribute does not apply here. Measures the model's
+#                FALSE POSITIVES, which a score-only testset cannot see.
+#   can't tell — not judgeable even with the window. If a human says this
+#                often, the instrument is asking an unanswerable question and
+#                the model's confident answer is the problem.
+
+_PAGE = """<!doctype html><html><head><meta charset="utf-8">
+<title>Label pool_v3</title><style>
+:root{--bg:#fbfbfa;--fg:#1a1a1a;--mut:#666;--line:#e0ddd8;--hl:#ffe9a8;--acc:#2f5d8a}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+background:var(--bg);color:var(--fg)}
+header{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);
+padding:10px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;z-index:9}
+header b{font-size:14px}
+.bar{flex:1;height:6px;background:var(--line);border-radius:3px;min-width:120px}
+.bar>i{display:block;height:100%;background:var(--acc);border-radius:3px;width:0}
+main{max-width:1180px;margin:0 auto;padding:20px;display:grid;
+grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:22px}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px}
+.meta{color:var(--mut);font-size:13px;margin-bottom:10px}
+.win{white-space:pre-wrap;max-height:60vh;overflow:auto;font-size:14px;
+background:#fcfbf9;border:1px solid var(--line);border-radius:6px;padding:12px}
+mark{background:var(--hl);padding:1px 0;font-weight:600}
+h3{margin:18px 0 4px;font-size:14px;text-transform:uppercase;letter-spacing:.04em}
+.rub{white-space:pre-wrap;font-size:12.5px;color:#444;background:#faf9f7;
+border-left:3px solid var(--line);padding:8px 10px;margin:6px 0 10px}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+button.o{border:1px solid var(--line);background:#fff;border-radius:6px;padding:6px 11px;
+cursor:pointer;font:inherit;font-size:13px}
+button.o:hover{border-color:var(--acc)}
+button.o.on{background:var(--acc);border-color:var(--acc);color:#fff}
+button.o.na.on{background:#8a8a8a;border-color:#8a8a8a}
+button.o.ct.on{background:#a8562f;border-color:#a8562f}
+nav{display:flex;gap:8px;margin-top:18px;align-items:center}
+nav button{padding:8px 16px;border-radius:6px;border:1px solid var(--line);
+background:#fff;cursor:pointer;font:inherit}
+nav button.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
+textarea{width:100%;min-height:52px;border:1px solid var(--line);border-radius:6px;
+padding:8px;font:inherit;font-size:13px;resize:vertical}
+.warn{background:#fff4f4;border:1px solid #e8c4c4;padding:10px;border-radius:6px;
+color:#8a2f2f;font-size:13px}
+</style></head><body>
+<header>
+  <b id="pos"></b><div class="bar"><i id="prog"></i></div>
+  <span id="cnt" style="font-size:13px;color:var(--mut)"></span>
+  <button onclick="dl()" style="padding:6px 14px;border-radius:6px;
+    border:1px solid var(--line);background:#fff;cursor:pointer;font:inherit">
+    Download labels</button>
+</header>
+<main>
+  <div class="card">
+    <div class="meta" id="meta"></div>
+    <div class="win" id="win"></div>
+  </div>
+  <div class="card" id="form"></div>
+</main>
+<script>
+const ITEMS=__ITEMS__, RUBRICS=__RUBRICS__, ATTRS=__ATTRS__;
+const KEY="pool_v3_labels";
+let L=JSON.parse(localStorage.getItem(KEY)||"{}"), i=0;
+const SCORES=[["0.0","0"],["0.25",".25"],["0.5",".5"],["0.75",".75"],["1.0","1"]];
+const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+function set(id,f,v){ (L[id]=L[id]||{})[f]=v; localStorage.setItem(KEY,JSON.stringify(L)); render(); }
+
+function opts(id,f,vals,cls){
+  const cur=(L[id]||{})[f];
+  return `<div class="opts">`+vals.map(([v,lab])=>
+    `<button class="o ${cls||''} ${cur===v?'on':''}" onclick="set('${id}','${f}',${cur===v?'null':`'${v}'`})">${lab}</button>`
+  ).join("")+`</div>`;
+}
+
+function render(){
+  const it=ITEMS[i], id=it.statement_id, done=Object.keys(L).filter(k=>Object.values(L[k]||{}).some(v=>v)).length;
+  document.getElementById("pos").textContent=`${i+1} / ${ITEMS.length}`;
+  document.getElementById("prog").style.width=(100*done/ITEMS.length)+"%";
+  document.getElementById("cnt").textContent=`${done} labelled`;
+  document.getElementById("meta").innerHTML=
+    `<b>${esc(it.politician)}</b> · ${esc(it.party||"")} · ${esc(it.side||"")} · ${it.date}`
+    +(it.window_id?` · window ${it.window_id}`:"");
+  const w=document.getElementById("win");
+  if(!it.window){ w.innerHTML=`<div class="warn">No window could be recovered for this
+    statement, so there is not enough context to label it. Skip it.</div>
+    <p style="margin-top:10px">${esc(it.statement)}</p>`; }
+  else { const n=s=>s.replace(/\s+/g," ");
+    const wi=n(it.window), st=n(it.statement), at=wi.indexOf(st);
+    w.innerHTML = at<0 ? esc(it.window)
+      : esc(wi.slice(0,at))+"<mark>"+esc(st)+"</mark>"+esc(wi.slice(at+st.length)); }
+
+  let h=`<h3>subject</h3><div class="rub">${esc(RUBRICS.subject)}</div>`
+    + opts(id,"subject",[["speaker","speaker"],["other","other"],["unclear","unclear"]]);
+  for(const a of ATTRS){
+    h+=`<h3>${a}</h3><div class="rub">${esc(RUBRICS[a])}</div>`
+      + opts(id,a,SCORES)
+      + `<div class="opts" style="margin-top:6px">`
+      + `<button class="o na ${(L[id]||{})[a]==="n/a"?"on":""}" onclick="set('${id}','${a}',${(L[id]||{})[a]==="n/a"?"null":"'n/a'"})">n/a — doesn't apply</button>`
+      + `<button class="o ct ${(L[id]||{})[a]==="?"?"on":""}" onclick="set('${id}','${a}',${(L[id]||{})[a]==="?"?"null":"'?'"})">can't tell</button>`
+      + `</div>`;
+  }
+  h+=`<h3>note</h3><textarea onchange="set('${id}','note',this.value)"
+      placeholder="optional — especially useful when you disagree with yourself">${
+      esc(((L[id]||{}).note)||"")}</textarea>`;
+  h+=`<nav><button onclick="go(-1)">&larr; prev</button>
+      <button class="pri" onclick="go(1)">next &rarr;</button>
+      <span style="color:var(--mut);font-size:13px">progress saves automatically</span></nav>`;
+  document.getElementById("form").innerHTML=h;
+}
+function go(d){ i=Math.max(0,Math.min(ITEMS.length-1,i+d)); window.scrollTo(0,0); render(); }
+document.addEventListener("keydown",e=>{ if(e.target.tagName==="TEXTAREA")return;
+  if(e.key==="ArrowRight")go(1); if(e.key==="ArrowLeft")go(-1); });
+function dl(){
+  const out=ITEMS.filter(t=>L[t.statement_id]).map(t=>({statement_id:t.statement_id,...L[t.statement_id]}));
+  const b=new Blob([out.map(o=>JSON.stringify(o)).join("\n")],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(b);
+  a.download="pool_v3_labels.jsonl"; a.click();
+}
+render();
+</script></body></html>"""
+
+
+def export_html(pool: str = DEFAULT_POOL, out: str = "testsets/pool_v3.html",
+                split: str | None = None) -> None:
+    """Write a self-contained labelling page — the statement in its window.
+
+    Open the file in a browser, label, then click **Download labels** and run
+    `import_json`. Progress is kept in the browser's local storage, so closing
+    the tab does not lose work.
+    """
+    rows = _load(pool)
+    if split:
+        rows = [r for r in rows if r.get("split") == split]
+    missing = [r for r in rows if not r.get("window")]
+    if missing and len(missing) == len(rows):
+        raise SystemExit("no windows attached — run `add_context` first")
+
+    keep = ("statement_id", "politician", "party", "side", "date",
+            "statement", "window", "window_id")
+    items = [{k: r.get(k) for k in keep} for r in rows]
+    html = (_PAGE
+            .replace("__ITEMS__", json.dumps(items, ensure_ascii=False))
+            .replace("__RUBRICS__", json.dumps(RUBRICS, ensure_ascii=False))
+            .replace("__ATTRS__", json.dumps(ATTRIBUTES)))
+    with open(out, "w", encoding="utf-8") as f:
+        f.write(html)
+
+    print(f"exported {len(rows)} items -> {out}")
+    if missing:
+        print(f"  {len(missing)} have no window and are flagged unlabellable")
+    print(f"\n  open {os.path.abspath(out)}")
+    print("  label, click 'Download labels', then:")
+    print(f"  python label_testset.py import_json --path pool_v3_labels.jsonl --by <name>")
+
+
+def import_json(path: str, pool: str = DEFAULT_POOL, by: str | None = None) -> None:
+    """Merge labels downloaded from the HTML page into the pool.
+
+    `n/a` and `?` are stored as-is rather than as numbers. They are answers, not
+    missing data: `n/a` says the attribute should not have fired here (a false
+    positive if the model scored it) and `?` says the item is not judgeable even
+    with its window. Coercing either to a number would erase the finding.
+    """
+    if not by:
+        raise SystemExit("--by <your name> is required, so we can measure "
+                         "inter-annotator agreement later")
+    incoming = _load(path)
+    rows = _load(pool)
+    by_id = {r["statement_id"]: r for r in rows}
+
+    merged, unknown, counts = 0, 0, collections.Counter()
+    for rec in incoming:
+        row = by_id.get(rec.get("statement_id"))
+        if not row:
+            unknown += 1
+            continue
+        gold = dict(row.get("gold") or {})
+        for field, value in rec.items():
+            if field == "statement_id" or value in (None, ""):
+                continue
+            if field == "note":
+                gold["note"] = value
+            elif field == "subject":
+                if value not in SUBJECT_VALUES:
+                    raise SystemExit(f"bad subject {value!r} for {rec['statement_id']}")
+                gold["subject"] = value
+            elif field in ATTRIBUTES + LEGACY_ATTRIBUTES:
+                gold[field] = value if value in ("n/a", "?") else float(value)
+                counts[value if value in ("n/a", "?") else "scored"] += 1
+        row["gold"] = gold
+        row["labelled_by"] = by
+        merged += 1
+
+    _save(rows, pool)
+    print(f"merged {merged} items from {path}" + (f", {unknown} unknown ids" if unknown else ""))
+    print(f"  scored {counts['scored']}, n/a {counts['n/a']}, can't tell {counts['?']}")
+    if counts["?"]:
+        print("  'can't tell' is a finding: those items are not judgeable even "
+              "with the window, so the model should not be confident there either.")
 
 
 def guide() -> None:
@@ -311,5 +602,6 @@ def status(pool: str = DEFAULT_POOL) -> None:
 
 
 if __name__ == "__main__":
-    fire.Fire({"export": export, "import_csv": import_csv, "status": status,
-               "guide": guide})
+    fire.Fire({"export": export, "export_html": export_html,
+               "import_csv": import_csv, "import_json": import_json,
+               "add_context": add_context, "status": status, "guide": guide})
