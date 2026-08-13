@@ -66,6 +66,7 @@ ALL = (
         "What did this politician commit to?",
         "The politician's ability to turn stated commitments into law.",
         evidence="corpus/strength_ledger.jsonl",
+        requires=("commitment",),
         subject_can_be_other=True,
     ),
     Attribute(
@@ -83,6 +84,9 @@ ALL = (
         "Whether stated positions match how the politician's party actually "
         "voted. Party-level: an MP may personally disagree with a party vote.",
         evidence="corpus/divisions.jsonl, corpus/propositions.jsonl",
+        # Both are mandatory: a stance with no proposition cannot be joined to a
+        # vote, and a proposition with no stance has nothing to contradict.
+        requires=("proposition", "stance"),
         subject_can_be_other=True,
     ),
     Attribute(
@@ -135,6 +139,16 @@ RETIRED = ("charisma",)
 SCORED_IN_WINDOWS = tuple(a.id for a in ALL if a.tier == "text")
 EXTRACTED_IN_WINDOWS = SCORED_IN_WINDOWS + tuple(
     a.id for a in ALL if a.tier == "search")
+
+# Strength and Authenticity are *extracted* from windows too — a commitment and
+# a stated position — but by a separate runner (`extract_positions.py`), not by
+# the scoring pass. Keeping them out of EXTRACTED_IN_WINDOWS is deliberate:
+# their output feeds a deterministic join rather than the score file, and
+# bundling them would put rows with no score into the scores dataset.
+#
+# Forthrightness is absent because it needs question/answer pairs, which a
+# speech window does not contain.
+RECORD_IN_WINDOWS = ("authenticity", "strength")
 
 # Scored over corpus/oral_questions.jsonl instead of over windows.
 PAIRWISE = tuple(a.id for a in ALL if a.id == "forthrightness")

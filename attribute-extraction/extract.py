@@ -65,6 +65,15 @@ class Example(BaseModel):
     subject_name: Optional[str] = Field(default=None)
     falsification_criterion: Optional[str] = Field(default=None)
     resolve_by: Optional[str] = Field(default=None)
+    # `record`-tier fields. Authenticity extracts a stance on a named bill or
+    # motion; the vote record decides whether it was kept. The bill is named in
+    # words rather than picked from an ID list — `authenticity_score.py` matches
+    # it to the proposition vocabulary, and refuses ambiguous matches.
+    proposition: Optional[str] = Field(default=None)
+    stance: Optional[str] = Field(default=None)
+    # Strength extracts a commitment so it can be joined to the legislative
+    # record. The ledger, not the model, decides whether it was delivered.
+    commitment: Optional[str] = Field(default=None)
     # Set by the quote gate: verbatim | spliced | missing. Rows that fail the
     # gate are dropped, so anything written out is `verbatim` — the field is
     # kept so the audit can be re-run on the output without the corpus.
@@ -427,12 +436,15 @@ def _accept(attr: str, politician: str, statement: str, sc, source_norm: str,
         rejects["quote:mid_sentence"] += 1
         return None
 
-    criterion = get("falsification_criterion")
-    resolve_by = get("resolve_by")
+    # Every field the registry declares mandatory for this attribute must be
+    # present. Read generically from the registry rather than by name, so
+    # declaring a new `requires` entry in attributes.py is enough to enforce it.
     for required in attributes.required_fields(attr):
-        if not (criterion if required == "falsification_criterion" else resolve_by):
+        if not get(required):
             rejects[f"{attr}:missing_{required}"] += 1
             return None
+    criterion = get("falsification_criterion")
+    resolve_by = get("resolve_by")
 
     raw = get("score")
     prior = None
@@ -465,6 +477,10 @@ def _accept(attr: str, politician: str, statement: str, sc, source_norm: str,
         subject_name=get("subject_name"),
         falsification_criterion=criterion,
         resolve_by=resolve_by,
+        proposition=get("proposition"),
+        stance=(str(get("stance")).lower().strip()
+                if get("stance") is not None else None),
+        commitment=get("commitment"),
         quote_check=verdict,
     )
 
