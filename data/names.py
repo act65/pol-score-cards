@@ -76,10 +76,12 @@ class RosterIndex:
     def __init__(self, path: str = DEFAULT_ROSTER, fuzzy_cutoff: float = 0.85):
         self.fuzzy_cutoff = fuzzy_cutoff
         self._index: dict[str, str] = {}
+        self._mps: dict[str, dict] = {}
         if not os.path.exists(path):
             return
         with open(path) as f:
             roster = json.load(f)
+        self._mps = {mp["id"]: mp for mp in roster}
         buckets: dict[str, set] = {}
         for mp in roster:
             keys = set(mp.get("aliases") or [])
@@ -96,7 +98,15 @@ class RosterIndex:
         self = cls.__new__(cls)
         self.fuzzy_cutoff = fuzzy_cutoff
         self._index = {norm(k): v for k, v in (mapping or {}).items()}
+        self._mps = {}
         return self
+
+    def name_of(self, politician_id: str) -> str:
+        """Canonical display name for an id, or the id if it is unknown."""
+        return self._mps.get(politician_id, {}).get("name", politician_id)
+
+    def party_of(self, politician_id: str) -> str:
+        return self._mps.get(politician_id, {}).get("party", "")
 
     def __len__(self) -> int:
         return len(self._index)
@@ -132,3 +142,18 @@ class RosterIndex:
     def as_dict(self) -> dict:
         """The raw {normalised key -> id} mapping, for callers that need it."""
         return dict(self._index)
+
+
+# Speaker tags in Hansard that are not an individual MP: the Chair, generic
+# interjections, officers of the House. Attributing a score to "an Hon member"
+# would create a phantom politician, so callers filter on this before resolving.
+NON_MP = {"hon member", "member", "members", "an hon member", "hon members",
+          "the speaker", "speaker", "speaker-elect", "clerk", "deputy speaker",
+          "assistant speaker", "temporary speaker", "chairperson",
+          "the chairperson", "chief commissioner", "sergeant-at-arms", "unknown"}
+
+
+def is_probably_mp_name(name: str) -> bool:
+    """False for the Chair, officers of the House and generic interjectors."""
+    n = norm(name)
+    return bool(n) and n not in NON_MP

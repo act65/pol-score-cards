@@ -301,7 +301,7 @@ def _guide_text() -> str:
 #                often, the instrument is asking an unanswerable question and
 #                the model's confident answer is the problem.
 
-_PAGE = """<!doctype html><html><head><meta charset="utf-8">
+_PAGE = r"""<!doctype html><html><head><meta charset="utf-8">
 <title>Label pool_v3</title><style>
 :root{--bg:#fbfbfa;--fg:#1a1a1a;--mut:#666;--line:#e0ddd8;--hl:#ffe9a8;--acc:#2f5d8a}
 *{box-sizing:border-box}

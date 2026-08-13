@@ -14,11 +14,36 @@ import datetime
 import hashlib
 import json
 import os
+import sys
 
 import fire
 
 import bias_adjust
-from roster import Roster, is_probably_mp_name
+# Name resolution comes from data/names.py, the single implementation (see
+# CLAUDE.md). `roster.py` used to live here and was the seventh near-copy; it
+# lacked the "Surname, Given" ordering, the "on behalf of" delegation strip and
+# the fuzzy match for Hansard's misspellings, so scores could split across
+# spelling variants of one MP. Verified identical on the v3.0 corpus before
+# removal: 111 distinct speaker names, 3,703 rows, zero divergence.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "..", "data"))
+from names import RosterIndex, clean, is_probably_mp_name  # noqa: E402
+
+
+class Roster:
+    """Thin adapter keeping the old call sites working over names.RosterIndex."""
+
+    def __init__(self, path: str = None):
+        self._idx = RosterIndex(path) if path else RosterIndex()
+
+    def match(self, name):
+        return self._idx.resolve(clean(name))
+
+    def name(self, mp_id):
+        return self._idx.name_of(mp_id)
+
+    def party(self, mp_id):
+        return self._idx.party_of(mp_id)
 
 import attributes as attribute_registry
 

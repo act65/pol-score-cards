@@ -7,7 +7,8 @@ speaker segmentation/attribution.
 
 import hansard_prep
 from bias_adjust import adjust_scores
-from roster import Roster, _norm, is_probably_mp_name
+from build_v2_dataset import Roster, is_probably_mp_name
+from names import norm as _norm
 
 R = Roster()
 
