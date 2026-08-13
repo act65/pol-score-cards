@@ -5,9 +5,20 @@ import os
 # runs from anywhere (gunicorn, Docker, etc.) — not only `cd site && python app.py`.
 _HERE = os.path.dirname(os.path.abspath(__file__))
 
+# Where the four dataset files live. Defaults to `static/`, the published data.
+# Point it elsewhere to preview a build without overwriting what is live:
+#
+#     SCORECARD_DATA=../attribute-extraction/site_data_v3 python app.py
+#
+# Only the dataset moves — templates, CSS and portraits still come from
+# `static/`, so a preview looks exactly like the real site.
+_DATA_DIR = os.environ.get("SCORECARD_DATA", "static")
+
 
 def load_jsonl(fname):
     data = []
+    if not os.path.isabs(fname):
+        fname = os.path.join(_DATA_DIR, os.path.basename(fname))
     path = fname if os.path.isabs(fname) else os.path.join(_HERE, fname)
     try:
         with open(path, 'r') as f:

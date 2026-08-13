@@ -81,7 +81,8 @@ def _pick_examples(exs, cap=0):
     return [spread[i] for i in idx]
 
 
-def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, dates, src_counts):
+def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, dates,
+            src_counts, use_prior=False):
     """Fold one score source into the shared pools. Scores are BLENDED into the
     same (mid, attr) pool as every other source — a politician gets one combined
     score per attribute. Each example is tagged with its `source` so the stats
@@ -95,8 +96,20 @@ def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, date
                 continue
             for e in exs:
                 sc = e.get("score")
+                resolved = True
                 if not isinstance(sc, (int, float)):
-                    continue
+                    # v3.0: search-tier rows (veracity, divination) carry no
+                    # score until the resolver runs, only the model's unaided
+                    # `prior_score`. With --use_prior we display that guess so
+                    # the card is not blank — but it is tagged `resolved:false`
+                    # all the way to the site, because a guess presented as a
+                    # checked fact is the exact failure v3.0 exists to end.
+                    if not use_prior:
+                        continue
+                    sc = e.get("prior_score")
+                    resolved = False
+                    if not isinstance(sc, (int, float)):
+                        continue
                 mid = R.match(e.get("politician", ""))
                 if not mid:
                     if is_probably_mp_name(e.get("politician", "")):
@@ -105,6 +118,7 @@ def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, date
                 per_pair[(mid, attr)].append(sc)
                 src_counts[source] += 1
                 examples[(mid, attr)].append({
+                    "resolved": resolved,
                     "politician_id": mid, "attribute": ID2NAME[attr],
                     "text": e.get("statement", ""),
                     "score": round(sc * 100),
@@ -115,10 +129,40 @@ def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, date
                 })
 
 
+def _record_scores(paths):
+    """Read the record-tier score files: {(politician_id, attribute) -> row}.
+
+    Strength, Authenticity and Forthrightness are not scored from text — they
+    come from `data/strength_score.py`, `data/authenticity_score.py` and the
+    Q/A pass, each already one row per politician with its own denominator.
+
+    They are deliberately NOT put through `bias_adjust`. Shrinkage exists to
+    stop a politician with three sampled statements looking extreme; these
+    scores are rates over a known, complete denominator (every bill they held,
+    every position they stated), so there is nothing to shrink toward and doing
+    so would pull a genuine 12-for-12 record toward the mean of a different
+    quantity.
+    """
+    out = {}
+    for path in paths:
+        if not path or not os.path.exists(path):
+            continue
+        for row in _read(path):
+            attr = row.get("attribute")
+            pid = row.get("politician_id")
+            # `insufficient_evidence` rows carry score None on purpose: no
+            # bills to pass, no positions stated. Absent, never zero.
+            if not attr or not pid or row.get("score") is None:
+                continue
+            out[(pid, attr)] = row
+    return out
+
+
 def run(scores="hansard_scores_full.jsonl", out="site_data_v2",
         corpus_label="Hansard 54th Parliament", min_n=1, max_examples=0,
         presser_scores="", presser_label="Post-Cabinet press conference",
-        release_scores="", release_label="Party press release"):
+        release_scores="", release_label="Party press release",
+        use_prior=False, record_scores=""):
     R = Roster()
     os.makedirs(out, exist_ok=True)
 
@@ -152,15 +196,20 @@ def run(scores="hansard_scores_full.jsonl", out="site_data_v2",
 
     _ingest(hansard_rows, corpus_label, "Hansard",
             lambda rec, date: f"https://hansard.parliament.nz/hansard-transcript/{date}",
-            R, per_pair, examples, unresolved, dates, src_counts)
+            R, per_pair, examples, unresolved, dates, src_counts, use_prior)
     _ingest(presser_rows, presser_label, "Pressers",
             lambda rec, date: rec.get("url", ""),
-            R, per_pair, examples, unresolved, dates, src_counts)
+            R, per_pair, examples, unresolved, dates, src_counts, use_prior)
     _ingest(release_rows, release_label, "Party releases", release_url,
-            R, per_pair, examples, unresolved, dates, src_counts)
+            R, per_pair, examples, unresolved, dates, src_counts, use_prior)
 
     adjusted = bias_adjust.adjust_scores(per_pair)
-    mp_ids = sorted({mid for (mid, _a) in per_pair})
+    record = _record_scores(
+        [p.strip() for p in record_scores.split(",")] if record_scores else [])
+    # A politician can have a record-tier score without ever being quoted, so
+    # the card list is the union of both, not just whoever was extracted.
+    mp_ids = sorted({mid for (mid, _a) in per_pair}
+                    | {pid for (pid, _a) in record})
 
     # politicians.jsonl
     with open(os.path.join(out, "politicians.jsonl"), "w", encoding="utf-8") as f:
@@ -180,6 +229,20 @@ def run(scores="hansard_scores_full.jsonl", out="site_data_v2",
         for mid in mp_ids:
             row = {"politician_id": mid}
             for aid, name, _d in ATTRIBUTES:
+                rec = record.get((mid, aid))
+                if rec is not None:
+                    # Computed from the record, not sampled from speech: no
+                    # shrinkage, and the denominator travels with the score so
+                    # the card can show what it is a rate *of*.
+                    row[name] = round(float(rec["score"]) * 100)
+                    row[f"{name}_n"] = (rec.get("positions_scored")
+                                        or rec.get("evidence_n") or 0)
+                    row[f"{name}_tier"] = "record"
+                    for extra in ("cohort", "cohort_n", "basis",
+                                  "positions_stated", "contradictions"):
+                        if rec.get(extra) is not None:
+                            row[f"{name}_{extra}"] = rec[extra]
+                    continue
                 a = adjusted.get((mid, aid))
                 if not a or a.n < min_n:
                     continue
@@ -187,6 +250,13 @@ def run(scores="hansard_scores_full.jsonl", out="site_data_v2",
                 row[f"{name}_n"] = a.n
                 row[f"{name}_conf"] = a.confidence
                 row[f"{name}_ci"] = round(a.ci95 * 100)
+                # Search-tier attributes shown from `prior_score` are the
+                # model's unaided guess. Flagged so the card can mark them
+                # unverified rather than presenting a guess as a check.
+                row[f"{name}_tier"] = (
+                    "unresolved"
+                    if attribute_registry.tier_of(aid) == "search"
+                    else "text")
             f.write(json.dumps(row) + "\n")
             n_scores += 1
 
