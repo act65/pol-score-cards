@@ -96,10 +96,38 @@ def _load_by_day(corpus, since, until=""):
     return dict(sorted(by_day.items()))
 
 
+# Which attributes one pass extracts. Two named sets, because they produce two
+# different datasets and must not be mixed:
+#
+#   scores    — the four text attributes (scored) plus veracity/divination
+#               (criterion, no score). Goes to the scores file.
+#   positions — authenticity and strength, which emit a stated position and a
+#               commitment with no score at all. These feed the deterministic
+#               joins in data/authenticity_score.py and data/strength_score.py.
+#
+# Appending positions to the scores file would put permanently score-less rows
+# into the dataset the site aggregates, so they are run separately and land in
+# their own file.
+def _resolve_attrs(spec: str) -> list:
+    """Named set ('scores', 'positions') or an explicit comma-separated list."""
+    named = {"scores": attributes.EXTRACTED_IN_WINDOWS,
+             "positions": attributes.RECORD_IN_WINDOWS}
+    if spec in named:
+        return sorted(named[spec])
+    chosen = [a.strip() for a in spec.split(",") if a.strip()]
+    unknown = [a for a in chosen if a not in attributes.BY_ID]
+    if unknown:
+        raise SystemExit(f"unknown attribute(s): {', '.join(unknown)}. "
+                         f"Use a name from attributes.py, or one of "
+                         f"{sorted(named)}.")
+    return sorted(chosen)
+
+
 def run(out="hansard_scores.jsonl",
         corpus="../data/corpus/hansard_v2.json",
         since="2023-10-06",
         until="",
+        attrs="scores",
         window_tokens=14000,
         workers=4,
         model=extract.DEFAULT_MODEL,
@@ -120,7 +148,7 @@ def run(out="hansard_scores.jsonl",
     # resolver). Forthrightness needs question/answer PAIRS and is run over
     # corpus/oral_questions.jsonl by extract_questions.py; Strength and
     # Authenticity are joined to records deterministically.
-    attrs = sorted(attributes.EXTRACTED_IN_WINDOWS)
+    attrs = _resolve_attrs(attrs)
     valid = set(attrs)
     system = extract.build_combined_system(attrs, prompts_dir)
     sys_tok = len(system) // 4
