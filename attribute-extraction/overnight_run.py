@@ -48,9 +48,43 @@ QA_SCORES = "forthrightness_scores_v3.jsonl"
 
 SINCE = "2023-10-06"
 PILOT_MONTH = "2025-10"
-WINDOW_TOKENS = "14000"
-WORKERS = "4"
-MODEL = "claude-opus-4-8"
+
+# Window size and call timeout are COUPLED — set them together or the run dies
+# silently. Measured on the subscription CLI: a 3k-token window returns in
+# ~150s, while a 14k-token one does not finish inside claude_cli's old 300s
+# default at all. The first v3.0 launch used 14k windows, so every call timed
+# out, retried twice and failed; the run looked healthy and produced nothing
+# for 20 minutes before it was caught.
+#
+# 3k is the ONLY size measured to complete reliably: the model bake-off ran 18
+# calls at 3k in ~150s each. Cost does not scale linearly with window size —
+# a bigger window means more statements to emit, so output grows too. Measured
+# on this corpus with Opus 5 via the CLI:
+#     3k tokens (~12k chars)  ->  ~150s      reliable
+#     6k tokens (~24k chars)  ->  >400s      no window landed in 7 min
+#    14k tokens (~56k chars)  ->  >600s      exceeded the old 300s default, so
+#                                            every call timed out and the run
+#                                            produced nothing while looking fine
+#
+# Smaller windows mean more calls, but a call that finishes beats a bigger one
+# that does not. The timeout is set well above the measured time so a slow call
+# waits rather than failing.
+WINDOW_TOKENS = "3000"
+CALL_TIMEOUT = "900"
+
+# Two settings the 2026-08-07 experiments decided:
+#
+#   MODEL   — `compare_models.py` treated Opus 5 as ground truth and neither
+#             cheaper model reproduced it. Sonnet 5 surfaced only 33% of the
+#             same statements (Opus 4.8, 50%), both under the 0.6 bar. Where
+#             they overlapped they agreed well (r 0.88-0.93), so the problem is
+#             WHICH statements get extracted, not how they are scored — a cheap
+#             model yields a different dataset, not a cheaper one.
+#   WORKERS — the subscription CLI queues above ~2 concurrent sessions. Six
+#             workers managed 9 calls then stalled dead; two is genuinely
+#             faster. See MODEL_COMPARISON.md and the memory note.
+MODEL = "claude-opus-5"
+WORKERS = "2"
 BACKEND = "claude_cli"
 
 BACKOFF = 75 * 60          # session-cap backoff
@@ -94,6 +128,7 @@ def _pass(stage: str, timeout_s: float, model: str, backend: str) -> None:
                "--since", f"{PILOT_MONTH}-01" if stage == "pilot" else SINCE,
                "--until", PILOT_MONTH if stage == "pilot" else "",
                "--window_tokens", WINDOW_TOKENS, "--workers", WORKERS,
+               "--timeout", CALL_TIMEOUT,
                "--backend", backend, "--model", model, "--out", SCORES]
     try:
         subprocess.run(cmd, cwd=HERE, timeout=max(30, timeout_s))
@@ -131,9 +166,34 @@ def status() -> None:
 
 def run(hours: float = 10.0, stage: str = "pilot", model: str = MODEL,
         backend: str = BACKEND, target: int = 0) -> None:
-    """Run one stage until it completes or the time budget runs out."""
+    """Run one stage until it completes or the time budget runs out.
+
+    `--stage all` runs the pilot, writes the audits, then rolls straight on into
+    the full term with whatever time is left. That ordering is deliberate: the
+    pilot month is a subset of the full term and windows are deduplicated by
+    `window_id`, so nothing is extracted twice and an overnight budget is never
+    left idle just because the pilot finished at 1am.
+
+    It does NOT replace reading the audits. The extractor's gates run in-process
+    (a non-verbatim quote cannot reach disk), so an unattended roll-on cannot
+    corrupt the output — but whether the prompts are behaving is still a
+    judgement call, and `ATTRIBUTE_OVERLAP_v3.md` is written after the pilot so
+    it is waiting in the morning either way.
+    """
+    if stage == "all":
+        deadline = time.time() + hours * 3600
+        run(hours=hours, stage="pilot", model=model, backend=backend)
+        left = (deadline - time.time()) / 3600
+        if left <= 0.2:
+            print(f"\n=== pilot done; no time left for the full term ===",
+                  flush=True)
+            return
+        print(f"\n=== rolling on into the full term with {left:.1f}h left ===",
+              flush=True)
+        run(hours=left, stage="windows", model=model, backend=backend)
+        return
     if stage not in ("pilot", "windows", "questions"):
-        raise SystemExit("--stage must be pilot | windows | questions")
+        raise SystemExit("--stage must be pilot | windows | questions | all")
 
     out_file = QA_SCORES if stage == "questions" else SCORES
     deadline = time.time() + hours * 3600

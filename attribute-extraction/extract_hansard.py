@@ -106,6 +106,10 @@ def run(out="hansard_scores.jsonl",
         backend=extract.DEFAULT_BACKEND,
         dry_run=False,
         limit_days=0,
+        # Must scale with window_tokens. A 3k-token window returns in ~150s; a
+        # 14k one does not fit in claude_cli's 300s default, and every call
+        # then times out silently. See extract.extract_all_attributes.
+        timeout=900,
         # rough public list rates ($/Mtok) for the estimate only — verify current.
         in_rate=15.0, out_rate=75.0, cache_read_rate=1.5):
     prompts_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prompts")
@@ -182,7 +186,7 @@ def run(out="hansard_scores.jsonl",
         local = collections.Counter()
         by_attr = extract.extract_all_attributes(
             client, system, {"date": date, "content": text}, valid,
-            model=model, backend=backend, stats=local)
+            model=model, backend=backend, stats=local, timeout=timeout)
         with gate_lock:
             gate.update(local)
         return wid, date, by_attr

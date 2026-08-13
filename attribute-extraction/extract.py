@@ -240,10 +240,22 @@ should — score high on one and low on another:
   * fierce criticism of a POLICY         -> HIGH civility (it attacks no one)
   * "Labour are hopeless"                -> HIGH civility, ZERO focus
   * an insult beside a sound argument    -> LOW civility, HIGH rigor
+  * on-policy but badly reasoned         -> HIGH focus, LOW rigor
 
 If you find yourself giving one statement the same score on several attributes,
 stop and check whether you are answering each question separately or just
 rating the statement overall.
+
+**FOCUS vs RIGOR — the pair most often confused.** The first v3.0 pilot had
+them correlating at 0.87, because a content-free jibe at the other party got
+scored twice: once by Focus (rightly) and once by Rigor, which reached for a
+fallacy label to describe what was really just abuse. The division:
+
+  * The statement engages a policy and the INFERENCE is weak -> score RIGOR.
+    Focus stays HIGH; arguing badly about a real policy is still on-policy.
+  * The statement is about the other party and there is no argument once you
+    remove that -> score FOCUS only. Emit NOTHING for Rigor. A jibe is not an
+    argument, and dressing it in a fallacy name does not make it one.
 
 === 2. SCORE ONLY WHERE THERE WAS A REAL OPPORTUNITY TO SCORE 0-100 ===
 
@@ -466,6 +478,7 @@ def extract_all_attributes(
     backend: str = DEFAULT_BACKEND,
     max_tokens: int = 8192,
     stats: Optional[Counter] = None,
+    timeout: int = 900,
 ) -> dict:
     """Score every attribute for one article in a single call.
 
@@ -473,6 +486,13 @@ def extract_all_attributes(
     counts across a run — the firing rate and the quote-gate reject rate are
     both metrics we hold prompt changes to, so they need to be observable
     during the run, not reconstructed afterwards.
+
+    `timeout` applies to the claude_cli backend and MUST scale with the window
+    size. It defaulted to 300s inside `claude_cli`, which is fine for a
+    3k-token window (~150s) and silently fatal for a 14k-token one: every call
+    timed out, retried twice, and the run produced nothing at all while looking
+    healthy. Window size and timeout are coupled, so they are set together in
+    the runner rather than left to a default here.
     """
     out = defaultdict(list)
     article_text = build_article_text(article)
@@ -484,7 +504,8 @@ def extract_all_attributes(
         # subscription-path equivalent of the API's messages.parse.
         result = claude_cli.call_structured(
             system, article_text, MultiResult.model_json_schema(),
-            model=model, instruction=_COMBINED_STRUCT_INSTRUCTION)
+            model=model, instruction=_COMBINED_STRUCT_INSTRUCTION,
+            timeout=timeout)
         rows = (result or {}).get("examples", []) or []
         pairs = [(str(r.get("politician", "")).strip(),
                   str(r.get("statement", "")).strip(),

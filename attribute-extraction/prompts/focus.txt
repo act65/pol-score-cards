@@ -33,7 +33,12 @@ remove. That statement is a 1.0. Only content-free party-bashing scores low.
 
 THIS IS *NOT* FOCUS — do not let these move the score:
 - Attacks on a PERSON → Civility. Focus is about parties and topics, not people.
-- Whether the argument is VALID → Rigor.
+- Whether the argument is VALID → Rigor. **A statement can be squarely on the
+  policy and still reason badly — that is HIGH focus and LOW rigor, and it is
+  the single most common case where the two get confused.** If the speaker is
+  engaging the measure before the House, score Focus high even when the
+  inference is a post hoc, a strawman, or an argument from absence of evidence.
+  Do not deduct here for a weak argument.
 - Whether the claim is TRUE → Veracity.
 - HOW PRECISE the statement is → Specificity. Focus asks what the statement is
   ABOUT; Specificity asks how much detail it carries. A vague but genuinely
