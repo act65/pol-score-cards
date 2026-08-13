@@ -131,7 +131,15 @@ def pairwise(by_attr: dict[str, dict[str, float]], min_n: int = 30) -> list[dict
             out.append({
                 "a": a, "b": b,
                 "n_both": len(both),
+                "n_a": len(ka), "n_b": len(kb),
                 "r": r,
+                # What share of each attribute's own selections is implicated?
+                # `r` is computed on the intersection alone, so it says nothing
+                # about the statements only one attribute picked. A high r over
+                # 5% of an attribute is a different finding from a high r over
+                # 80% of it, and the bare number cannot tell them apart.
+                "share_a": len(both) / len(ka) if ka else 0.0,
+                "share_b": len(both) / len(kb) if kb else 0.0,
                 # Jaccard: of every statement either attribute picked, what
                 # fraction did both pick?
                 "jaccard": len(both) / len(union) if union else 0.0,
@@ -226,10 +234,11 @@ def _render(by_attr, pairs, paths, min_n) -> list[str]:
         L.append("These pairs are close to measuring one property twice. Because card")
         L.append("rank is a geometric mean over all nine, a statement penalised by two")
         L.append("correlated attributes costs the MP twice for one act.")
-        L += ["", "| pair | r | co-scored | mean gap | selection overlap |",
-              "|---|---:|---:|---:|---:|"]
+        L += ["", "| pair | r | co-scored | share of each | mean gap | selection overlap |",
+              "|---|---:|---:|---:|---:|---:|"]
         for p in flagged:
             L.append(f"| {p['a']} / {p['b']} | **{p['r']:.2f}** | {p['n_both']:,} | "
+                     f"{100*p['share_a']:.0f}% / {100*p['share_b']:.0f}% | "
                      f"{p['mean_gap']:.3f} | {p['jaccard']:.2f} |")
     L.append("")
 
@@ -237,9 +246,17 @@ def _render(by_attr, pairs, paths, min_n) -> list[str]:
     ranked = sorted((p for p in pairs if p["r"] is not None),
                     key=lambda p: -p["r"])[:12]
     L += ["## Most correlated pairs", "",
-          "| pair | r | co-scored | selection overlap |", "|---|---:|---:|---:|"]
+          "`r` is computed on the co-scored statements **only**. Read it next to",
+          "`share of each` — the fraction of each attribute's own selections that",
+          "the pair has in common. A high `r` over a small share means the two",
+          "agree on a narrow slice and say nothing about each other elsewhere; a",
+          "high `r` over a large share is genuine redundancy.", "",
+          "| pair | r | co-scored | share of each | selection overlap |",
+          "|---|---:|---:|---:|---:|"]
     for p in ranked:
-        L.append(f"| {p['a']} / {p['b']} | {p['r']:.2f} | {p['n_both']:,} | "
+        L.append(f"| {p['a']} / {p['b']} | {p['r']:.2f} | {p['n_both']:,} "
+                 f"({p['n_a']:,} / {p['n_b']:,}) | "
+                 f"{100*p['share_a']:.0f}% / {100*p['share_b']:.0f}% | "
                  f"{p['jaccard']:.2f} |")
     L.append("")
 

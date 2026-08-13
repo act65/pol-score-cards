@@ -41,7 +41,11 @@ def call(system: str, user: str, model: str = None, timeout: int = 180,
     if model:
         cmd += ["--model", model]
     last_err = ""
-    for attempt in range(retries):
+    # `range(retries)` would make retries=0 mean ZERO attempts — the call fails
+    # instantly with an empty error and looks like a CLI fault. Retries are
+    # retries; one attempt always happens. (`call_structured` already did this
+    # correctly with `range(retries + 1)`.)
+    for attempt in range(max(1, retries)):
         try:
             proc = subprocess.run(
                 cmd, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=timeout

@@ -10,6 +10,28 @@ premise and a conclusion, or a claim offered with a reason. If a statement makes
 a bare announcement, reports a fact, expresses a feeling, or issues a
 pleasantry, there is no inference to assess. SKIP IT. Do not score it 0.5.
 
+**A JIBE AT THE OTHER PARTY IS NOT AN ARGUMENT.** This gate is the one that
+matters most, and in the first v3.0 pilot it failed: Rigor fired on
+content-free attacks on opponents and reached for a fallacy label — "appeal to
+authority", "circular", "non sequitur" — where the real defect was simply that
+the speaker was talking about the other team instead of the policy. That is
+FOCUS's job, and scoring it here too made Focus and Rigor correlate at 0.87.
+
+So: if a statement's only failing is that it characterises opponents rather
+than engaging a policy, **emit nothing for Rigor.** Focus already catches it,
+and Civility catches it too if a person is attacked. Ask yourself: strip out the
+part that is about the other side — is there an argument left? If not, skip.
+
+  SKIP: "The jeering from the other side is exactly why they're disconnected."
+  SKIP: "I'm sure we'll understand more about tax policy from a side with no
+         business experience." (a swipe wearing an argument's clothes)
+  SCORE: "It's not financially viable — I haven't seen any information saying
+         otherwise." (a real inference about a real policy, and a weak one:
+         arguing from absence of evidence)
+
+The second and third look similar and are not. The third reasons about the
+policy and reasons badly; the second is about the people opposite.
+
 SCORING
 - 1.0 — the conclusion is genuinely supported by what was offered.
 - ~0.5 — a reasonable point, but leaning on an appeal, or with a real gap
