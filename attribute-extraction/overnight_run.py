@@ -101,10 +101,30 @@ def _count(path: str) -> int:
 
 
 def _plan_size(stage: str, model: str, backend: str) -> int:
-    """Ask the extractor how many windows the stage contains, without spending."""
+    """Ask the extractor how many windows the stage contains, without spending.
+
+    Every stage must be asked about *itself*. This defaulted to the window plan
+    for anything that was not `pilot`, so the positions run reported "0/5,548"
+    — the Q/A pair count — against a real target of 260.
+    """
+    if stage == "questions":
+        cmd = [PY, "extract_questions.py", "run", "--dry_run",
+               "--source", "oral", "--out", QA_SCORES]
+        try:
+            proc = subprocess.run(cmd, cwd=HERE, capture_output=True,
+                                  text=True, timeout=300)
+            for line in proc.stdout.splitlines():
+                if "calls:" in line:
+                    return int(line.split("calls:")[1].split()[0].replace(",", ""))
+        except Exception:  # noqa: BLE001
+            pass
+        return 0
+
+    pilot_scope = stage in ("pilot", "positions")
     cmd = [PY, "extract_hansard.py", "--dry_run",
-           "--since", f"{PILOT_MONTH}-01" if stage == "pilot" else SINCE,
-           "--until", PILOT_MONTH if stage == "pilot" else "",
+           "--attrs", "positions" if stage == "positions" else "scores",
+           "--since", f"{PILOT_MONTH}-01" if pilot_scope else SINCE,
+           "--until", PILOT_MONTH if pilot_scope else "",
            "--window_tokens", WINDOW_TOKENS, "--model", model,
            "--backend", backend]
     try:

@@ -56,10 +56,36 @@ def call(system: str, user: str, model: str = None, timeout: int = 180,
         if proc is not None and proc.returncode == 0 and proc.stdout.strip():
             return proc.stdout.strip()
         if proc is not None:
-            last_err = (proc.stderr or proc.stdout or "").strip()[:300] or f"exit {proc.returncode}"
+            last_err = (proc.stderr or proc.stdout or "").strip()[:1200] or f"exit {proc.returncode}"
         if attempt < retries - 1:
             time.sleep(2 ** attempt)   # 1s, 2s, 4s …
     raise RuntimeError(f"claude CLI failed after {retries} attempts: {last_err}")
+
+
+class QuotaExhausted(RuntimeError):
+    """The subscription's usage window is spent — retrying cannot help.
+
+    Distinguished from an ordinary transient failure because the response is
+    the opposite of transient: no request reached the API at all. The envelope
+    comes back `is_error` with `duration_api_ms: 0` and every token count zero,
+    which no real API error produces.
+
+    This matters because the two are indistinguishable to a retry loop. On the
+    night of 2026-08-13 the Forthrightness pass consumed the window at 03:12 and
+    the positions pass that followed spent its whole 2.8h budget re-attempting
+    260 windows three times each — 780 calls, none of which could ever have
+    succeeded — while reporting "no progress, backing off".
+    """
+
+
+def _is_quota_error(envelope: dict) -> bool:
+    """True for the never-reached-the-API signature described above."""
+    if not envelope.get("is_error"):
+        return False
+    usage = envelope.get("usage") or {}
+    spent = sum(v for k, v in usage.items()
+                if k.endswith("tokens") and isinstance(v, int))
+    return envelope.get("duration_api_ms") == 0 and spent == 0
 
 
 def call_structured(system: str, user: str, schema: dict, model: str = None,
@@ -92,6 +118,11 @@ def call_structured(system: str, user: str, schema: dict, model: str = None,
             except json.JSONDecodeError:
                 env, last_err = None, "result envelope was not JSON"
             if env is not None:
+                if _is_quota_error(env):
+                    raise QuotaExhausted(
+                        "no request reached the API (zero tokens, zero API "
+                        "time) — the subscription usage window is spent. "
+                        "Retrying cannot help; resume after it resets.")
                 if env.get("is_error"):
                     last_err = str(env.get("result", "cli error"))[:300]
                 elif env.get("structured_output") is not None:
@@ -99,7 +130,16 @@ def call_structured(system: str, user: str, schema: dict, model: str = None,
                 else:
                     last_err = "no structured_output in envelope"
         elif proc is not None:
-            last_err = (proc.stderr or proc.stdout or "").strip()[:300] or f"exit {proc.returncode}"
+            raw = (proc.stderr or proc.stdout or "").strip()
+            try:
+                if _is_quota_error(json.loads(raw)):
+                    raise QuotaExhausted(
+                        "no request reached the API (zero tokens, zero API "
+                        "time) — the subscription usage window is spent. "
+                        "Retrying cannot help; resume after it resets.")
+            except (json.JSONDecodeError, TypeError, AttributeError):
+                pass
+            last_err = raw[:1200] or f"exit {proc.returncode}"
         if attempt < retries:
             time.sleep(2 ** attempt)
     raise RuntimeError(f"claude --json-schema failed after {retries + 1} attempts: {last_err}")
@@ -135,6 +175,11 @@ def call_structured_searching(system: str, user: str, schema: dict,
             except json.JSONDecodeError:
                 env, last_err = None, "result envelope was not JSON"
             if env is not None:
+                if _is_quota_error(env):
+                    raise QuotaExhausted(
+                        "no request reached the API (zero tokens, zero API "
+                        "time) — the subscription usage window is spent. "
+                        "Retrying cannot help; resume after it resets.")
                 if env.get("is_error"):
                     last_err = str(env.get("result", "cli error"))[:300]
                 elif env.get("structured_output") is not None:
