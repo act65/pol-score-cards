@@ -35,9 +35,22 @@ import fire
 HERE = os.path.dirname(os.path.abspath(__file__))
 PY = sys.executable
 
-# Fraction of the night each stage gets. Forthrightness first and larger: it is
-# the attribute the card is missing entirely, and 924 calls will not fit.
-PLAN = (("questions", 0.6), ("positions", 0.4))
+# Stages in order. Each gets ALL the remaining time and hands over what it does
+# not use.
+#
+# The first version split the night by fixed shares, which was the right hedge
+# when neither stage had a measured throughput. It is the wrong shape now, for
+# two reasons learnt on 2026-08-13: a share is a cap even when the stage could
+# have finished, and — the expensive one — the quota ran out mid-night and the
+# second stage ground through 780 calls that could not succeed. Now that
+# `claude_cli.QuotaExhausted` aborts a pass immediately, a stage that cannot
+# run costs seconds rather than hours, so sequential-until-done is strictly
+# better than rationing.
+#
+# `positions` first: it is the pilot's remaining work and the Authenticity join
+# is built and idle waiting for it. `questions` continues Forthrightness with
+# whatever is left (569 calls outstanding).
+PLAN = ("positions", "questions")
 
 
 def _next(hhmm: str, after: dt.datetime | None = None) -> dt.datetime:
@@ -55,8 +68,8 @@ def run(at: str = "23:00", until: str = "06:00", model: str | None = None) -> No
 
     print(f"scheduled: {start:%Y-%m-%d %H:%M} -> {stop:%H:%M}  ({hours:.2f}h)",
           flush=True)
-    for stage, share in PLAN:
-        print(f"  {stage:10s} {hours * share:.2f}h", flush=True)
+    print(f"  stages, in order: {' -> '.join(PLAN)}", flush=True)
+    print("  each runs until it finishes or the window closes", flush=True)
     print(f"sleeping {(start - dt.datetime.now()).total_seconds() / 3600:.2f}h "
           f"— NO subscription quota is used until then", flush=True)
 
@@ -69,17 +82,16 @@ def run(at: str = "23:00", until: str = "06:00", model: str | None = None) -> No
         if left > 0:
             print(f"  {left / 3600:.1f}h until start", flush=True)
 
-    for stage, share in PLAN:
+    for stage in PLAN:
         # Recompute from the real clock each time, so a stage that finishes
         # early hands its remaining time to the next one instead of idling.
         remaining = (stop - dt.datetime.now()).total_seconds() / 3600
         if remaining <= 0.1:
             print(f"\n=== out of time before {stage} — skipped ===", flush=True)
             break
-        budget = min(hours * share, remaining)
         print(f"\n=== {dt.datetime.now():%H:%M} — {stage} "
-              f"({budget:.2f}h budget) ===", flush=True)
-        cmd = [PY, "overnight_run.py", "run", "--hours", f"{budget:.2f}",
+              f"({remaining:.2f}h left in the window) ===", flush=True)
+        cmd = [PY, "overnight_run.py", "run", "--hours", f"{remaining:.2f}",
                "--stage", stage]
         if model:
             cmd += ["--model", model]
