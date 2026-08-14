@@ -43,6 +43,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import fire
 
 import attributes
+import claude_cli
 import extract
 import hansard_prep
 
@@ -227,10 +228,22 @@ def run(out="hansard_scores.jsonl",
     with open(out, "a", encoding="utf-8") as fh, \
             ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
         futures = {ex.submit(work, item): item[0] for item in todo}
+        quota_spent = False
         for fut in as_completed(futures):
             wid = futures[fut]
             try:
                 wid, date, by_attr = fut.result()
+            except claude_cli.QuotaExhausted as e:
+                # Every remaining call would fail the same way, so stop now.
+                # Grinding on wasted 2.8h and 780 calls on 2026-08-13 while
+                # reporting "no progress" as if it were a transient stall.
+                print(f"\nSUBSCRIPTION QUOTA EXHAUSTED at {wid}: {e}", flush=True)
+                print("stopping this pass — the run is resumable, so restart "
+                      "it after the usage window resets.", flush=True)
+                quota_spent = True
+                for pending in futures:
+                    pending.cancel()
+                break
             except Exception as e:  # noqa: BLE001
                 print(f"\nerror on {wid}: {e}", flush=True)
                 continue
@@ -242,6 +255,9 @@ def run(out="hansard_scores.jsonl",
             written += 1
             n = sum(len(v) for v in by_attr.values())
             print(f"[{written}/{len(todo)}] {wid}: {n} scored examples", flush=True)
+    if quota_spent:
+        print(f"\nSTOPPED EARLY on quota: {written} of {len(todo)} windows "
+              f"done this pass.", flush=True)
     print(f"done: wrote {written} windows -> {out}")
     _report_gate(gate, attrs)
 

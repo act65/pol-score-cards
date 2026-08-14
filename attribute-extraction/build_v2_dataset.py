@@ -54,6 +54,13 @@ import attributes as attribute_registry
 ATTRIBUTES = [(a.id, a.name, a.definition) for a in attribute_registry.ALL]
 ID2NAME = {a: n for a, n, _ in ATTRIBUTES}
 
+# These scorecards cover the 54th Parliament. The oral-questions corpus starts
+# earlier (2023-07), so 19% of the Q/A pairs are from the 53rd — a different
+# Parliament, with different portfolios and, for some MPs, a different side of
+# the House. Letting those through would put pre-election behaviour on a card
+# whose every other attribute is term-only.
+TERM_START = "2023-10-06"
+
 
 def _read(path):
     rows = []
@@ -129,6 +136,60 @@ def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, date
                 })
 
 
+def _ingest_qa(rows, R, per_pair, examples, unresolved, dates, src_counts,
+               since=TERM_START):
+    """Fold Forthrightness question/answer pairs into the scored pools.
+
+    Unlike Strength and Authenticity, Forthrightness is **not** exempt from
+    shrinkage. Their denominators are complete — every bill an MP held, every
+    position they stated — so there is nothing to shrink toward. An MP's
+    answered questions are a *sample* of how they answer, and a minister who
+    fielded three questions should not sit above one who fielded ninety on the
+    strength of three. So these go through the same empirical-Bayes path as the
+    text attributes.
+
+    Each pair also becomes an example, so the card can show the question next to
+    the answer. A Forthrightness score without the question it dodged is not
+    auditable, which is the whole promise of the site.
+    """
+    skipped_pre_term = 0
+    for rec in rows:
+        score = rec.get("score")
+        if not isinstance(score, (int, float)):
+            continue
+        if since and (rec.get("date") or "") < since:
+            skipped_pre_term += 1
+            continue
+        # The Q/A extractor leaves politician_id null; resolve it here through
+        # the one name implementation rather than trusting the raw string.
+        mid = rec.get("politician_id") or R.match(rec.get("politician", ""))
+        if not mid:
+            if is_probably_mp_name(rec.get("politician", "")):
+                unresolved[rec.get("politician", "")] += 1
+            continue
+        date = rec.get("date", "")
+        dates.add(date)
+        per_pair[(mid, "forthrightness")].append(score)
+        src_counts["Oral questions"] += 1
+        question = (rec.get("question") or "").strip()
+        examples[(mid, "forthrightness")].append({
+            "resolved": True,
+            "politician_id": mid, "attribute": ID2NAME["forthrightness"],
+            "text": rec.get("statement", ""),
+            "score": round(score * 100),
+            "explanation": rec.get("explanation", ""),
+            "question": question,
+            "asked_by": rec.get("asker"),
+            "context": f"Oral question — {date}"
+                       + (f" — asked by {rec['asker']}" if rec.get("asker") else ""),
+            "source_url": f"https://hansard.parliament.nz/hansard-transcript/{date}",
+            "source": "Oral questions",
+        })
+    if skipped_pre_term:
+        print(f"  Q/A: skipped {skipped_pre_term:,} pairs before {since} "
+              f"(53rd Parliament)")
+
+
 def _record_scores(paths):
     """Read the record-tier score files: {(politician_id, attribute) -> row}.
 
@@ -162,7 +223,8 @@ def run(scores="hansard_scores_full.jsonl", out="site_data_v2",
         corpus_label="Hansard 54th Parliament", min_n=1, max_examples=0,
         presser_scores="", presser_label="Post-Cabinet press conference",
         release_scores="", release_label="Party press release",
-        use_prior=False, record_scores=""):
+        use_prior=False, record_scores="", qa_scores="",
+        qa_since=TERM_START):
     R = Roster()
     os.makedirs(out, exist_ok=True)
 
@@ -202,6 +264,10 @@ def run(scores="hansard_scores_full.jsonl", out="site_data_v2",
             R, per_pair, examples, unresolved, dates, src_counts, use_prior)
     _ingest(release_rows, release_label, "Party releases", release_url,
             R, per_pair, examples, unresolved, dates, src_counts, use_prior)
+
+    if qa_scores and os.path.exists(qa_scores):
+        _ingest_qa(_read(qa_scores), R, per_pair, examples, unresolved,
+                   dates, src_counts, since=qa_since)
 
     adjusted = bias_adjust.adjust_scores(per_pair)
     record = _record_scores(
