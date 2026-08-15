@@ -142,6 +142,12 @@ def index():
 def attribute_detail(politician_id, attribute):
     politician = data_access_jsonl.get_politician(politician_id)
     attribute_info = data_access_jsonl.get_attribute_description(attribute)
+    # An attribute that is not in the dataset must 404, not render an empty page.
+    # A reachable URL for a dropped attribute is how Charisma stayed visible on
+    # the site after it was cut; Strength and Authenticity left the same way on
+    # 2026-08-15 and must not linger as blank pages showing "N/A".
+    if attribute_info is None:
+        return "Attribute not found", 404
     scores = data_access_jsonl.get_scores(politician_id) or {}
     score = scores.get(attribute, "N/A")
     # bias-aware metadata (see bias_adjust.py): n statements, confidence tier, ±95% CI
