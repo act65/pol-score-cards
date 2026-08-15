@@ -194,12 +194,20 @@ def _saved(path: str) -> set:
 def run(scores: str = "hansard_scores_v3.jsonl", out: str = DEFAULT_OUT,
         per_call: int = 3, workers: int = 3, limit: int = 0,
         model: str = "claude-opus-4-8", timeout: int = 600,
-        dry_run: bool = False) -> None:
-    """Resolve pending veracity/divination items against searched sources."""
+        dry_run: bool = False, attrs: str = "veracity,divination") -> None:
+    """Resolve pending veracity/divination items against searched sources.
+
+    `--attrs divination` runs one attribute at a time. Divination is the one to
+    resolve first: it is the smaller set by an order of magnitude (110 pending
+    against 1,109), and it is the attribute least able to survive on a guess —
+    "did it come true" has an answer in the world, and a model's unaided hunch
+    about it carries no information the reader could check.
+    """
+    chosen = tuple(a.strip() for a in attrs.split(",") if a.strip())
     scores = scores if os.path.isabs(scores) else os.path.join(HERE, scores)
     out = out if os.path.isabs(out) else os.path.join(HERE, out)
 
-    items = load_pending(scores, limit=limit)
+    items = load_pending(scores, attributes=chosen, limit=limit)
     done = _saved(out)
     todo = [it for it in items if it["item_id"] not in done]
     batches = [todo[i:i + per_call] for i in range(0, len(todo), per_call)]

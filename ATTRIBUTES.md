@@ -605,3 +605,45 @@ are has not fixed the instrument.
 | 2026-08-07 | **Veracity and Divination grounded by search**, via one shared resolver with pre-registered falsification criteria. |
 | 2026-08-07 | **53rd Parliament deferred** until after the pilot — for the political-bias check and long-horizon outcomes, not for text-only evaluation. |
 | 2026-08-07 | Hansard is already public, so **publishing the 54th corpus does not disqualify it for evaluation**. Hold back gold labels, not statements. |
+
+---
+
+## Decision 2026-08-15 — Strength and Authenticity deferred to v4
+
+Seven attributes remain: Forthrightness, Veracity, Divination, Focus, Civility,
+Rigor, Specificity.
+
+**Strength — the ledger cannot answer the question the attribute asks.** Built,
+measured, and cut on what the measurement showed. 53% of scored MPs (64 of 121)
+have no resolved bill at all, so their score came entirely from ballot bills and
+amendment papers: an activity count, not a delivery rate. Among ministers
+`delivery_rate` took 4 distinct values across 29 people, so it barely separated
+them either. The manifesto and coalition-promise side — the half that would make
+this a genuine delivery measure — was never built. Publishing it would label a
+rank-within-cohort activity count as "did commitments become law".
+
+**Authenticity — the unit does not match the card.** NZ votes are cast per
+party, and only 88 of 212 propositions carry an individual member record. For
+most MPs it would measure *the party's* consistency with *this member's* words
+and print the result on the member's card. Every other attribute measures the
+person. v4 should rebuild it on conscience votes and named dissents, where the
+unit is right.
+
+**Focus was considered and kept.** The concern was its correlation, but it is
+not distinctive: mean r with its neighbours is 0.62, against 0.61 for Rigor and
+0.65 for Specificity. It is not a hub. It fills a gap nothing else covers —
+"Labour are hopeless, they were hopeless in 2017" insults no one, so Civility
+passes it cleanly — and it costs nothing extra, being extracted in the same
+call.
+
+**Veracity and Divination stay, resolved by search rather than guessed.** They
+currently render from `prior_score`, which is a placeholder, not the answer.
+The resolver is the accepted path; Divination is resolved first, being the
+smaller set (110 pending against 1,109) and the one least able to stand on a
+guess.
+
+**What survives for v4:** `data/strength_score.py`, `data/authenticity_score.py`
+and their 25 tests, `corpus/strength_ledger.jsonl`, the 212-item proposition
+vocabulary, and the `extract_hansard.py --attrs positions` path. Their prompts
+stay in `prompts/`. Nothing is deleted; the attributes are out of the active set
+in `attributes.py` via `DEFERRED`.

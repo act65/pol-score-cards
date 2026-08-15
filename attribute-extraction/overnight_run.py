@@ -45,6 +45,7 @@ PY = sys.executable
 # blend two instruments.
 SCORES = "hansard_scores_v3.jsonl"
 POSITIONS = "positions_v3.jsonl"
+RESOLVED = "resolved_v3.jsonl"
 QA_SCORES = "forthrightness_scores_v3.jsonl"
 
 SINCE = "2023-10-06"
@@ -154,6 +155,13 @@ def _pass(stage: str, timeout_s: float, model: str, backend: str) -> int:
         cmd = [PY, "extract_questions.py", "run", "--source", "oral",
                "--out", QA_SCORES, "--workers", WORKERS,
                "--model", model, "--backend", backend]
+    elif stage in ("resolve_divination", "resolve_veracity"):
+        # Search-backed resolution. Divination first: 110 pending against
+        # veracity's 1,109, and it is the attribute least able to stand on a
+        # guess — "did it come true" has an answer in the world.
+        attr = stage.split("_", 1)[1]
+        cmd = [PY, "resolve.py", "run", "--scores", SCORES,
+               "--attrs", attr, "--workers", WORKERS, "--model", model]
     elif stage == "positions":
         # Record-tier extraction: a stated position and a commitment, no score.
         # Feeds data/authenticity_score.py and the Strength ledger join, and
@@ -185,7 +193,7 @@ def _audit(stage: str) -> None:
     These are the checks that decide whether the prompt rewrite worked, so they
     belong at the end of the run rather than in a follow-up someone forgets.
     """
-    if stage in ("questions", "positions") or not _count(SCORES):
+    if stage != "pilot" and stage != "windows" or not _count(SCORES):
         return
     print("\n=== instrument audits ===", flush=True)
     subprocess.run([PY, "attribute_overlap.py", "run", "--scores", SCORES,
@@ -202,7 +210,7 @@ def status() -> None:
     """Progress across all stages. Spends nothing."""
     print(f"windows scored:       {_count(SCORES):,}  ({SCORES})")
     print(f"Q/A pairs scored:     {_count(QA_SCORES):,}  ({QA_SCORES})")
-    print(f"position windows:     {_count(POSITIONS):,}  ({POSITIONS})")
+    print(f"resolved claims:      {_count(RESOLVED):,}  ({RESOLVED})")
     for name in ("ATTRIBUTE_OVERLAP_v3.md", "QUOTE_AUDIT_v3.md"):
         p = os.path.join(HERE, name)
         print(f"{name}: {'present' if os.path.exists(p) else 'not yet generated'}")
@@ -236,12 +244,16 @@ def run(hours: float = 10.0, stage: str = "pilot", model: str = MODEL,
               flush=True)
         run(hours=left, stage="windows", model=model, backend=backend)
         return
-    if stage not in ("pilot", "windows", "questions", "positions"):
+    if stage not in ("pilot", "windows", "questions", "positions",
+                     "resolve_divination", "resolve_veracity"):
         raise SystemExit("--stage must be pilot | windows | questions | "
-                         "positions | all")
+                         "positions | resolve_divination | resolve_veracity "
+                         "| all")
 
     out_file = {"questions": QA_SCORES,
-                "positions": POSITIONS}.get(stage, SCORES)
+                "positions": POSITIONS,
+                "resolve_divination": RESOLVED,
+                "resolve_veracity": RESOLVED}.get(stage, SCORES)
     deadline = time.time() + hours * 3600
     target = target or _plan_size(stage, model, backend)
 
