@@ -25,9 +25,16 @@ def _json(path):
 
 
 def test_icon_map_covers_exactly_the_live_attributes():
+    """Every live attribute has an icon, and nothing retired or deferred does.
+
+    This is the test that would have caught Charisma surviving in the site copy
+    after it was cut, so it stays strict in BOTH directions: a missing icon
+    breaks a card, and a stale one puts a dropped attribute back on the page."""
     icons = _json(os.path.join(REPO, "shared", "attribute_icons.json"))
     keys = {k for k in icons if not k.startswith("_")}
-    assert keys == set(attributes.ATTRIBUTES)
+    assert keys == set(attributes.ATTRIBUTES), (
+        f"missing: {set(attributes.ATTRIBUTES) - keys}, "
+        f"stale: {keys - set(attributes.ATTRIBUTES)}")
 
 
 def test_every_icon_has_a_drawn_glyph_and_a_blurb():

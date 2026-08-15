@@ -1,11 +1,5 @@
 {
   "_comment": "Canonical attribute -> icon/legend mapping. Single source of truth shared by the site and the game. Synced into site/static/ and game/static/ by shared/sync.py. Keyed by the game's lowercase attribute id; 'site_id' is the matching id used in site/static/attributes.jsonl + scores.jsonl where it differs. 'svg' is a hand-built heraldic line-icon (24x24, stroke=currentColor) used in preference to 'symbol' (the emoji fallback).",
-  "strength": {
-    "name": "Strength",
-    "symbol": "💪",
-    "blurb": "Turns rhetoric into implemented policy",
-    "svg": "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M12 2 L13.6 5 V14 H10.4 V5 Z'/><line x1='8' y1='15' x2='16' y2='15'/><line x1='12' y1='15' x2='12' y2='20'/><circle cx='12' cy='21.2' r='1.2' fill='currentColor' stroke='none'/></svg>"
-  },
   "veracity": {
     "name": "Veracity",
     "symbol": "🛡️",
@@ -48,11 +42,5 @@
     "symbol": "🤝",
     "blurb": "Respectful; no personal attacks",
     "svg": "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M5 20 C8 16 11 11 13 4'/><path d='M13 4 C15.5 4.2 16.2 6.6 14.8 8 C12.7 7.8 12 5.2 13 4 Z'/><path d='M11.4 8.6 C13.9 8.8 14.6 11.2 13.2 12.6 C11.1 12.4 10.4 9.8 11.4 8.6 Z'/><path d='M9.4 13.2 C11.9 13.4 12.6 15.8 11.2 17.2 C9.1 17 8.4 14.4 9.4 13.2 Z'/></svg>"
-  },
-  "authenticity": {
-    "name": "Authenticity",
-    "symbol": "🎭",
-    "blurb": "Words match actions",
-    "svg": "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M3.5 7 C3.5 5 8.5 5 8.5 7 C8.5 12 7 15 6 15 C5 15 3.5 12 3.5 7 Z'/><circle cx='5' cy='8.6' r='0.5' fill='currentColor' stroke='none'/><circle cx='7' cy='8.6' r='0.5' fill='currentColor' stroke='none'/><path d='M5 11 C5.6 12.2 6.4 12.2 7 11'/><path d='M15.5 9 C15.5 7 20.5 7 20.5 9 C20.5 14 19 17 18 17 C17 17 15.5 14 15.5 9 Z'/><circle cx='17' cy='10.6' r='0.5' fill='currentColor' stroke='none'/><circle cx='19' cy='10.6' r='0.5' fill='currentColor' stroke='none'/><path d='M17 14.6 C17.6 13.4 18.4 13.4 19 14.6'/></svg>"
   }
 }

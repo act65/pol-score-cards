@@ -47,10 +47,17 @@ PY = sys.executable
 # run costs seconds rather than hours, so sequential-until-done is strictly
 # better than rationing.
 #
-# `positions` first: it is the pilot's remaining work and the Authenticity join
-# is built and idle waiting for it. `questions` continues Forthrightness with
-# whatever is left (569 calls outstanding).
-PLAN = ("positions", "questions")
+# Updated 2026-08-15, after Strength and Authenticity were deferred to v4. The
+# `positions` stage extracted exactly what those two consumed, so it is dropped
+# — running it now would spend a night producing input for attributes nobody
+# will publish.
+#
+# `questions` first: Forthrightness is the worst-covered live attribute (25% of
+# cards) and the best-grounded one, with 569 calls left to finish.
+# `resolve_divination` second: 110 pending claims, ~37 calls, and it converts
+# Divination from a model's guess into something a reader can check against a
+# source. Veracity's 1,109 come after, on another night.
+PLAN = ("questions", "resolve_divination")
 
 
 def _next(hhmm: str, after: dt.datetime | None = None) -> dt.datetime:

@@ -159,13 +159,18 @@ def test_every_attribute_has_a_prompt_file():
 
 def test_no_prompt_file_is_orphaned():
     """A stray prompt is a prompt nobody reviews. charisma/true/promises were
-    all removed in v3.0."""
+    all removed in v3.0.
+
+    DEFERRED attributes keep their prompts on purpose: Strength and Authenticity
+    are v4 work, not mistakes, and deleting the prompts would throw away the
+    rubric that has to be revived. What must never happen is a prompt matching
+    NOTHING in the registry."""
     import glob
     import os
     here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     found = {os.path.splitext(os.path.basename(p))[0]
              for p in glob.glob(os.path.join(here, "prompts", "*.txt"))}
-    assert found == set(attributes.ATTRIBUTES)
+    assert found == set(attributes.ATTRIBUTES) | set(attributes.DEFERRED)
 
 
 # --- subject attribution: the bug the first smoke test found ----------------

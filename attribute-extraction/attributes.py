@@ -1,4 +1,4 @@
-"""The nine attributes — one importable source of truth.
+"""The attribute set — one importable source of truth.
 
 Every other module used to work out the attribute set by listing `prompts/*.txt`
 and subtracting a denylist of helper prompts. That silently broke whenever a
@@ -6,6 +6,10 @@ prompt file was added or renamed, and it could not express the thing v3.0 most
 needs to say: **not every attribute is scored the same way.**
 
     from attributes import ATTRIBUTES, SCORED_IN_WINDOWS, tier_of
+
+**Seven active attributes** as of 2026-08-15. Charisma was RETIRED (r=0.96 with
+Civility); Strength and Authenticity are DEFERRED to v4 — see the note above
+each tuple for why. All three stay defined so older output still reads.
 
 Three tiers, defined in `ATTRIBUTES.md` (which is the contract — if this file
 disagrees with it, this file is the bug):
@@ -53,7 +57,7 @@ class Attribute:
     subject_can_be_other: bool = False
 
 
-ALL = (
+_DEFINED = (
     Attribute(
         "forthrightness", "Forthrightness", "record",
         "Did the answer address the question that was asked?",
@@ -124,7 +128,37 @@ ALL = (
     ),
 )
 
-BY_ID = {a.id: a for a in ALL}
+# Deferred to v4 on 2026-08-15. Their definitions stay here so existing output
+# still reads and so the work is not lost, but they are out of the active set:
+# nothing extracts them, nothing scores them, no card shows them.
+#
+# **Strength** — the ledger cannot answer the question the attribute asks.
+# 53% of scored MPs (64 of 121) have no resolved bill at all, so their score
+# came entirely from ballot bills and amendment papers: an activity count, not
+# a delivery rate. Among ministers `delivery_rate` took 4 distinct values
+# across 29 people. The manifesto and coalition-promise side, which is what
+# would make it a real delivery measure, was never built. Publishing it would
+# label a rank-within-cohort activity count as "did commitments become law".
+#
+# **Authenticity** — the unit does not match the card. NZ votes are cast per
+# party, and only 88 of 212 propositions carry an individual member record, so
+# for most MPs it measures *the party's* consistency with *this member's*
+# words while printing on the member's card. Every other attribute measures the
+# person. v4 should build it on conscience votes and named dissents, where the
+# unit is right.
+#
+# What survives for v4: `data/strength_score.py`, `data/authenticity_score.py`
+# and their 25 tests, `corpus/strength_ledger.jsonl`, the proposition
+# vocabulary, and the `positions` extraction path.
+DEFERRED = ("strength", "authenticity")
+
+# The active set — what is extracted, scored, evaluated and shown.
+ALL = tuple(a for a in _DEFINED if a.id not in DEFERRED)
+
+# Every attribute ever defined, keyed by id. Built from _DEFINED, not ALL, so a
+# reader handed a v2.0 or early-v3.0 file can still name what it finds instead
+# of crashing on it.
+BY_ID = {a.id: a for a in _DEFINED}
 ATTRIBUTES = tuple(a.id for a in ALL)
 
 # Cut 2026-08-07: Charisma correlated with Civility at r=0.96 — one insult
@@ -148,7 +182,11 @@ EXTRACTED_IN_WINDOWS = SCORED_IN_WINDOWS + tuple(
 #
 # Forthrightness is absent because it needs question/answer pairs, which a
 # speech window does not contain.
-RECORD_IN_WINDOWS = ("authenticity", "strength")
+# Empty since 2026-08-15: both record-tier window attributes are DEFERRED. The
+# path is kept — `extract_hansard.py --attrs positions` still works — because
+# v4 needs exactly this to revive Authenticity from individual votes.
+RECORD_IN_WINDOWS = tuple(a for a in ("authenticity", "strength")
+                          if a not in DEFERRED)
 
 # Scored over corpus/oral_questions.jsonl instead of over windows.
 PAIRWISE = tuple(a.id for a in ALL if a.id == "forthrightness")
