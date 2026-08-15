@@ -176,6 +176,31 @@ class _AttrScore(BaseModel):
         default=None,
         description=("REQUIRED for divination. ISO date (YYYY-MM-DD) by which "
                      "the outcome should be observable."))
+    # `record`-tier fields. These live here, on the schema the MODEL sees,
+    # because a field the gate requires but the schema never offers is a field
+    # the model cannot supply: the first positions run proposed 138 examples
+    # and every one was dropped for `missing_proposition` / `missing_commitment`.
+    proposition: Optional[str] = Field(
+        default=None,
+        description=("REQUIRED for authenticity. The bill, motion or policy the "
+                     "speaker took a position ON, named as they named it (e.g. "
+                     "'Fast-track Approvals Bill'). Do NOT invent an id — the "
+                     "join matches this text to the vote record, and refuses "
+                     "ambiguous matches. If no identifiable measure is named, "
+                     "emit nothing for authenticity."))
+    stance: Optional[str] = Field(
+        default=None,
+        description=("REQUIRED for authenticity. Exactly 'support' or 'oppose' "
+                     "— the direction the speaker took on that proposition. "
+                     "If the position has no clear direction, emit nothing for "
+                     "authenticity rather than guessing."))
+    commitment: Optional[str] = Field(
+        default=None,
+        description=("REQUIRED for strength. The specific thing the speaker "
+                     "committed THEMSELVES or their government to doing, in "
+                     "one clause. Not a prediction about the world (that is "
+                     "divination) and not an opinion. If no commitment is "
+                     "made, emit nothing for strength."))
 
 
 class _MultiExample(BaseModel):
@@ -460,12 +485,21 @@ def _accept(attr: str, politician: str, statement: str, sc, source_norm: str,
         # `score` stays None, so a guess can never be published as a resolved
         # answer no matter what the model returned.
         score = None
-        try:
-            prior = max(0.0, min(1.0, float(
-                get("prior_score") if get("prior_score") is not None else raw)))
-        except (TypeError, ValueError):
+        # A `prior_score` is the model's unaided guess at an answer the RESOLVER
+        # will later establish, so it only means anything for the search tier.
+        # Record-tier attributes are never guessed — arithmetic over the
+        # legislative record decides them — so a missing prior there is correct,
+        # not a defect, and counting it as one filled the gate report with
+        # `no_prior` noise on rows that were kept anyway.
+        if attributes.tier_of(attr) != "search":
             prior = None
-            rejects[f"{attr}:no_prior"] += 1
+        else:
+            try:
+                prior = max(0.0, min(1.0, float(
+                    get("prior_score") if get("prior_score") is not None else raw)))
+            except (TypeError, ValueError):
+                prior = None
+                rejects[f"{attr}:no_prior"] += 1
 
     return Example(
         politician=politician or "Unknown",

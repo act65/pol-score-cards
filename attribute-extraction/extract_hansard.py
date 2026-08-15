@@ -260,6 +260,10 @@ def run(out="hansard_scores.jsonl",
               f"done this pass.", flush=True)
     print(f"done: wrote {written} windows -> {out}")
     _report_gate(gate, attrs)
+    if quota_spent:
+        # EX_TEMPFAIL: blocked, not broken. overnight_run.py stops the stage on
+        # this rather than re-entering a pass that cannot make progress.
+        raise SystemExit(75)
 
 
 def _report_gate(gate, attrs):

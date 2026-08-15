@@ -215,11 +215,20 @@ def run(out: str = "forthrightness_scores.jsonl", source: str = "oral",
                 for s in resp.parsed_output.scores]
 
     written = 0
+    quota_spent = False
     with open(out, "a") as fh, ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
         futures = {ex.submit(work, b): b for b in batches}
         for fut in as_completed(futures):
             try:
                 results = fut.result()
+            except claude_cli.QuotaExhausted as e:
+                # Every remaining batch would fail identically — stop rather
+                # than retry work that cannot succeed. Resumable.
+                print(f"\nSUBSCRIPTION QUOTA EXHAUSTED: {e}", flush=True)
+                quota_spent = True
+                for pending in futures:
+                    pending.cancel()
+                break
             except Exception as e:  # noqa: BLE001
                 print(f"error on a batch: {e}", flush=True)
                 continue
@@ -245,6 +254,9 @@ def run(out: str = "forthrightness_scores.jsonl", source: str = "oral",
                 print(f"[{written}/{len(todo)}] scored", flush=True)
 
     print(f"done: wrote {written:,} scores -> {out}")
+    if quota_spent:
+        # EX_TEMPFAIL: blocked, not broken. See extract_hansard.py.
+        raise SystemExit(75)
     if stats:
         print(f"skipped: {dict(stats)}")
 

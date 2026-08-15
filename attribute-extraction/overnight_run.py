@@ -138,8 +138,18 @@ def _plan_size(stage: str, model: str, backend: str) -> int:
     return 0
 
 
-def _pass(stage: str, timeout_s: float, model: str, backend: str) -> None:
-    """One resumable pass, hard-capped so it cannot outlive the deadline."""
+# Exit code a runner uses for "the subscription window is spent". Distinct from
+# an ordinary failure because the response is different: waiting may help,
+# retrying immediately never does.
+EX_QUOTA = 75
+
+
+def _pass(stage: str, timeout_s: float, model: str, backend: str) -> int:
+    """One resumable pass, hard-capped so it cannot outlive the deadline.
+
+    Returns the runner's exit code, so the caller can tell a stage that failed
+    from one that is merely blocked.
+    """
     if stage == "questions":
         cmd = [PY, "extract_questions.py", "run", "--source", "oral",
                "--out", QA_SCORES, "--workers", WORKERS,
@@ -162,9 +172,11 @@ def _pass(stage: str, timeout_s: float, model: str, backend: str) -> None:
                "--timeout", CALL_TIMEOUT,
                "--backend", backend, "--model", model, "--out", SCORES]
     try:
-        subprocess.run(cmd, cwd=HERE, timeout=max(30, timeout_s))
+        return subprocess.run(cmd, cwd=HERE,
+                              timeout=max(30, timeout_s)).returncode
     except subprocess.TimeoutExpired:
         print("  pass hit the deadline — stopping cleanly (resumable)", flush=True)
+        return 0
 
 
 def _audit(stage: str) -> None:
@@ -240,10 +252,22 @@ def run(hours: float = 10.0, stage: str = "pilot", model: str = MODEL,
     print(f"=== v3.0 {stage}: up to {hours}h, {model} via {backend}, "
           f"starting at {label} ===", flush=True)
 
+    quota_strikes = 0
     while (not target or done() < target) and time.time() < deadline:
         before = done()
-        _pass(stage, deadline - time.time(), model, backend)
+        code = _pass(stage, deadline - time.time(), model, backend)
         after = done()
+        if code == EX_QUOTA:
+            # One retry is worth it: a rolling usage window can reset within the
+            # night. Six are not — on 2026-08-14 the loop re-entered the pass
+            # every 75 minutes from 23:10 to 06:00 and never recovered, which
+            # means the cap was longer than the night, not a rolling window.
+            quota_strikes += 1
+            if quota_strikes >= 2:
+                print(f"\n=== {stage}: subscription quota exhausted twice — "
+                      f"stopping for the night at {after:,}. Resumable. ===",
+                      flush=True)
+                break
         left = (deadline - time.time()) / 3600
         print(f"[{after:,}{f'/{target:,}' if target else ''}] "
               f"(+{after - before} this pass, {left:.1f}h left)", flush=True)
