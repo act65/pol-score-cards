@@ -188,3 +188,44 @@ def test_strength_and_authenticity_keep_subject_other():
 def test_a_nonsense_subject_falls_back_to_speaker():
     assert attributes.normalise_subject("strength", "themself") == "speaker"
     assert attributes.normalise_subject("strength", None) == "speaker"
+
+
+# --- the model-facing schema must offer every field the gate demands ---------
+#
+# On 2026-08-14 the positions run proposed 138 examples and kept ZERO: the
+# registry required `proposition`/`stance`/`commitment`, `_accept` enforced
+# them, but they existed only on the internal `Example` model — never on
+# `_AttrScore`, the schema the model actually fills in. A field the gate
+# requires but the schema never offers cannot be supplied, so the whole run
+# was guaranteed to produce nothing. That cost a night of quota.
+
+def test_every_required_field_exists_on_the_model_facing_schema():
+    import attributes
+    import extract
+
+    offered = set(extract._AttrScore.model_json_schema()["properties"])
+    for attr in attributes.ATTRIBUTES:
+        for field in attributes.required_fields(attr):
+            assert field in offered, (
+                f"{attr} requires {field!r}, but _AttrScore does not offer it — "
+                f"the model has nowhere to put it and every example will be "
+                f"dropped as missing_{field}")
+
+
+def test_required_fields_are_also_carried_on_the_output_model():
+    """Whatever the gate accepts must survive to disk, or the join sees nothing."""
+    import attributes
+    import extract
+
+    carried = set(extract.Example.model_json_schema()["properties"])
+    for attr in attributes.ATTRIBUTES:
+        for field in attributes.required_fields(attr):
+            assert field in carried, f"{attr}: {field!r} would be dropped on write"
+
+
+def test_record_tier_does_not_demand_a_prior_score():
+    """Record-tier rows are computed, never guessed, so a missing prior is fine."""
+    import attributes
+    assert attributes.tier_of("strength") == "record"
+    assert attributes.tier_of("authenticity") == "record"
+    assert attributes.tier_of("veracity") == "search"
