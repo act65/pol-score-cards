@@ -220,6 +220,14 @@ def run(scores: str = "hansard_scores_v3.jsonl", out: str = DEFAULT_OUT,
         print(f"by attribute: {dict(by_attr)}")
         return
 
+    if not batches:
+        # EX_NOTHING_TO_DO: the stage is finished. overnight_run.py stops on
+        # this rather than inferring completion by comparing a row count to a
+        # call count -- two different units, which on 2026-08-15 made the
+        # questions stage exit instantly (4,265 rows "exceeded" 569 calls) and
+        # the resolver spin for five hours after it had already finished.
+        print("nothing to do — stage complete", flush=True)
+        raise SystemExit(64)
     print(f"{len(todo)} items in {len(batches)} calls ({workers} workers)")
     lock = threading.Lock()
     written = 0

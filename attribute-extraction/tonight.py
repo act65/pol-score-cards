@@ -4,20 +4,12 @@
     nohup python tonight.py run --at 23:00 --until 06:00 > tonight.log 2>&1 &
     python tonight.py status
 
-Two attributes still have no data, and neither can be produced deterministically:
+Runs the remaining v3.0 LLM work in order, each stage taking the whole window
+until it finishes or the night ends. See PLAN below for what is queued and why.
 
-* **Forthrightness** — 924 calls over `corpus/oral_questions.jsonl`. Evasion is
-  a relation between a question and an answer, so it cannot be read off a speech
-  window; this is the only pass that produces it.
-* **Authenticity** — a stated position per window, which
-  `data/authenticity_score.py` joins to the vote record. The join and its tests
-  are already built and idle for want of input.
-
-**Why split the night rather than finish one.** Neither has ever run, so neither
-has a measured throughput, and committing the whole window to the first one
-risks waking up to one attribute done and the other still at zero. Both are
-resumable and idempotent, so a half-finished pass is progress, not waste. The
-split is deliberately uneven — Forthrightness has ~3.5x the calls.
+Everything here is resumable and idempotent, so a half-finished stage is
+progress rather than waste, and a stage that is already complete exits in
+seconds (EX_DONE) instead of spinning.
 
 Nothing is spent before `--at`. The wait is a sleep, not a poll.
 """
@@ -53,11 +45,13 @@ PY = sys.executable
 # will publish.
 #
 # `questions` first: Forthrightness is the worst-covered live attribute (25% of
-# cards) and the best-grounded one, with 569 calls left to finish.
-# `resolve_divination` second: 110 pending claims, ~37 calls, and it converts
-# Divination from a model's guess into something a reader can check against a
-# source. Veracity's 1,109 come after, on another night.
-PLAN = ("questions", "resolve_divination")
+# cards) with 569 calls left. It did NO work on 2026-08-15 -- the runner compared
+# a row count to a call count and declared itself finished -- so this is its
+# first real night.
+# `resolve_veracity` second: divination is fully resolved (110/110, all with
+# source URLs), so veracity's 1,109 pending claims are next. That is ~370 calls
+# and will take more than one night.
+PLAN = ("questions", "resolve_veracity")
 
 
 def _next(hhmm: str, after: dt.datetime | None = None) -> dt.datetime:

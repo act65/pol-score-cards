@@ -144,6 +144,12 @@ def _plan_size(stage: str, model: str, backend: str) -> int:
 # retrying immediately never does.
 EX_QUOTA = 75
 
+# "My todo list is empty" — the stage is genuinely finished. The runner is the
+# only thing that knows this reliably: overnight_run counts OUTPUT ROWS, while a
+# stage's work is measured in CALLS, and comparing the two silently broke both
+# stages on 2026-08-15.
+EX_DONE = 64
+
 
 def _pass(stage: str, timeout_s: float, model: str, backend: str) -> int:
     """One resumable pass, hard-capped so it cannot outlive the deadline.
@@ -255,7 +261,14 @@ def run(hours: float = 10.0, stage: str = "pilot", model: str = MODEL,
                 "resolve_divination": RESOLVED,
                 "resolve_veracity": RESOLVED}.get(stage, SCORES)
     deadline = time.time() + hours * 3600
-    target = target or _plan_size(stage, model, backend)
+    # Only window stages have a target in the same units as `done()` (rows
+    # written == windows scored). For `questions` the plan is in CALLS and for
+    # the resolvers it is in ITEMS, neither of which is comparable to a row
+    # count — so they get no target and stop when the runner says EX_DONE.
+    if stage in ("pilot", "windows"):
+        target = target or _plan_size(stage, model, backend)
+    else:
+        target = 0
 
     def done() -> int:
         return _count(out_file)
@@ -269,6 +282,9 @@ def run(hours: float = 10.0, stage: str = "pilot", model: str = MODEL,
         before = done()
         code = _pass(stage, deadline - time.time(), model, backend)
         after = done()
+        if code == EX_DONE:
+            print(f"\n=== {stage}: complete at {after:,} ===", flush=True)
+            break
         if code == EX_QUOTA:
             # One retry is worth it: a rolling usage window can reset within the
             # night. Six are not — on 2026-08-14 the loop re-entered the pass

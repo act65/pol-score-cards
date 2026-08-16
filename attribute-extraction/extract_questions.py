@@ -191,6 +191,14 @@ def run(out: str = "forthrightness_scores.jsonl", source: str = "oral",
               f"system ≈{len(system) // 4:,} tok (cached)")
         return
 
+    if not batches:
+        # EX_NOTHING_TO_DO: the stage is finished. overnight_run.py stops on
+        # this rather than inferring completion by comparing a row count to a
+        # call count -- two different units, which on 2026-08-15 made this
+        # stage exit instantly (4,265 rows "exceeded" 569 calls, so it did no
+        # work at all) and the resolver spin for five hours after finishing.
+        print("nothing to do — stage complete", flush=True)
+        raise SystemExit(64)
     print(f"{len(todo):,} pairs in {len(batches):,} calls ({workers} workers)")
     client = extract._client() if backend == "anthropic" else None
     by_id = {r["id"]: r for r in todo}

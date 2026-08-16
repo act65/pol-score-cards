@@ -203,6 +203,9 @@ def run(out="hansard_scores.jsonl",
         print(f"resuming: {len(done)} windows already in {out}")
     todo = [p for p in plan if p[0] not in done]
     print(f"{len(todo)} windows to do (of {n_win}) with {workers} worker(s)")
+    if not todo:
+        print("nothing to do — stage complete", flush=True)
+        raise SystemExit(64)
 
     # Gate statistics across the whole run. The quote-reject rate and the
     # per-attribute firing rate are both targets in ATTRIBUTES.md, so they are
