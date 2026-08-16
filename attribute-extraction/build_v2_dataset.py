@@ -89,7 +89,7 @@ def _pick_examples(exs, cap=0):
 
 
 def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, dates,
-            src_counts, use_prior=False):
+            src_counts, use_prior=False, resolved=None):
     """Fold one score source into the shared pools. Scores are BLENDED into the
     same (mid, attr) pool as every other source — a politician gets one combined
     score per attribute. Each example is tagged with its `source` so the stats
@@ -101,9 +101,17 @@ def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, date
         for attr, exs in rec.get("examples_by_attribute", {}).items():
             if attr not in ID2NAME:
                 continue
-            for e in exs:
+            for i, e in enumerate(exs):
                 sc = e.get("score")
-                resolved = True
+                is_resolved = True
+                verdict = sources = None
+                if sc is None and resolved:
+                    # A searched verdict beats the guess, and beats it silently
+                    # -- same field, but now with sources behind it.
+                    hit = resolved.get((rec.get("window_id", ""), attr, str(i)))
+                    if hit and hit.get("resolved_score") is not None:
+                        sc = hit["resolved_score"]
+                        verdict, sources = hit.get("verdict"), hit.get("sources")
                 if not isinstance(sc, (int, float)):
                     # v3.0: search-tier rows (veracity, divination) carry no
                     # score until the resolver runs, only the model's unaided
@@ -114,7 +122,7 @@ def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, date
                     if not use_prior:
                         continue
                     sc = e.get("prior_score")
-                    resolved = False
+                    is_resolved = False
                     if not isinstance(sc, (int, float)):
                         continue
                 mid = R.match(e.get("politician", ""))
@@ -124,8 +132,8 @@ def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, date
                     continue
                 per_pair[(mid, attr)].append(sc)
                 src_counts[source] += 1
-                examples[(mid, attr)].append({
-                    "resolved": resolved,
+                ex_row = {
+                    "resolved": is_resolved,
                     "politician_id": mid, "attribute": ID2NAME[attr],
                     "text": e.get("statement", ""),
                     "score": round(sc * 100),
@@ -133,7 +141,11 @@ def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, date
                     "context": f"{label} — {date}",
                     "source_url": url,
                     "source": source,
-                })
+                }
+                if verdict:
+                    ex_row["verdict"] = verdict
+                    ex_row["evidence_urls"] = sources or []
+                examples[(mid, attr)].append(ex_row)
 
 
 def _ingest_qa(rows, R, per_pair, examples, unresolved, dates, src_counts,
@@ -190,6 +202,34 @@ def _ingest_qa(rows, R, per_pair, examples, unresolved, dates, src_counts,
               f"(53rd Parliament)")
 
 
+def _resolved_index(path):
+    """{(window_id, attribute, index) -> resolved row} from the resolver output.
+
+    Search-tier attributes are extracted with `score=None` and a `prior_score`
+    that is only the model's unaided guess. Once `resolve.py` has searched for
+    evidence, THAT is the answer and the guess must be replaced — a resolved
+    score carries source URLs a reader can click, which is the whole difference
+    between the two.
+
+    `uncheckable` and `not_yet_due` return no score. They stay unresolved rather
+    than falling back to the guess: a prediction whose horizon has not passed
+    has no answer yet, and inventing one from a hunch is exactly the failure the
+    resolver exists to remove.
+    """
+    index = {}
+    if not path or not os.path.exists(path):
+        return index
+    for row in _read(path):
+        item = row.get("item_id") or ""
+        # "<window_id>|<attribute>|<i>", where window_id may carry a @model tag.
+        parts = item.split("|")
+        if len(parts) != 3:
+            continue
+        window, attr, i = parts[0].split("@")[0], parts[1], parts[2]
+        index[(window, attr, i)] = row
+    return index
+
+
 def _record_scores(paths):
     """Read the record-tier score files: {(politician_id, attribute) -> row}.
 
@@ -224,7 +264,7 @@ def run(scores="hansard_scores_full.jsonl", out="site_data_v2",
         presser_scores="", presser_label="Post-Cabinet press conference",
         release_scores="", release_label="Party press release",
         use_prior=False, record_scores="", qa_scores="",
-        qa_since=TERM_START):
+        qa_since=TERM_START, resolved=""):
     R = Roster()
     os.makedirs(out, exist_ok=True)
 
@@ -256,9 +296,14 @@ def run(scores="hansard_scores_full.jsonl", out="site_data_v2",
             return f"https://web.archive.org/web/{ts}/{u}" if ts else f"https://web.archive.org/web/{u}"
         return u
 
+    resolved_index = _resolved_index(resolved)
+    if resolved_index:
+        print(f"  resolver: {len(resolved_index):,} searched verdicts available")
+
     _ingest(hansard_rows, corpus_label, "Hansard",
             lambda rec, date: f"https://hansard.parliament.nz/hansard-transcript/{date}",
-            R, per_pair, examples, unresolved, dates, src_counts, use_prior)
+            R, per_pair, examples, unresolved, dates, src_counts, use_prior,
+            resolved_index)
     _ingest(presser_rows, presser_label, "Pressers",
             lambda rec, date: rec.get("url", ""),
             R, per_pair, examples, unresolved, dates, src_counts, use_prior)
