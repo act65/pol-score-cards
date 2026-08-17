@@ -1,17 +1,28 @@
-"""Run the two remaining v3.0 extractions overnight, in sequence.
+"""Schedule the overnight v3.0 extraction work.
 
     cd attribute-extraction
+    # one night
     nohup python tonight.py run --at 23:00 --until 06:00 > tonight.log 2>&1 &
+    # every night until the work is finished
+    nohup python tonight.py nightly --at 00:00 --until 04:00 > nightly.log 2>&1 &
     python tonight.py status
 
-Runs the remaining v3.0 LLM work in order, each stage taking the whole window
-until it finishes or the night ends. See PLAN below for what is queued and why.
-
 Everything here is resumable and idempotent, so a half-finished stage is
-progress rather than waste, and a stage that is already complete exits in
-seconds (EX_DONE) instead of spinning.
+progress rather than waste, and a finished stage exits in seconds (EX_DONE)
+instead of spinning.
 
-Nothing is spent before `--at`. The wait is a sleep, not a poll.
+**Nothing is spent before `--at`.** The wait is a sleep, not a poll.
+
+## Why the night is a rotation, not a queue
+
+The subscription cap is a *rolling* window that recovers in roughly 2-3 hours,
+not a nightly ceiling. Measured on 2026-08-16: Forthrightness ran hard from
+23:00, hit the cap at 00:14, and the old one-turn-each plan moved on and never
+came back — while quota returned at about 03:00 and was spent by a slower stage.
+
+So each stage runs until it finishes or the window closes, and the plan rotates:
+a stage blocked at midnight is still in the rotation when quota returns at 3am.
+A stage that reports EX_DONE is dropped for good.
 """
 
 from __future__ import annotations
@@ -27,77 +38,48 @@ import fire
 HERE = os.path.dirname(os.path.abspath(__file__))
 PY = sys.executable
 
-# Stages in order. Each gets ALL the remaining time and hands over what it does
-# not use.
-#
-# The first version split the night by fixed shares, which was the right hedge
-# when neither stage had a measured throughput. It is the wrong shape now, for
-# two reasons learnt on 2026-08-13: a share is a cap even when the stage could
-# have finished, and — the expensive one — the quota ran out mid-night and the
-# second stage ground through 780 calls that could not succeed. Now that
-# `claude_cli.QuotaExhausted` aborts a pass immediately, a stage that cannot
-# run costs seconds rather than hours, so sequential-until-done is strictly
-# better than rationing.
-#
-# Updated 2026-08-15, after Strength and Authenticity were deferred to v4. The
-# `positions` stage extracted exactly what those two consumed, so it is dropped
-# — running it now would spend a night producing input for attributes nobody
-# will publish.
-#
-# `questions` first: Forthrightness is the worst-covered live attribute (25% of
-# cards) with 569 calls left. It did NO work on 2026-08-15 -- the runner compared
-# a row count to a call count and declared itself finished -- so this is its
-# first real night.
-# `resolve_veracity` second: divination is fully resolved (110/110, all with
-# source URLs). Veracity has 1,028 pending after 2026-08-16, and each call does
-# several web round-trips, so it is slow — measured at roughly 27 calls in the
-# ~2h of usable quota that night. It will take several nights.
-#
-# The loop below is a ROUND-ROBIN, not one pass per stage: the usage cap
-# recovers within a night, and a stage blocked at midnight must still be there
-# to use quota that returns at 3am.
+# Exit code a runner uses for "my todo list is empty" (see overnight_run.py).
+EX_DONE = 64
+
+# Single-night default: finish Forthrightness, then resolve veracity.
 PLAN = ("questions", "resolve_veracity")
+
+# Nightly default: the full 54th-Parliament extraction first — it is the long
+# pole and gets the whole window whenever it can run. The other two are in the
+# rotation so that a night where `windows` is quota-blocked still advances
+# something, rather than idling until dawn.
+NIGHTLY_PLAN = ("windows", "questions", "resolve_veracity")
 
 
 def _next(hhmm: str, after: dt.datetime | None = None) -> dt.datetime:
+    """The next occurrence of HH:MM strictly after `after` (default: now)."""
     after = after or dt.datetime.now()
     h, m = (int(x) for x in hhmm.split(":"))
     target = after.replace(hour=h, minute=m, second=0, microsecond=0)
     return target + dt.timedelta(days=1) if target <= after else target
 
 
-def run(at: str = "23:00", until: str = "06:00", model: str | None = None) -> None:
-    """Sleep until `at`, then run each stage for its share of the window."""
-    start = _next(at)
-    stop = _next(until, after=start)
-    hours = (stop - start).total_seconds() / 3600
-
-    print(f"scheduled: {start:%Y-%m-%d %H:%M} -> {stop:%H:%M}  ({hours:.2f}h)",
-          flush=True)
-    print(f"  stages, in order: {' -> '.join(PLAN)}", flush=True)
-    print("  each runs until it finishes or the window closes", flush=True)
+def _sleep_until(start: dt.datetime) -> None:
+    """Sleep to `start`, waking hourly to log so a long wait looks alive."""
     print(f"sleeping {(start - dt.datetime.now()).total_seconds() / 3600:.2f}h "
           f"— NO subscription quota is used until then", flush=True)
-
     while True:
         left = (start - dt.datetime.now()).total_seconds()
         if left <= 0:
-            break
+            return
         time.sleep(min(3600, left))
         left = (start - dt.datetime.now()).total_seconds()
         if left > 0:
             print(f"  {left / 3600:.1f}h until start", flush=True)
 
-    # Round-robin, not one pass each. A stage blocked by the usage cap early in
-    # the night must get another turn when the cap recovers — on 2026-08-16
-    # Forthrightness was locked out at 00:14 and quota came back at ~03:00, but
-    # the plan had already moved on and never returned to it.
-    done: set = set()
+
+def _one_night(stop: dt.datetime, plan, model, done: set) -> set:
+    """Rotate through `plan` until `stop`. Returns the set of finished stages."""
     round_no = 0
     while (stop - dt.datetime.now()).total_seconds() / 3600 > 0.1:
         round_no += 1
         progressed = False
-        for stage in PLAN:
+        for stage in plan:
             if stage in done:
                 continue
             remaining = (stop - dt.datetime.now()).total_seconds() / 3600
@@ -112,25 +94,76 @@ def run(at: str = "23:00", until: str = "06:00", model: str | None = None) -> No
             code = subprocess.run(
                 cmd, cwd=HERE,
                 env={**os.environ, "PYTHONUNBUFFERED": "1"}).returncode
-            if code == 64:
-                # Nothing left in this stage, ever. Do not offer it another turn.
+            if code == EX_DONE:
                 print(f"  {stage} is complete — dropping it from the rotation",
                       flush=True)
                 done.add(stage)
             else:
                 progressed = True
-        if len(done) == len(PLAN):
+        if len(done) == len(plan):
             print("\nall stages complete", flush=True)
             break
         if not progressed:
             print("\nno stage can make progress — ending the night", flush=True)
             break
+    return done
+
+
+def run(at: str = "23:00", until: str = "06:00", model: str | None = None,
+        stages: str = "") -> None:
+    """Wait until `at`, then work the plan until `until`. One night only."""
+    plan = tuple(s.strip() for s in stages.split(",") if s.strip()) or PLAN
+    start = _next(at)
+    stop = _next(until, after=start)
+
+    print(f"scheduled: {start:%Y-%m-%d %H:%M} -> {stop:%H:%M}  "
+          f"({(stop - start).total_seconds() / 3600:.2f}h)", flush=True)
+    print(f"  stages, rotating: {' -> '.join(plan)}", flush=True)
+    _sleep_until(start)
+    _one_night(stop, plan, model, set())
 
     print(f"\n=== {dt.datetime.now():%H:%M} — night finished ===", flush=True)
     subprocess.run([PY, "overnight_run.py", "status"], cwd=HERE)
 
 
-def status(at: str = "23:00") -> None:
+def nightly(at: str = "00:00", until: str = "04:00", model: str | None = None,
+            stages: str = "", max_nights: int = 0) -> None:
+    """Work the plan in the same window EVERY night until it is finished.
+
+    Stages that report completion are remembered across nights and are not
+    started again, so the run winds down on its own rather than needing to be
+    stopped by hand. It exits when every stage is done.
+
+    `--max_nights` caps the number of nights (0 = until finished).
+    """
+    plan = tuple(s.strip() for s in stages.split(",") if s.strip()) or NIGHTLY_PLAN
+    done: set = set()
+    night = 0
+
+    print(f"nightly schedule: {at} -> {until}, every night until finished",
+          flush=True)
+    print(f"  stages, rotating: {' -> '.join(plan)}", flush=True)
+
+    while not max_nights or night < max_nights:
+        night += 1
+        start = _next(at)
+        stop = _next(until, after=start)
+        print(f"\n########## night {night}: {start:%Y-%m-%d %H:%M} -> "
+              f"{stop:%H:%M} ##########", flush=True)
+        _sleep_until(start)
+        done = _one_night(stop, plan, model, done)
+
+        print(f"\n=== {dt.datetime.now():%H:%M} — night {night} finished "
+              f"({len(done)}/{len(plan)} stages complete) ===", flush=True)
+        subprocess.run([PY, "overnight_run.py", "status"], cwd=HERE)
+
+        if len(done) == len(plan):
+            print(f"\n########## all stages finished after {night} night(s) "
+                  f"##########", flush=True)
+            return
+
+
+def status(at: str = "00:00") -> None:
     """What is scheduled and what exists so far. Spends nothing."""
     now = dt.datetime.now()
     start = _next(at)
@@ -141,4 +174,4 @@ def status(at: str = "23:00") -> None:
 
 
 if __name__ == "__main__":
-    fire.Fire({"run": run, "status": status})
+    fire.Fire({"run": run, "nightly": nightly, "status": status})
