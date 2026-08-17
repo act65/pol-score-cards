@@ -49,8 +49,13 @@ PY = sys.executable
 # a row count to a call count and declared itself finished -- so this is its
 # first real night.
 # `resolve_veracity` second: divination is fully resolved (110/110, all with
-# source URLs), so veracity's 1,109 pending claims are next. That is ~370 calls
-# and will take more than one night.
+# source URLs). Veracity has 1,028 pending after 2026-08-16, and each call does
+# several web round-trips, so it is slow — measured at roughly 27 calls in the
+# ~2h of usable quota that night. It will take several nights.
+#
+# The loop below is a ROUND-ROBIN, not one pass per stage: the usage cap
+# recovers within a night, and a stage blocked at midnight must still be there
+# to use quota that returns at 3am.
 PLAN = ("questions", "resolve_veracity")
 
 
@@ -83,20 +88,43 @@ def run(at: str = "23:00", until: str = "06:00", model: str | None = None) -> No
         if left > 0:
             print(f"  {left / 3600:.1f}h until start", flush=True)
 
-    for stage in PLAN:
-        # Recompute from the real clock each time, so a stage that finishes
-        # early hands its remaining time to the next one instead of idling.
-        remaining = (stop - dt.datetime.now()).total_seconds() / 3600
-        if remaining <= 0.1:
-            print(f"\n=== out of time before {stage} — skipped ===", flush=True)
+    # Round-robin, not one pass each. A stage blocked by the usage cap early in
+    # the night must get another turn when the cap recovers — on 2026-08-16
+    # Forthrightness was locked out at 00:14 and quota came back at ~03:00, but
+    # the plan had already moved on and never returned to it.
+    done: set = set()
+    round_no = 0
+    while (stop - dt.datetime.now()).total_seconds() / 3600 > 0.1:
+        round_no += 1
+        progressed = False
+        for stage in PLAN:
+            if stage in done:
+                continue
+            remaining = (stop - dt.datetime.now()).total_seconds() / 3600
+            if remaining <= 0.1:
+                break
+            print(f"\n=== {dt.datetime.now():%H:%M} — {stage} "
+                  f"(round {round_no}, {remaining:.2f}h left) ===", flush=True)
+            cmd = [PY, "overnight_run.py", "run", "--hours", f"{remaining:.2f}",
+                   "--stage", stage]
+            if model:
+                cmd += ["--model", model]
+            code = subprocess.run(
+                cmd, cwd=HERE,
+                env={**os.environ, "PYTHONUNBUFFERED": "1"}).returncode
+            if code == 64:
+                # Nothing left in this stage, ever. Do not offer it another turn.
+                print(f"  {stage} is complete — dropping it from the rotation",
+                      flush=True)
+                done.add(stage)
+            else:
+                progressed = True
+        if len(done) == len(PLAN):
+            print("\nall stages complete", flush=True)
             break
-        print(f"\n=== {dt.datetime.now():%H:%M} — {stage} "
-              f"({remaining:.2f}h left in the window) ===", flush=True)
-        cmd = [PY, "overnight_run.py", "run", "--hours", f"{remaining:.2f}",
-               "--stage", stage]
-        if model:
-            cmd += ["--model", model]
-        subprocess.run(cmd, cwd=HERE, env={**os.environ, "PYTHONUNBUFFERED": "1"})
+        if not progressed:
+            print("\nno stage can make progress — ending the night", flush=True)
+            break
 
     print(f"\n=== {dt.datetime.now():%H:%M} — night finished ===", flush=True)
     subprocess.run([PY, "overnight_run.py", "status"], cwd=HERE)
