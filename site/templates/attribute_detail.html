@@ -13,6 +13,15 @@
         .conf-high { background: #d1fae5; color: #065f46; }
         .conf-medium { background: #fef3c7; color: #92400e; }
         .conf-low { background: #fee2e2; color: #991b1b; }
+        /* Forthrightness evidence is a PAIR. The question is set back and
+           quieter than the answer, so the eye lands on what the politician
+           said while still reading what they were asked. */
+        .ev-question { color: #4b5563; font-size: 0.95em; line-height: 1.5;
+                       border-left: 3px solid #d1d5db; padding: 0.1em 0 0.1em 0.75em;
+                       margin: 0 0 0.5em 0; }
+        .ev-qlabel { display: inline-block; font-weight: 700; font-size: 0.75em;
+                     letter-spacing: 0.06em; color: #6b7280; margin-right: 0.5em;
+                     vertical-align: 0.1em; }
     </style>
 </head>
 <body>
@@ -44,7 +53,18 @@
                         <span class="ev-score {{ tier }}">{{ example.score }}</span>
                     {% endif %}
                     <div class="ev-body">
-                        <blockquote class="ev-quote">“{{ example.text }}”</blockquote>
+                        {# Forthrightness scores an ANSWER against the question
+                           it was given. Without the question the quote is
+                           meaningless — many answers are literally "Yes." — so
+                           the pair is shown, question first. #}
+                        {% if example.question %}
+                            <div class="ev-question">
+                                <span class="ev-qlabel">Q{% if example.asked_by %} — {{ example.asked_by }}{% endif %}</span>
+                                {{ example.question }}
+                            </div>
+                        {% endif %}
+                        <blockquote class="ev-quote">
+                            {% if example.question %}<span class="ev-qlabel">A</span>{% endif %}“{{ example.text }}”</blockquote>
                         {% if example.context %}
                             <div class="ev-context">{{ example.context }}</div>
                         {% endif %}
