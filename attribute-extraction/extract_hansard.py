@@ -65,8 +65,20 @@ def _windows(blocks, window_tokens):
     return win
 
 
-def _saved_ids(path):
-    ids = set()
+def _saved_ids(path, window_tokens=None):
+    """Window ids already written, refusing to resume across window sizes.
+
+    `window_id` is "<date>#<index>", and the index is a position within THAT
+    day's packing — so 2025-10-07#3 means a different passage at 3,000 tokens
+    than at 14,000. Resuming a 3k file with a 14k run would skip the first few
+    ids of every day as "already done" and write the rest under colliding ids,
+    producing a file that is neither instrument and looks fine.
+
+    Each record carries the size it was produced at, so a mismatch is a hard
+    error rather than silent corruption. Older files have no marker; those are
+    assumed to match and warn.
+    """
+    ids, sizes = set(), set()
     if os.path.exists(path):
         with open(path, encoding="utf-8") as f:
             for line in f:
@@ -74,9 +86,27 @@ def _saved_ids(path):
                 if not line:
                     continue
                 try:
-                    ids.add(json.loads(line)["window_id"])
+                    row = json.loads(line)
                 except Exception:
-                    pass
+                    continue
+                if "window_id" in row:
+                    ids.add(row["window_id"])
+                if row.get("window_tokens"):
+                    sizes.add(int(row["window_tokens"]))
+
+    if ids and window_tokens is not None:
+        if sizes and sizes != {int(window_tokens)}:
+            raise SystemExit(
+                f"\n{path} was written at window_tokens={sorted(sizes)}, but "
+                f"this run uses {window_tokens}.\n"
+                f"Window ids are not comparable across sizes — resuming would "
+                f"silently skip work and mix two instruments in one file.\n"
+                f"Write to a different --out, or archive the existing file "
+                f"first.")
+        if not sizes:
+            print(f"warning: {os.path.basename(path)} predates the "
+                  f"window_tokens marker; assuming it was produced at "
+                  f"{window_tokens}.", flush=True)
     return ids
 
 
@@ -198,7 +228,7 @@ def run(out="hansard_scores.jsonl",
         return
 
     client = extract._client() if backend == "anthropic" else None
-    done = _saved_ids(out)
+    done = _saved_ids(out, window_tokens)
     if done:
         print(f"resuming: {len(done)} windows already in {out}")
     todo = [p for p in plan if p[0] not in done]
@@ -251,6 +281,9 @@ def run(out="hansard_scores.jsonl",
                 print(f"\nerror on {wid}: {e}", flush=True)
                 continue
             rec = {"window_id": wid, "date": date,
+                   # The slicing this record came from. Read on resume to stop
+                   # two window sizes being mixed into one file.
+                   "window_tokens": window_tokens,
                    "examples_by_attribute":
                        {a: [e.model_dump() for e in exs] for a, exs in by_attr.items()}}
             fh.write(json.dumps(rec) + "\n")
