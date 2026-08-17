@@ -71,7 +71,19 @@ PILOT_MONTH = "2025-10"
 # Smaller windows mean more calls, but a call that finishes beats a bigger one
 # that does not. The timeout is set well above the measured time so a slow call
 # waits rather than failing.
-WINDOW_TOKENS = "3000"
+# 14,000 since 2026-08-17, up from 3,000. Content is constant however Hansard is
+# sliced; what changes is the call count, and every call resends the 7,469-token
+# system prompt. At 3k that overhead was 41.4M tokens against 13.9M of actual
+# debate — three-quarters of everything sent was the same rubric. At 14k it is
+# 8.4M, so total input drops 55.3M -> 22.3M for identical coverage. The
+# subscription cap is what limits this project, so that is the lever that
+# matters; wall clock barely moves (116h -> 94h).
+#
+# The cost is that the 3k audits (pilot_3k/) describe a different instrument.
+# Re-run attribute_overlap.py and check_quotes.py on the 14k output and compare
+# before trusting it. CALL_TIMEOUT must stay well above 600s: a 14k window does
+# not fit in claude_cli's 300s default, and every call then fails silently.
+WINDOW_TOKENS = "14000"
 CALL_TIMEOUT = "900"
 
 # Two settings the 2026-08-07 experiments decided:
