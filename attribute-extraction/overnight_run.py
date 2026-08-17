@@ -150,6 +150,11 @@ EX_QUOTA = 75
 # stages on 2026-08-15.
 EX_DONE = 64
 
+# How many blocked passes before a stage gives up for the night. With BACKOFF at
+# 75 min this spans roughly the whole window, which is what we want: the usage
+# cap recovers in ~2-3h and the stage should still be there when it does.
+QUOTA_STRIKES = 5
+
 
 def _pass(stage: str, timeout_s: float, model: str, backend: str) -> int:
     """One resumable pass, hard-capped so it cannot outlive the deadline.
@@ -278,12 +283,14 @@ def run(hours: float = 10.0, stage: str = "pilot", model: str = MODEL,
           f"starting at {label} ===", flush=True)
 
     quota_strikes = 0
+    stage_complete = False
     while (not target or done() < target) and time.time() < deadline:
         before = done()
         code = _pass(stage, deadline - time.time(), model, backend)
         after = done()
         if code == EX_DONE:
             print(f"\n=== {stage}: complete at {after:,} ===", flush=True)
+            stage_complete = True
             break
         if code == EX_QUOTA:
             # One retry is worth it: a rolling usage window can reset within the
@@ -291,7 +298,16 @@ def run(hours: float = 10.0, stage: str = "pilot", model: str = MODEL,
             # every 75 minutes from 23:10 to 06:00 and never recovered, which
             # means the cap was longer than the night, not a rolling window.
             quota_strikes += 1
-            if quota_strikes >= 2:
+            # Raised from 2 on 2026-08-17. The cap turned out to be a ROLLING
+            # window, not a nightly ceiling: on 2026-08-16 questions was locked
+            # out at 00:14, quota returned around 03:00, and the slower resolver
+            # spent it instead. Two strikes ended a stage that had ~3h of usable
+            # time left.
+            #
+            # A blocked pass now costs seconds (QuotaExhausted aborts it), so
+            # patience is nearly free -- the real cost of stopping early is a
+            # whole stage idle for the rest of the night.
+            if quota_strikes >= QUOTA_STRIKES:
                 print(f"\n=== {stage}: subscription quota exhausted twice — "
                       f"stopping for the night at {after:,}. Resumable. ===",
                       flush=True)
@@ -313,7 +329,8 @@ def run(hours: float = 10.0, stage: str = "pilot", model: str = MODEL,
             time.sleep(min(SHORT_SLEEP, max(0, deadline - time.time())))
 
     _audit(stage)
-    finished = "complete" if target and done() >= target else "deadline reached"
+    finished = ("complete" if stage_complete or (target and done() >= target)
+                else "deadline reached")
     print(f"\n=== {stage} finished ({finished}) at {done():,} ===", flush=True)
     print("\nNOTHING WAS PUBLISHED. v3.0 scores are not comparable with v2.0 "
           "(Civility re-anchored, Charisma replaced by Focus), so the site is "
@@ -321,6 +338,12 @@ def run(hours: float = 10.0, stage: str = "pilot", model: str = MODEL,
     if stage == "pilot":
         print("\nNext: read ATTRIBUTE_OVERLAP_v3.md and QUOTE_AUDIT_v3.md. If the "
               "targets hold, run --stage windows.", flush=True)
+
+    if stage_complete:
+        # Propagate completion to the caller (tonight.py), which drops the
+        # stage from its rotation. Without this the exit code is 0 and a
+        # finished stage keeps being offered turns for the rest of the night.
+        raise SystemExit(EX_DONE)
 
 
 if __name__ == "__main__":
