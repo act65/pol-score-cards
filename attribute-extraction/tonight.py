@@ -44,19 +44,19 @@ EX_DONE = 64
 # Single-night default: finish Forthrightness, then resolve veracity.
 PLAN = ("questions", "resolve_veracity")
 
-# Nightly default. `pilot` leads: after the switch to 14,000-token windows on
-# 2026-08-17 the instrument is unvalidated, and re-running the SAME month
-# (2025-10, 51 windows at 14k against 260 at 3k) is the only comparison that
-# isolates window size from everything else. It ends by writing both audits, so
-# one night gives a like-for-like read against pilot_3k/.
+# Nightly default. `pilot` is NOT in it: the 2025-10 month is complete at
+# window_tokens=3000 (260 windows, 3,703 examples) and audited, so re-running it
+# would only spend quota re-deriving numbers we have. It was briefly first in
+# this list while the 14,000-token window was under test; that test concluded on
+# 2026-08-18 in favour of 3k (see overnight_run.WINDOW_TOKENS for the numbers).
 #
-# `windows` is the long pole and takes the whole night once the pilot is done.
-# `questions` and `resolve_veracity` are in the rotation so a night where the
-# extraction is quota-blocked still advances something rather than idling.
+# `windows` is the long pole and takes the whole night. `questions` and
+# `resolve_veracity` are in the rotation so a night where the extraction is
+# quota-blocked still advances something rather than idling.
 #
 # A stage that finishes reports EX_DONE and drops out, so this list winds down
 # to nothing on its own.
-NIGHTLY_PLAN = ("pilot", "windows", "questions", "resolve_veracity")
+NIGHTLY_PLAN = ("windows", "questions", "resolve_veracity")
 
 
 def _next(hhmm: str, after: dt.datetime | None = None) -> dt.datetime:
