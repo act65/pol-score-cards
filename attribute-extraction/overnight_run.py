@@ -71,19 +71,40 @@ PILOT_MONTH = "2025-10"
 # Smaller windows mean more calls, but a call that finishes beats a bigger one
 # that does not. The timeout is set well above the measured time so a slow call
 # waits rather than failing.
-# 14,000 since 2026-08-17, up from 3,000. Content is constant however Hansard is
-# sliced; what changes is the call count, and every call resends the 7,469-token
-# system prompt. At 3k that overhead was 41.4M tokens against 13.9M of actual
-# debate — three-quarters of everything sent was the same rubric. At 14k it is
-# 8.4M, so total input drops 55.3M -> 22.3M for identical coverage. The
-# subscription cap is what limits this project, so that is the lever that
-# matters; wall clock barely moves (116h -> 94h).
+# 3,000 — reverted on 2026-08-18 after one night at 14,000 was measured
+# against the archived 3k month (pilot_3k/ vs pilot_14k/, same six sitting days
+# of 2025-10 scored both ways).
 #
-# The cost is that the 3k audits (pilot_3k/) describe a different instrument.
-# Re-run attribute_overlap.py and check_quotes.py on the 14k output and compare
-# before trusting it. CALL_TIMEOUT must stay well above 600s: a 14k window does
-# not fit in claude_cli's 300s default, and every call then fails silently.
-WINDOW_TOKENS = "14000"
+# The case for 14k was token overhead: every call resends the 7,469-token system
+# prompt, so 5,548 calls carry 41.4M tokens of repeated rubric against 13.9M of
+# actual debate, while 1,127 calls carry only 8.4M. That arithmetic is right and
+# still true. It is simply outweighed:
+#
+#   * RECALL. 14k returned 1,045 examples where 3k returned 2,381 on the same
+#     days — 44%, and between 0.42 and 0.52 on every individual day. Content
+#     input is identical either way (13.90M tokens at both sizes, per --dry_run),
+#     so this is the same spend for less than half the evidence: 2.35 examples
+#     per 1,000 window tokens against 4.7.
+#   * COVERAGE. Rebuilding each window and locating every quote inside it, 3k
+#     draws uniformly (20.0/21.0/18.8/19.6/20.7% across window fifths,
+#     chi2(4)=5.7, p=0.22). 14k front-loads: 27.1% from the first fifth, 15.9%
+#     from the fourth, chi2(4)=49.5, p<1e-9. The model stops reading evenly well
+#     before 14k tokens.
+#   * STABILITY. Card scores are not window-size invariant — r=0.77 across 57
+#     MP-attribute cells with >=4 scores in both runs, 10 moving by more than
+#     0.15. Focus was worst hit (30% recall, mean 0.74 -> 0.60), which is the
+#     attribute a whole-debate window was most supposed to help.
+#
+# 14k did halve multi-attribute double-counting (26% -> 19%), but both sizes are
+# far inside the <60% target, so that buys nothing we needed.
+#
+# Not a prompt bug: the preamble says "find EACH statement that bears on any
+# attribute", with no cap and no notability filter. It is the model's behaviour
+# over long context. Raising this again needs new evidence, not new reasoning.
+#
+# CALL_TIMEOUT stays at 900s. It only has to exceed the ~150s a 3k window takes,
+# and a slow call should wait rather than fail.
+WINDOW_TOKENS = "3000"
 CALL_TIMEOUT = "900"
 
 # Two settings the 2026-08-07 experiments decided:
