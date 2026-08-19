@@ -48,6 +48,15 @@ POSITIONS = "positions_v3.jsonl"
 RESOLVED = "resolved_v3.jsonl"
 QA_SCORES = "forthrightness_scores_v3.jsonl"
 
+# Per-call token accounting (claude_cli._record_usage). The subscription cap is
+# what limits this project, and until now we only ever saw it indirectly — as
+# the point in the night where calls started failing. This records what each
+# call actually cost, including whether the 7,469-token system prompt is being
+# cache-read or billed in full, which decides whether the window size or the
+# repeated rubric is the thing worth fixing. Costs nothing: the numbers are
+# already in the response envelope.
+USAGE_LOG = os.path.join(HERE, "usage_v3.jsonl")
+
 SINCE = "2023-10-06"
 PILOT_MONTH = "2025-10"
 
@@ -225,6 +234,7 @@ def _pass(stage: str, timeout_s: float, model: str, backend: str) -> int:
                "--backend", backend, "--model", model, "--out", SCORES]
     try:
         return subprocess.run(cmd, cwd=HERE,
+                              env={**os.environ, "CLAUDE_CLI_USAGE_LOG": USAGE_LOG},
                               timeout=max(30, timeout_s)).returncode
     except subprocess.TimeoutExpired:
         print("  pass hit the deadline — stopping cleanly (resumable)", flush=True)

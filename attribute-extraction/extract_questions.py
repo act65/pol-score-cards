@@ -210,7 +210,7 @@ def run(out: str = "forthrightness_scores.jsonl", source: str = "oral",
         if backend == "claude_cli":
             result = claude_cli.call_structured(
                 system, text, _PairResult.model_json_schema(),
-                model=model, instruction="")
+                model=model, instruction="", label="questions")
             return [(s.get("question_id"), s.get("score"), s.get("explanation", ""))
                     for s in (result or {}).get("scores", []) or []]
         resp = client.messages.parse(
