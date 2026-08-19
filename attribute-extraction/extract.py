@@ -555,7 +555,7 @@ def extract_all_attributes(
         result = claude_cli.call_structured(
             system, article_text, MultiResult.model_json_schema(),
             model=model, instruction=_COMBINED_STRUCT_INSTRUCTION,
-            timeout=timeout)
+            timeout=timeout, label="windows")
         rows = (result or {}).get("examples", []) or []
         pairs = [(str(r.get("politician", "")).strip(),
                   str(r.get("statement", "")).strip(),

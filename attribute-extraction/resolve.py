@@ -238,7 +238,8 @@ def run(scores: str = "hansard_scores_v3.jsonl", out: str = DEFAULT_OUT,
             _SYSTEM, _render(batch), {"type": "object", "properties": {
                 "verdicts": {"type": "array", "items": _Verdict.model_json_schema()}},
                 "required": ["verdicts"]},
-            model=model, instruction=_INSTRUCTION, timeout=timeout)
+            model=model, instruction=_INSTRUCTION, timeout=timeout,
+            label="resolve")
 
     with open(out, "a") as fh, ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
         futures = {ex.submit(work, b): b for b in batches}

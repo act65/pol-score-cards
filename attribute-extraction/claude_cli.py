@@ -9,10 +9,51 @@ it robustly.
 Used by extract.py when backend="claude_cli".
 """
 
+import datetime as dt
 import json
+import os
 import re
 import subprocess
+import threading
 import time
+
+# --- usage accounting -------------------------------------------------------
+# Every `claude -p --output-format json` envelope carries a `usage` block with
+# input_tokens / cache_read_input_tokens / cache_creation_input_tokens / output.
+# We used to discard it, and then spend days inferring the subscription's
+# metering from when overnight runs hit the cap. Two nights at different window
+# sizes capped within 9% of the same total-input figure computed at FULL rate
+# for the 7,469-token system prompt, and 2.2x apart computed at the 10% cache
+# rate — strong evidence the repeated prefix is NOT being cached. That matters
+# enormously: at window_tokens=3000 the full term sends 41.4M tokens of rubric
+# against 13.9M of actual debate.
+#
+# So record it. Set CLAUDE_CLI_USAGE_LOG to a path and every call appends one
+# line. Costs nothing — the numbers are already in the response we parse.
+_USAGE_LOCK = threading.Lock()
+
+
+def _record_usage(env: dict, label: str = "") -> None:
+    path = os.environ.get("CLAUDE_CLI_USAGE_LOG", "")
+    if not path:
+        return
+    u = env.get("usage") or {}
+    row = {
+        "ts": dt.datetime.now().isoformat(timespec="seconds"),
+        "label": label,
+        "input": u.get("input_tokens"),
+        "cache_read": u.get("cache_read_input_tokens"),
+        "cache_creation": u.get("cache_creation_input_tokens"),
+        "output": u.get("output_tokens"),
+        "duration_ms": env.get("duration_ms"),
+        "duration_api_ms": env.get("duration_api_ms"),
+        "cost_usd": env.get("total_cost_usd"),
+    }
+    try:
+        with _USAGE_LOCK, open(path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(row) + "\n")
+    except OSError:
+        pass          # accounting must never break an extraction run
 
 JSON_INSTRUCTION = (
     "\n\nReturn ONLY a JSON array (no prose, no markdown fences) where each element "
@@ -89,7 +130,8 @@ def _is_quota_error(envelope: dict) -> bool:
 
 
 def call_structured(system: str, user: str, schema: dict, model: str = None,
-                    instruction: str = "", timeout: int = 300, retries: int = 2):
+                    instruction: str = "", timeout: int = 300, retries: int = 2,
+                    label: str = ""):
     """Run `claude -p --json-schema <schema> --output-format json` and return the
     validated ``structured_output`` object.
 
@@ -118,6 +160,7 @@ def call_structured(system: str, user: str, schema: dict, model: str = None,
             except json.JSONDecodeError:
                 env, last_err = None, "result envelope was not JSON"
             if env is not None:
+                _record_usage(env, label)
                 if _is_quota_error(env):
                     raise QuotaExhausted(
                         "no request reached the API (zero tokens, zero API "
@@ -145,7 +188,7 @@ def call_structured(system: str, user: str, schema: dict, model: str = None,
     raise RuntimeError(f"claude --json-schema failed after {retries + 1} attempts: {last_err}")
 
 
-def call_structured_searching(system: str, user: str, schema: dict,
+def call_structured_searching(system: str, user: str, schema: dict, label: str = "",
                               model: str = None, instruction: str = "",
                               timeout: int = 600, retries: int = 2):
     """Like ``call_structured``, but with web search and fetch enabled.
@@ -175,6 +218,7 @@ def call_structured_searching(system: str, user: str, schema: dict,
             except json.JSONDecodeError:
                 env, last_err = None, "result envelope was not JSON"
             if env is not None:
+                _record_usage(env, label)
                 if _is_quota_error(env):
                     raise QuotaExhausted(
                         "no request reached the API (zero tokens, zero API "
