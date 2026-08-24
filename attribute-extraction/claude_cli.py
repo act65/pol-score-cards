@@ -131,7 +131,8 @@ def _is_quota_error(envelope: dict) -> bool:
 
 def call_structured(system: str, user: str, schema: dict, model: str = None,
                     instruction: str = "", timeout: int = 300, retries: int = 2,
-                    label: str = ""):
+                    label: str = "", system_prompt_flag: bool = None,
+                    effort: str = None):
     """Run `claude -p --json-schema <schema> --output-format json` and return the
     validated ``structured_output`` object.
 
@@ -141,11 +142,40 @@ def call_structured(system: str, user: str, schema: dict, model: str = None,
     so we don't fall back to brittle text parsing. Closes the quality gap that the
     loose-JSON CLI path otherwise has vs the API.
     """
-    prompt = f"{system}{instruction}\n\n=== TEXT TO ANALYSE ===\n{user}"
-    cmd = ["claude", "-p", prompt, "--json-schema", json.dumps(schema),
-           "--output-format", "json"]
+    # Both default off, and both switchable by environment so an A/B can flip
+    # them for one run without editing call sites.
+    if system_prompt_flag is None:
+        system_prompt_flag = os.environ.get("CLAUDE_CLI_SYSTEM_FLAG", "") == "1"
+    effort = effort or os.environ.get("CLAUDE_CLI_EFFORT", "") or None
+
+    if system_prompt_flag:
+        # Send the rubric as the SESSION SYSTEM PROMPT rather than as the head
+        # of the user message. Two things change, both measured in usage_v3.jsonl
+        # over the 294 calls of 2026-08-19..24:
+        #
+        #   * --system-prompt REPLACES the CLI's own default system prompt,
+        #     which is 20,611 tokens and cache-read on every single call. We use
+        #     none of it: extraction needs no tools, no file access and no
+        #     Claude Code behaviour, only the model and a JSON schema.
+        #   * a system prompt is a stable cacheable prefix. Prepended to the user
+        #     message the rubric was NOT being reused — cache_read sat at exactly
+        #     20,611 (the CLI default alone) while cache_creation ran at 26,512
+        #     per call, i.e. we paid to write a cache entry that nothing ever
+        #     read back, because the unique window text shared its cached span.
+        #
+        # The risk is that this is a different instrument: same rubric, different
+        # surrounding prompt. Gate it on ab_prompt.py before trusting it.
+        prompt = f"{instruction}\n\n=== TEXT TO ANALYSE ===\n{user}".lstrip()
+        cmd = ["claude", "-p", prompt, "--system-prompt", system,
+               "--json-schema", json.dumps(schema), "--output-format", "json"]
+    else:
+        prompt = f"{system}{instruction}\n\n=== TEXT TO ANALYSE ===\n{user}"
+        cmd = ["claude", "-p", prompt, "--json-schema", json.dumps(schema),
+               "--output-format", "json"]
     if model:
         cmd += ["--model", model]
+    if effort:
+        cmd += ["--effort", effort]
     last_err = ""
     for attempt in range(retries + 1):
         proc = None
