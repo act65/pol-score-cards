@@ -204,7 +204,12 @@ def _pass(stage: str, timeout_s: float, model: str, backend: str) -> int:
     Returns the runner's exit code, so the caller can tell a stage that failed
     from one that is merely blocked.
     """
-    if stage == "questions":
+    if stage == "ab_prompt":
+        # One-off instrument check, not extraction: re-scores 12 already-scored
+        # windows under both prompt arrangements so the cheaper one can be
+        # adopted (or rejected) on evidence. ~24 calls, then EX_DONE.
+        cmd = [PY, "ab_prompt.py", "run", "--n", "12", "--model", model]
+    elif stage == "questions":
         cmd = [PY, "extract_questions.py", "run", "--source", "oral",
                "--out", QA_SCORES, "--workers", WORKERS,
                "--model", model, "--backend", backend]
@@ -298,13 +303,14 @@ def run(hours: float = 10.0, stage: str = "pilot", model: str = MODEL,
               flush=True)
         run(hours=left, stage="windows", model=model, backend=backend)
         return
-    if stage not in ("pilot", "windows", "questions", "positions",
+    if stage not in ("pilot", "windows", "questions", "positions", "ab_prompt",
                      "resolve_divination", "resolve_veracity"):
         raise SystemExit("--stage must be pilot | windows | questions | "
                          "positions | resolve_divination | resolve_veracity "
                          "| all")
 
     out_file = {"questions": QA_SCORES,
+                "ab_prompt": "ab_prompt_B.jsonl",
                 "positions": POSITIONS,
                 "resolve_divination": RESOLVED,
                 "resolve_veracity": RESOLVED}.get(stage, SCORES)

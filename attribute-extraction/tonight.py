@@ -56,7 +56,11 @@ PLAN = ("questions", "resolve_veracity")
 #
 # A stage that finishes reports EX_DONE and drops out, so this list winds down
 # to nothing on its own.
-NIGHTLY_PLAN = ("windows", "questions", "resolve_veracity")
+# `ab_prompt` leads for one night only: it is ~24 calls (about 1% of a night's
+# quota) and decides whether the remaining ~4,930 windows can be extracted at
+# roughly double the current rate. Deciding that before spending 70 more nights
+# at the current rate is worth an hour. It reports EX_DONE and drops out.
+NIGHTLY_PLAN = ("ab_prompt", "windows", "questions", "resolve_veracity")
 
 
 def _next(hhmm: str, after: dt.datetime | None = None) -> dt.datetime:
@@ -79,6 +83,13 @@ def _sleep_until(start: dt.datetime) -> None:
         left = (start - dt.datetime.now()).total_seconds()
         if left > 0:
             print(f"  {left / 3600:.1f}h until start", flush=True)
+        elif left < -300:
+            # Night 4 (2026-08-22) woke at 07:29 for a 00:00 window and lost the
+            # whole night in silence. time.sleep() tracks elapsed time, not wall
+            # clock, so a suspended laptop overshoots. Say so, rather than
+            # printing "night finished" over an empty run.
+            print(f"  OVERSHOT the start by {-left / 3600:.1f}h — the machine was "
+                  f"probably suspended. This night's window is gone.", flush=True)
 
 
 def _one_night(stop: dt.datetime, plan, model, done: set) -> set:
