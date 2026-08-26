@@ -41,6 +41,12 @@ PY = sys.executable
 # Exit code a runner uses for "my todo list is empty" (see overnight_run.py).
 EX_DONE = 64
 
+# "This stage is broken" — it exited non-zero having written nothing. Unlike
+# EX_DONE it is not remembered across nights (tomorrow's code may be fixed), but
+# it must leave the rotation NOW: on 2026-08-25/26 a stage that crashed instantly
+# was retried every round for two whole nights and starved the stage that worked.
+EX_FAIL = 70
+
 # Single-night default: finish Forthrightness, then resolve veracity.
 PLAN = ("questions", "resolve_veracity")
 
@@ -60,6 +66,12 @@ PLAN = ("questions", "resolve_veracity")
 # quota) and decides whether the remaining ~4,930 windows can be extracted at
 # roughly double the current rate. Deciding that before spending 70 more nights
 # at the current rate is worth an hour. It reports EX_DONE and drops out.
+# `ab_prompt` leads, but only because a broken stage now costs seconds instead
+# of a night. It led on 2026-08-25/26 while broken and starved `windows` twice
+# over; that is fixed at the runner (EX_FAIL) rather than by demoting it, since
+# the information it buys — whether the remaining ~4,930 windows can be done at
+# roughly double the rate — governs every night after this one. ~20 calls, well
+# under an hour, and it leaves `windows` the rest.
 NIGHTLY_PLAN = ("ab_prompt", "windows", "questions", "resolve_veracity")
 
 
@@ -95,11 +107,12 @@ def _sleep_until(start: dt.datetime) -> None:
 def _one_night(stop: dt.datetime, plan, model, done: set) -> set:
     """Rotate through `plan` until `stop`. Returns the set of finished stages."""
     round_no = 0
+    broken: set = set()          # failing tonight; retried tomorrow
     while (stop - dt.datetime.now()).total_seconds() / 3600 > 0.1:
         round_no += 1
         progressed = False
         for stage in plan:
-            if stage in done:
+            if stage in done or stage in broken:
                 continue
             remaining = (stop - dt.datetime.now()).total_seconds() / 3600
             if remaining <= 0.1:
@@ -117,10 +130,18 @@ def _one_night(stop: dt.datetime, plan, model, done: set) -> set:
                 print(f"  {stage} is complete — dropping it from the rotation",
                       flush=True)
                 done.add(stage)
+            elif code == EX_FAIL:
+                print(f"  {stage} is FAILING — out of the rotation for tonight "
+                      f"so it stops starving the stages that work", flush=True)
+                broken.add(stage)
             else:
                 progressed = True
         if len(done) == len(plan):
             print("\nall stages complete", flush=True)
+            break
+        if len(done | broken) == len(plan):
+            print("\nevery stage is finished or failing — ending the night",
+                  flush=True)
             break
         if not progressed:
             print("\nno stage can make progress — ending the night", flush=True)
