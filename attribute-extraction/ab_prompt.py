@@ -49,6 +49,7 @@ import sys
 import fire
 
 import attributes
+import claude_cli
 import extract
 import extract_hansard
 import hansard_prep
@@ -97,6 +98,7 @@ def run(n: int = 12, model: str = "claude-opus-5", window_tokens: int = 3000,
             done = {json.loads(l)["window_id"] for l in open(path) if l.strip()}
         os.environ["CLAUDE_CLI_SYSTEM_FLAG"] = flag
         os.environ["CLAUDE_CLI_USAGE_LOG"] = os.path.join(HERE, f"ab_usage_{arm}.jsonl")
+        fails = 0
         with open(path, "a", encoding="utf-8") as fh:
             for i, wid in enumerate(wids, 1):
                 if wid in done:
@@ -107,14 +109,29 @@ def run(n: int = 12, model: str = "claude-opus-5", window_tokens: int = 3000,
                     continue
                 try:
                     got = extract.extract_all_attributes(
-                        text, attrs, prompts_dir=prompts, model=model,
-                        backend="claude_cli", timeout=timeout)
+                        None, system, {"date": wid.split("#")[0], "content": text},
+                        set(attrs), model=model, backend="claude_cli",
+                        timeout=timeout)
+                except claude_cli.QuotaExhausted as exc:
+                    print(f"  [{arm} {i}/{len(wids)}] {wid}: quota exhausted "
+                          f"— stopping; rerun to resume", flush=True)
+                    return
+                except TypeError:
+                    # A signature mismatch is a BUG, not a transient failure, and
+                    # swallowing it cost two whole nights on 2026-08-25/26: every
+                    # call raised, the broad `except` logged and continued, the
+                    # stage never reported EX_DONE, and it blocked `windows` in
+                    # the rotation for 8 hours. Crash instead.
+                    raise
                 except Exception as exc:            # noqa: BLE001
                     print(f"  [{arm} {i}/{len(wids)}] {wid}: FAILED {exc}", flush=True)
-                    if "QUOTA" in str(exc).upper() or "quota" in str(exc):
-                        print("  quota exhausted — stopping; rerun to resume")
-                        return
+                    fails += 1
+                    if fails >= 3 and not (_load(A_OUT) or _load(B_OUT)):
+                        raise SystemExit(
+                            f"\n{fails} consecutive failures and nothing written "
+                            f"— aborting rather than burning the night retrying.")
                     continue
+                fails = 0
                 total = sum(len(v) for v in got.values())
                 fh.write(json.dumps({"window_id": wid, "arm": arm,
                                      "examples_by_attribute": got},

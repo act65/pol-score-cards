@@ -197,6 +197,11 @@ EX_DONE = 64
 # cap recovers in ~2-3h and the stage should still be there when it does.
 QUOTA_STRIKES = 5
 
+# "This stage is broken." Distinct from EX_QUOTA (blocked, worth waiting for)
+# and EX_DONE (finished, drop it for good). The scheduler drops a broken stage
+# for the rest of the night so it stops blocking stages that still work.
+EX_FAIL = 70
+
 
 def _pass(stage: str, timeout_s: float, model: str, backend: str) -> int:
     """One resumable pass, hard-capped so it cannot outlive the deadline.
@@ -208,7 +213,7 @@ def _pass(stage: str, timeout_s: float, model: str, backend: str) -> int:
         # One-off instrument check, not extraction: re-scores 12 already-scored
         # windows under both prompt arrangements so the cheaper one can be
         # adopted (or rejected) on evidence. ~24 calls, then EX_DONE.
-        cmd = [PY, "ab_prompt.py", "run", "--n", "12", "--model", model]
+        cmd = [PY, "ab_prompt.py", "run", "--n", "10", "--model", model]
     elif stage == "questions":
         cmd = [PY, "extract_questions.py", "run", "--source", "oral",
                "--out", QA_SCORES, "--workers", WORKERS,
@@ -366,6 +371,18 @@ def run(hours: float = 10.0, stage: str = "pilot", model: str = MODEL,
               f"(+{after - before} this pass, {left:.1f}h left)", flush=True)
         if (target and after >= target) or time.time() >= deadline:
             break
+        if after == before and code not in (0, EX_QUOTA):
+            # A pass that made no progress AND exited non-zero for a reason
+            # other than quota is broken, not blocked. Backing off assumes the
+            # obstacle is time; a crash is not fixed by waiting. On 2026-08-25
+            # ab_prompt raised TypeError on every call and this loop napped 75
+            # minutes four times over, holding the front of the rotation for two
+            # entire nights while `windows` — which was working — never ran.
+            print(f"\n=== {stage}: exited {code} having written nothing. That is "
+                  f"a failure, not a quota block, so waiting cannot help. "
+                  f"Dropping it for tonight. ===", flush=True)
+            _audit(stage)
+            raise SystemExit(EX_FAIL)
         if after == before:
             # No progress: almost always the subscription session cap. Back off,
             # but never past the deadline the user set.
