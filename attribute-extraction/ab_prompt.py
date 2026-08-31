@@ -112,10 +112,13 @@ def run(n: int = 12, model: str = "claude-opus-5", window_tokens: int = 3000,
                         None, system, {"date": wid.split("#")[0], "content": text},
                         set(attrs), model=model, backend="claude_cli",
                         timeout=timeout)
-                except claude_cli.QuotaExhausted as exc:
+                except claude_cli.QuotaExhausted:
+                    # Exit EX_QUOTA (75), not 0. Returning quietly told the
+                    # runner "finished, wrote nothing", which is indistinguishable
+                    # from success and defeats its quota accounting.
                     print(f"  [{arm} {i}/{len(wids)}] {wid}: quota exhausted "
                           f"— stopping; rerun to resume", flush=True)
-                    return
+                    raise SystemExit(75)
                 except TypeError:
                     # A signature mismatch is a BUG, not a transient failure, and
                     # swallowing it cost two whole nights on 2026-08-25/26: every
@@ -133,9 +136,15 @@ def run(n: int = 12, model: str = "claude-opus-5", window_tokens: int = 3000,
                     continue
                 fails = 0
                 total = sum(len(v) for v in got.values())
-                fh.write(json.dumps({"window_id": wid, "arm": arm,
-                                     "examples_by_attribute": got},
-                                    ensure_ascii=False) + "\n")
+                # Example is a pydantic model, not a dict — mirror how
+                # extract_hansard writes the real corpus (model_dump). Getting
+                # this wrong cost four nights: my test asserted `.statement`,
+                # which a model object satisfies, so it never touched the write.
+                fh.write(json.dumps(
+                    {"window_id": wid, "arm": arm,
+                     "examples_by_attribute": {a: [e.model_dump() for e in exs]
+                                               for a, exs in got.items()}},
+                    ensure_ascii=False) + "\n")
                 fh.flush()
                 print(f"  [{arm} {i}/{len(wids)}] {wid}: {total} examples", flush=True)
     # Tell the scheduler the stage is finished so it drops out of the rotation
@@ -255,9 +264,10 @@ def report(out: str = "") -> None:
     say(f"mean statement overlap {mean_ov:.2f}, mean score r {mean_r:.2f}, "
         f"yield ratio {nb / na if na else 0:.2f}\n")
     if yield_ok and mean_ov >= 0.5 and (mean_r >= 0.8 or corrs == []):
-        say("**Same instrument within sampling noise.** Adopting B is a cost "
-            "change, not a measurement change — the 618 windows already scored "
-            "stay comparable.")
+        n_done = sum(1 for _ in open(os.path.join(HERE, SCORES), encoding="utf-8"))
+        say(f"**Same instrument within sampling noise.** Adopting B is a cost "
+            f"change, not a measurement change — the {n_done:,} windows already "
+            f"scored stay comparable.")
     else:
         say("**Not established as the same instrument.** Adopting B would make "
             "the corpus a blend, as the Charisma and 14k episodes both did. "

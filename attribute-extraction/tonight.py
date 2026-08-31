@@ -47,6 +47,21 @@ EX_DONE = 64
 # was retried every round for two whole nights and starved the stage that worked.
 EX_FAIL = 70
 
+# How long one stage may hold the night before the rotation moves on.
+#
+# Without this the rotation did not rotate. `overnight_run run --hours H` loops
+# internally until H is up, so the FIRST stage in the plan owned the whole night
+# unless it finished or crashed — and a quota-blocked stage just napped through
+# it. Measured on 2026-08-29: quota died at 00:01, ab_prompt backed off 75
+# minutes three times, and `windows` never ran at all. It is also why
+# `questions` and `resolve_veracity` had no turn in thirteen nights.
+#
+# Every stage is resumable and idempotent, so being cut off mid-slice costs
+# nothing but the tail of one call. overnight_run's own backoff is already
+# clamped to its deadline, so a blocked stage yields at the end of its slice
+# rather than sleeping past it.
+TURN_HOURS = 1.0
+
 # Single-night default: finish Forthrightness, then resolve veracity.
 PLAN = ("questions", "resolve_veracity")
 
@@ -117,9 +132,11 @@ def _one_night(stop: dt.datetime, plan, model, done: set) -> set:
             remaining = (stop - dt.datetime.now()).total_seconds() / 3600
             if remaining <= 0.1:
                 break
+            turn = min(remaining, TURN_HOURS)
             print(f"\n=== {dt.datetime.now():%H:%M} — {stage} "
-                  f"(round {round_no}, {remaining:.2f}h left) ===", flush=True)
-            cmd = [PY, "overnight_run.py", "run", "--hours", f"{remaining:.2f}",
+                  f"(round {round_no}, {turn:.2f}h slice, {remaining:.2f}h "
+                  f"left in the night) ===", flush=True)
+            cmd = [PY, "overnight_run.py", "run", "--hours", f"{turn:.2f}",
                    "--stage", stage]
             if model:
                 cmd += ["--model", model]

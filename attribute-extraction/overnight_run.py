@@ -131,7 +131,12 @@ MODEL = "claude-opus-5"
 WORKERS = "2"
 BACKEND = "claude_cli"
 
-BACKOFF = 75 * 60          # session-cap backoff
+# Session-cap backoff. Was 75 min, chosen when a stage owned the whole night and
+# re-entering cost real calls. Both premises are gone: a blocked pass now aborts
+# in seconds (QuotaExhausted), and tonight.py hands each stage a bounded slice,
+# so the waiting is done by the rotation rather than by sleeping here. A shorter
+# nap just means quota recovery is noticed sooner.
+BACKOFF = 20 * 60
 SHORT_SLEEP = 60
 
 
