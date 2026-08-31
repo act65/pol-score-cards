@@ -121,3 +121,34 @@ def test_signature_mismatch_is_not_swallowed(monkeypatch, tmp_path):
     # ignores it, and patching it would break prompt loading.
     with pytest.raises(TypeError):
         ab_prompt.run(n=1)
+
+
+def test_run_writes_readable_jsonl_and_reports(captured, monkeypatch, tmp_path,
+                                               capsys):
+    """The whole stage: call -> write -> read back -> report.
+
+    The test above stops at the call and asserts `.statement`, which a pydantic
+    Example satisfies — so it passed while `json.dumps` on that same object blew
+    up in the write one line later, costing four nights (2026-08-27..30). A
+    stage is not exercised until its output has been written AND read back.
+    """
+    a_out, b_out = tmp_path / "a.jsonl", tmp_path / "b.jsonl"
+    monkeypatch.setattr(ab_prompt, "A_OUT", str(a_out))
+    monkeypatch.setattr(ab_prompt, "B_OUT", str(b_out))
+    monkeypatch.setattr(ab_prompt, "_pick", lambda n, seed_skip=0: ["2023-12-05#0"])
+    monkeypatch.setattr(ab_prompt, "_window_text", lambda wid, wt=3000: CONTENT)
+
+    with pytest.raises(SystemExit) as exc:      # EX_DONE once both arms finish
+        ab_prompt.run(n=1)
+    assert exc.value.code == 64
+
+    for path in (a_out, b_out):
+        rows = [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
+        assert len(rows) == 1
+        got = rows[0]["examples_by_attribute"]
+        assert got["civility"][0]["statement"] == QUOTE   # a dict, not a model
+
+    ab_prompt.report()
+    out = capsys.readouterr().out
+    assert "1 windows scored under both arms" in out
+    assert "Verdict" in out
