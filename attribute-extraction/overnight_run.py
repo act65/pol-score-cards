@@ -57,6 +57,18 @@ QA_SCORES = "forthrightness_scores_v3.jsonl"
 # already in the response envelope.
 USAGE_LOG = os.path.join(HERE, "usage_v3.jsonl")
 
+# Pass the rubric as --system-prompt rather than prepending it to the user
+# message. Adopted 2026-09-01 on the ab_prompt.py A/B (see AB_PROMPT.md):
+# 24% cheaper per call at list weighting and 22% faster, from -21% output and
+# -32% cache writes, because it replaces the CLI's own 20.6k-token default
+# prompt (which extraction never uses) with a genuinely reusable prefix.
+#
+# Adopted only because it measures the SAME. Statement selection agrees with
+# arm A at 0.40 while the corpus prompt agrees with ITSELF at only 0.38, score
+# correlation is r=0.96 on shared statements, and yield is 94% against ±17%
+# run-to-run variation. Set SYSTEM_PROMPT_FLAG = "0" to revert.
+SYSTEM_PROMPT_FLAG = "1"
+
 SINCE = "2023-10-06"
 PILOT_MONTH = "2025-10"
 
@@ -249,7 +261,9 @@ def _pass(stage: str, timeout_s: float, model: str, backend: str) -> int:
                "--backend", backend, "--model", model, "--out", SCORES]
     try:
         return subprocess.run(cmd, cwd=HERE,
-                              env={**os.environ, "CLAUDE_CLI_USAGE_LOG": USAGE_LOG},
+                              env={**os.environ,
+                                   "CLAUDE_CLI_USAGE_LOG": USAGE_LOG,
+                                   "CLAUDE_CLI_SYSTEM_FLAG": SYSTEM_PROMPT_FLAG},
                               timeout=max(30, timeout_s)).returncode
     except subprocess.TimeoutExpired:
         print("  pass hit the deadline — stopping cleanly (resumable)", flush=True)
