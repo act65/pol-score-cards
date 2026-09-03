@@ -81,13 +81,10 @@ PLAN = ("questions", "resolve_veracity")
 # quota) and decides whether the remaining ~4,930 windows can be extracted at
 # roughly double the current rate. Deciding that before spending 70 more nights
 # at the current rate is worth an hour. It reports EX_DONE and drops out.
-# `ab_prompt` leads, but only because a broken stage now costs seconds instead
-# of a night. It led on 2026-08-25/26 while broken and starved `windows` twice
-# over; that is fixed at the runner (EX_FAIL) rather than by demoting it, since
-# the information it buys — whether the remaining ~4,930 windows can be done at
-# roughly double the rate — governs every night after this one. ~20 calls, well
-# under an hour, and it leaves `windows` the rest.
-NIGHTLY_PLAN = ("ab_prompt", "windows", "questions", "resolve_veracity")
+# `ab_prompt` is done (2026-09-01) and its answer is adopted — see AB_PROMPT.md
+# and overnight_run.SYSTEM_PROMPT_FLAG. It is out of the rotation; re-add it by
+# name only if the prompt arrangement is questioned again.
+NIGHTLY_PLAN = ("windows", "questions", "resolve_veracity")
 
 
 def _next(hhmm: str, after: dt.datetime | None = None) -> dt.datetime:

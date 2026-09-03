@@ -181,6 +181,36 @@ def _usage(arm):
             "secs": g("duration_ms") / 1000}
 
 
+def _self_agreement(wids):
+    """How much the corpus prompt agrees with ITSELF on statement selection.
+
+    Arm A re-runs the exact prompt the corpus was built with, on windows the
+    corpus already holds, so comparing the two measures pure run-to-run noise.
+    That is the only honest yardstick for arm B: a changed prompt cannot be
+    expected to agree with A more than A agrees with the original.
+    """
+    orig = {}
+    path = os.path.join(HERE, SCORES)
+    if not os.path.exists(path):
+        return None
+    for line in open(path, encoding="utf-8"):
+        if line.strip():
+            r = json.loads(line)
+            if r["window_id"] in set(wids):
+                orig[r["window_id"]] = r.get("examples_by_attribute") or {}
+    A = _load(A_OUT)
+    if not orig:
+        return None
+    jacs = []
+    attrs = {a for w in wids for a in set(orig.get(w, {})) | set(A.get(w, {}))}
+    for attr in attrs:
+        sx = {e["statement"] for w in wids for e in orig.get(w, {}).get(attr, [])}
+        sy = {e["statement"] for w in wids for e in A.get(w, {}).get(attr, [])}
+        if sx or sy:
+            jacs.append(len(sx & sy) / len(sx | sy))
+    return statistics.mean(jacs) if jacs else None
+
+
 def report(out: str = "") -> None:
     """Compare the two arms. Spends nothing."""
     A, B = _load(A_OUT), _load(B_OUT)
@@ -260,10 +290,22 @@ def report(out: str = "") -> None:
     mean_ov = statistics.mean(overlaps) if overlaps else 0
     mean_r = statistics.mean(corrs) if corrs else float("nan")
     yield_ok = 0.85 <= (nb / na if na else 0) <= 1.15
+
+    # The floor: arm A is the corpus prompt re-run on windows the corpus already
+    # contains, so `original vs A` is how much this instrument disagrees with
+    # ITSELF. Without it a raw overlap number means nothing — I first gated this
+    # on an invented 0.50 and it rejected a change that was inside the noise.
+    floor = _self_agreement(shared)
     say("## Verdict\n")
     say(f"mean statement overlap {mean_ov:.2f}, mean score r {mean_r:.2f}, "
-        f"yield ratio {nb / na if na else 0:.2f}\n")
-    if yield_ok and mean_ov >= 0.5 and (mean_r >= 0.8 or corrs == []):
+        f"yield ratio {nb / na if na else 0:.2f}")
+    if floor is not None:
+        say(f"same-prompt floor (corpus vs arm A) {floor:.2f} — the most "
+            f"agreement any change could show\n")
+    else:
+        say("")
+    ov_ok = mean_ov >= (floor - 0.05) if floor is not None else mean_ov >= 0.5
+    if yield_ok and ov_ok and (mean_r >= 0.8 or corrs == []):
         n_done = sum(1 for _ in open(os.path.join(HERE, SCORES), encoding="utf-8"))
         say(f"**Same instrument within sampling noise.** Adopting B is a cost "
             f"change, not a measurement change — the {n_done:,} windows already "
