@@ -62,8 +62,6 @@ EX_FAIL = 70
 # rather than sleeping past it.
 TURN_HOURS = 1.0
 
-# Single-night default: finish Forthrightness, then resolve veracity.
-PLAN = ("questions", "resolve_veracity")
 
 # Nightly default. `pilot` is NOT in it: the 2025-10 month is complete at
 # window_tokens=3000 (260 windows, 3,703 examples) and audited, so re-running it
@@ -84,6 +82,9 @@ PLAN = ("questions", "resolve_veracity")
 # `ab_prompt` is done (2026-09-01) and its answer is adopted — see AB_PROMPT.md
 # and overnight_run.SYSTEM_PROMPT_FLAG. It is out of the rotation; re-add it by
 # name only if the prompt arrangement is questioned again.
+# Both entry points read this one list. They used to differ — `run` carried a
+# two-stage PLAN from the era when `windows` owned the whole night — and on
+# 2026-09-06 that silently started a night with no window extraction in it.
 NIGHTLY_PLAN = ("windows", "questions", "resolve_veracity")
 
 
@@ -166,7 +167,7 @@ def _one_night(stop: dt.datetime, plan, model, done: set) -> set:
 def run(at: str = "23:00", until: str = "06:00", model: str | None = None,
         stages: str = "") -> None:
     """Wait until `at`, then work the plan until `until`. One night only."""
-    plan = tuple(s.strip() for s in stages.split(",") if s.strip()) or PLAN
+    plan = tuple(s.strip() for s in stages.split(",") if s.strip()) or NIGHTLY_PLAN
     start = _next(at)
     stop = _next(until, after=start)
 
