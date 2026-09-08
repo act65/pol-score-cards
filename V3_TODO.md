@@ -204,6 +204,19 @@ the moment v3.0 scores are published, so these must ship together:
       Authenticity caveat; denominators shown for rate-based scores; fix the
       missing-attribute free pass (cards with 8 attributes median 45th, with 9
       median 71st).
+- [ ] 🤖 **Resolve a designed sample of Veracity/Divination claims.**
+      Nightly resolution was pulled on 2026-09-08: it drained ~58 claims a
+      night against ~425 created, so the backlog grew ~7x faster than it
+      cleared (~25,000 claims over the full term, ~430 nights) for 22% of each
+      night's budget. It also sampled by extraction order — 371 of 389
+      resolved claims came from one month of seven.
+      Do it once the claim pool is COMPLETE, so the sample can be stratified
+      (per MP, and across sitting months) and is therefore unbiased. Open
+      questions: sample size per MP for a usable CI; whether `not_yet_due` /
+      `uncheckable` (20% of returns, no score by design) should be drawn
+      against the quota or replaced; whether Divination needs its own rate
+      given how few claims it yields. `resolve.py` is unchanged and the 389
+      resolved rows are kept.
 
 ---
 
