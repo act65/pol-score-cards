@@ -82,10 +82,25 @@ TURN_HOURS = 1.0
 # `ab_prompt` is done (2026-09-01) and its answer is adopted — see AB_PROMPT.md
 # and overnight_run.SYSTEM_PROMPT_FLAG. It is out of the rotation; re-add it by
 # name only if the prompt arrangement is questioned again.
+# `resolve_veracity` was PULLED on 2026-09-08. It could not converge: at 1,235
+# of 5,548 windows the pool already held 5,588 pending claims against 389
+# resolved. Extraction emits ~4.5 claims per window (~425 a night) and the
+# resolver cleared ~58 a night, so the backlog grew about 7x faster than it
+# drained — the full term is ~25,000 claims, or ~430 nights — while taking 22%
+# of each night's output budget (256 s/call, and 20% of what it returned was
+# not_yet_due/uncheckable, which by design carry no score).
+#
+# It was also not accumulating a usable sample: it works in extraction order,
+# so 371 of its 389 resolved claims came from one month (2025-10) out of seven.
+# A stratified sample drawn from the FINISHED pool is unbiased, which a
+# chronological pass can never be. So: finish extraction first, then resolve a
+# designed sample. resolve.py is unchanged and the 389 resolved rows are kept.
+# Re-add by name (`--stages windows,questions,resolve_veracity`) to resume it.
+#
 # Both entry points read this one list. They used to differ — `run` carried a
 # two-stage PLAN from the era when `windows` owned the whole night — and on
 # 2026-09-06 that silently started a night with no window extraction in it.
-NIGHTLY_PLAN = ("windows", "questions", "resolve_veracity")
+NIGHTLY_PLAN = ("windows", "questions")
 
 
 def _next(hhmm: str, after: dt.datetime | None = None) -> dt.datetime:
