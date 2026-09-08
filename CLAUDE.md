@@ -103,6 +103,12 @@ python overnight_run.py run --hours 10 --stage windows    # full term
 python overnight_run.py run --hours 6  --stage questions  # Forthrightness over Q/A pairs
 python overnight_run.py status                            # progress, spends nothing
 
+# The scheduler runs under systemd so a crash or reboot cannot silently lose a
+# night (two were lost that way on 2026-09-04). Unit kept in the repo at
+# attribute-extraction/nz-scorecards-nightly.service.
+systemctl --user status nz-scorecards-nightly             # is tonight armed?
+systemctl --user disable --now nz-scorecards-nightly      # stop scheduling
+
 # Forthrightness is scored over question/answer PAIRS, not speech windows
 python extract_questions.py run --dry_run --source oral      #   924 calls
 python extract_questions.py run --dry_run --source written   # 7,097 calls — opt-in only

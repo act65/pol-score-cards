@@ -1,0 +1,30 @@
+[Unit]
+# Nightly v3.0 extraction for pol-score-cards. The scheduler sleeps until
+# 23:00, works the rotation until 06:00, then sleeps again. It spends NO
+# subscription quota outside that window.
+#
+# This unit exists because the machine crashed twice (2026-09-04, 2026-09-08)
+# and the run only came back when someone noticed. Two nights were lost the
+# first time.
+#
+# Remove with:
+#   systemctl --user disable --now nz-scorecards-nightly
+#   rm ~/.config/systemd/user/nz-scorecards-nightly.service
+Description=NZ scorecards nightly extraction (23:00-06:00)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/act65/Documents/repos/pol-score-cards/attribute-extraction
+Environment=PYTHONUNBUFFERED=1
+Environment=PATH=/home/act65/.local/bin:/home/act65/miniconda3/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/act65/miniconda3/bin/python tonight.py nightly --at 23:00 --until 06:00
+# on-failure, not always: the scheduler exits 0 when every stage is finished,
+# and that must be allowed to stay finished.
+Restart=on-failure
+RestartSec=60
+StandardOutput=append:/home/act65/Documents/repos/pol-score-cards/attribute-extraction/nightly.log
+StandardError=append:/home/act65/Documents/repos/pol-score-cards/attribute-extraction/nightly.log
+
+[Install]
+WantedBy=default.target
