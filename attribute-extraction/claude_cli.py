@@ -119,6 +119,29 @@ class QuotaExhausted(RuntimeError):
     """
 
 
+try:
+    import quota_budget
+except ImportError:                    # the budget is optional; run without it
+    quota_budget = None
+
+
+def _budget_gate() -> None:
+    """Stop BEFORE spawning if our own budget for the rolling window is spent.
+
+    The subscription's cap is shared with the user's daytime sessions and is
+    readable from nowhere, so this is not a quota reading — it is a ceiling we
+    put on ourselves so the overnight run cannot take the whole window. See
+    quota_budget.py. Re-raised as QuotaExhausted so the runner's existing
+    clean-stop path handles it unchanged.
+    """
+    if quota_budget is None:
+        return
+    try:
+        quota_budget.gate()
+    except quota_budget.BudgetExhausted as e:
+        raise QuotaExhausted(str(e)) from e
+
+
 def _is_quota_error(envelope: dict) -> bool:
     """True for the never-reached-the-API signature described above."""
     if not envelope.get("is_error"):
@@ -142,6 +165,7 @@ def call_structured(system: str, user: str, schema: dict, model: str = None,
     so we don't fall back to brittle text parsing. Closes the quality gap that the
     loose-JSON CLI path otherwise has vs the API.
     """
+    _budget_gate()
     # Both default off, and both switchable by environment so an A/B can flip
     # them for one run without editing call sites.
     if system_prompt_flag is None:

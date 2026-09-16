@@ -109,6 +109,12 @@ python overnight_run.py status                            # progress, spends not
 systemctl --user status nz-scorecards-nightly             # is tonight armed?
 systemctl --user disable --now nz-scorecards-nightly      # stop scheduling
 
+# A ceiling we put on OURSELVES so the night cannot take the whole rolling
+# window — the real cap is readable from nowhere and is shared with daytime
+# interactive sessions. Edit the dollars in quota_budget.json.
+python quota_budget.py status        # spend per window vs cap; spends nothing
+python quota_budget.py calibrate     # the real ceiling, measured from history
+
 # Forthrightness is scored over question/answer PAIRS, not speech windows
 python extract_questions.py run --dry_run --source oral      #   924 calls
 python extract_questions.py run --dry_run --source written   # 7,097 calls — opt-in only
