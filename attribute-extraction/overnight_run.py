@@ -69,6 +69,14 @@ USAGE_LOG = os.path.join(HERE, "usage_v3.jsonl")
 # run-to-run variation. Set SYSTEM_PROMPT_FLAG = "0" to revert.
 SYSTEM_PROMPT_FLAG = "1"
 
+# A ceiling WE put on ourselves, so the overnight run cannot take the whole
+# rolling window and leave nothing for daytime work. It is not a quota reading:
+# the real cap is readable from nowhere and is shared with interactive sessions
+# that never touch our log. See quota_budget.py; edit the dollar figures in
+# quota_budget.json. Hitting it raises QuotaExhausted, so the night stops
+# exactly the way a real quota block stops it, and the message says which.
+BUDGET_CONFIG = os.path.join(HERE, "quota_budget.json")
+
 SINCE = "2023-10-06"
 PILOT_MONTH = "2025-10"
 
@@ -263,7 +271,8 @@ def _pass(stage: str, timeout_s: float, model: str, backend: str) -> int:
         return subprocess.run(cmd, cwd=HERE,
                               env={**os.environ,
                                    "CLAUDE_CLI_USAGE_LOG": USAGE_LOG,
-                                   "CLAUDE_CLI_SYSTEM_FLAG": SYSTEM_PROMPT_FLAG},
+                                   "CLAUDE_CLI_SYSTEM_FLAG": SYSTEM_PROMPT_FLAG,
+                                   "CLAUDE_CLI_BUDGET": BUDGET_CONFIG},
                               timeout=max(30, timeout_s)).returncode
     except subprocess.TimeoutExpired:
         print("  pass hit the deadline — stopping cleanly (resumable)", flush=True)
