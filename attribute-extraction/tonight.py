@@ -111,9 +111,35 @@ def _next(hhmm: str, after: dt.datetime | None = None) -> dt.datetime:
     return target + dt.timedelta(days=1) if target <= after else target
 
 
+def _window_now(at: str, until: str, now: dt.datetime = None) -> tuple:
+    """(start, stop) for the window to work, joining one already in progress.
+
+    `_next` alone forfeits a whole night if the scheduler starts a minute late.
+    That happened on 2026-09-17: the machine booted at 23:09, nine minutes into
+    a 23:00-06:00 window, so `_next("23:00")` returned TOMORROW and it slept
+    23.85h with 6.8 usable hours sitting right there.
+
+    So if we are inside a window right now, start now and keep its real end.
+    Handles the midnight wrap, where `until` is earlier in the day than `at`.
+    """
+    now = now or dt.datetime.now()
+    todays_at = now.replace(hour=int(at.split(":")[0]),
+                            minute=int(at.split(":")[1]),
+                            second=0, microsecond=0)
+    for begin in (todays_at, todays_at - dt.timedelta(days=1)):
+        end = _next(until, after=begin)
+        if begin <= now < end:
+            return now, end
+    start = _next(at, after=now)
+    return start, _next(until, after=start)
+
+
 def _sleep_until(start: dt.datetime) -> None:
     """Sleep to `start`, waking hourly to log so a long wait looks alive."""
-    print(f"sleeping {(start - dt.datetime.now()).total_seconds() / 3600:.2f}h "
+    wait = (start - dt.datetime.now()).total_seconds()
+    if wait <= 0:
+        return                    # already inside the window; joined late
+    print(f"sleeping {wait / 3600:.2f}h "
           f"— NO subscription quota is used until then", flush=True)
     while True:
         left = (start - dt.datetime.now()).total_seconds()
@@ -183,8 +209,7 @@ def run(at: str = "23:00", until: str = "06:00", model: str | None = None,
         stages: str = "") -> None:
     """Wait until `at`, then work the plan until `until`. One night only."""
     plan = tuple(s.strip() for s in stages.split(",") if s.strip()) or NIGHTLY_PLAN
-    start = _next(at)
-    stop = _next(until, after=start)
+    start, stop = _window_now(at, until)
 
     print(f"scheduled: {start:%Y-%m-%d %H:%M} -> {stop:%H:%M}  "
           f"({(stop - start).total_seconds() / 3600:.2f}h)", flush=True)
@@ -216,10 +241,10 @@ def nightly(at: str = "00:00", until: str = "04:00", model: str | None = None,
 
     while not max_nights or night < max_nights:
         night += 1
-        start = _next(at)
-        stop = _next(until, after=start)
+        start, stop = _window_now(at, until)
+        joined = "" if start.strftime("%H:%M") == at else "  (joined late)"
         print(f"\n########## night {night}: {start:%Y-%m-%d %H:%M} -> "
-              f"{stop:%H:%M} ##########", flush=True)
+              f"{stop:%H:%M} ##########{joined}", flush=True)
         _sleep_until(start)
         done = _one_night(stop, plan, model, done)
 
