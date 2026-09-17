@@ -165,6 +165,46 @@ def _saved_ids(path: str) -> set:
     return ids
 
 
+# A pair the model DECLINES to score writes no output row, and the resume key
+# is the output row — so "declined" was indistinguishable from "not yet tried"
+# and 66 pairs were re-sent every night forever. Measured on the night of
+# 2026-09-17: `questions` held 3 of the 7 hours, re-attempting the same 66
+# pairs and scoring 2, while `windows` (which had real work) waited its turn.
+#
+# They are not hard, they are mis-paired: the Q/A parser matched "Supplementary?"
+# and "A point of order, Mr Speaker." to unrelated answers, and paired condolence
+# speeches with answers to other questions. The model is right to decline.
+#
+# So count attempts in a sidecar and stop after MAX_ATTEMPTS. A skipped pair
+# gets NO score, ever — same rule as `uncheckable` in the resolver. Recording
+# it as 0.0 would say the minister stonewalled a question nobody asked.
+MAX_ATTEMPTS = 3
+
+
+def _attempts_path(out: str) -> str:
+    stem = out[:-6] if out.endswith(".jsonl") else out
+    return f"{stem}_attempts.json"
+
+
+def _load_attempts(out: str) -> dict:
+    try:
+        with open(_attempts_path(out), encoding="utf-8") as f:
+            d = json.load(f)
+        return d if isinstance(d, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _save_attempts(out: str, attempts: dict) -> None:
+    try:
+        tmp = _attempts_path(out) + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(attempts, f)
+        os.replace(tmp, _attempts_path(out))
+    except OSError:
+        pass          # bookkeeping must never break a scoring run
+
+
 def run(out: str = "forthrightness_scores.jsonl", source: str = "oral",
         since: str = "", per_call: int = 12, max_chars: int = 24000,
         workers: int = 4, model: str = extract.DEFAULT_MODEL,
@@ -177,7 +217,13 @@ def run(out: str = "forthrightness_scores.jsonl", source: str = "oral",
     system = extract.load_prompt("forthrightness") + _INSTRUCTION
     rows = load_pairs(source, since=since, dedupe=dedupe)
     done = _saved_ids(out)
-    todo = [r for r in rows if r["id"] not in done]
+    attempts = _load_attempts(out)
+    givenup = {i for i, n in attempts.items() if n >= MAX_ATTEMPTS}
+    todo = [r for r in rows
+            if r["id"] not in done and r["id"] not in givenup]
+    if givenup:
+        print(f"giving up on {len(givenup):,} pairs the model declined "
+              f"{MAX_ATTEMPTS}x — no score, see {_attempts_path(out)}")
     if limit:
         todo = todo[:limit]
     batches = list(_batches(todo, per_call, max_chars))
@@ -224,6 +270,8 @@ def run(out: str = "forthrightness_scores.jsonl", source: str = "oral",
 
     written = 0
     quota_spent = False
+    scored_ids: set = set()
+    attempted: list = []          # batches that actually got an answer back
     with open(out, "a") as fh, ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
         futures = {ex.submit(work, b): b for b in batches}
         for fut in as_completed(futures):
@@ -240,6 +288,7 @@ def run(out: str = "forthrightness_scores.jsonl", source: str = "oral",
             except Exception as e:  # noqa: BLE001
                 print(f"error on a batch: {e}", flush=True)
                 continue
+            attempted.append(futures[fut])
             with lock:
                 for qid, score, why in results:
                     row = by_id.get(str(qid))
@@ -258,8 +307,25 @@ def run(out: str = "forthrightness_scores.jsonl", source: str = "oral",
                         "question": row["question"], "statement": row["answer"],
                     }, ensure_ascii=False) + "\n")
                     written += 1
+                    scored_ids.add(row["id"])
                 fh.flush()
                 print(f"[{written}/{len(todo)}] scored", flush=True)
+
+    # Only batches that came back count as an attempt. A batch cancelled by a
+    # quota block never reached the model, and charging it an attempt would
+    # silently discard real work after three blocked nights.
+    missed = 0
+    for batch in attempted:
+        for r in batch:
+            if r["id"] not in scored_ids:
+                attempts[r["id"]] = attempts.get(r["id"], 0) + 1
+                missed += 1
+    if missed:
+        _save_attempts(out, attempts)
+        spent = sum(1 for r in todo if attempts.get(r["id"], 0) >= MAX_ATTEMPTS)
+        print(f"declined this pass: {missed:,}"
+              + (f" — {spent:,} have now hit {MAX_ATTEMPTS} attempts and will "
+                 f"not be retried" if spent else ""))
 
     print(f"done: wrote {written:,} scores -> {out}")
     if quota_spent:

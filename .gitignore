@@ -181,3 +181,4 @@ site/static/img/portraits/masks/
 attribute-extraction/site_data_v3/
 attribute-extraction/ab_usage_*.jsonl
 attribute-extraction/usage_v3.jsonl
+attribute-extraction/forthrightness_scores_v3_attempts.json
