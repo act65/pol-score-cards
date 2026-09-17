@@ -1,1 +1,9 @@
 *.json
+
+# `*.json` above is for scraped payloads and run scratch. These two are
+# CONFIG and PROVENANCE and must travel with the repo — quota_budget.json
+# silently failed to commit on 2026-09-17 because of the blanket rule, which
+# would have left a fresh clone on the built-in $60/5h fallback, BELOW the
+# ceiling the run had already been hitting.
+!quota_budget.json
+!forthrightness_scores_v3_attempts.json
