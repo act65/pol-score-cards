@@ -2,14 +2,14 @@
   "windows": [
     {
       "hours": 5,
-      "max_cost_usd": 150.0,
-      "why": "Anthropic's cap is a rolling ~5h window, so this is the one that binds. $150 is roughly 2x the ceiling measured on the previous tier ($77 in the busiest 5h window, 2026-09-16), which the run hit night after night. Set deliberately above the old ceiling to use the 20x upgrade, and deliberately below any plausible 20x cap so the morning is not eaten."
+      "max_cost_usd": 300.0,
+      "why": "BURST VALUE for 2026-09-18/19. Normally 150. Raised so our own ceiling cannot stop the run before the subscription window resets at 2026-09-19 10:00 \u2014 the whole point of the burst is to reach the real cap, not ours."
     },
     {
       "hours": 168,
-      "max_cost_usd": 1000.0,
-      "why": "A weekly backstop, not the working limit — about $143/night over seven nights. It exists so a bug that loops cannot burn a month of quota in one night."
+      "max_cost_usd": 2000.0,
+      "why": "BURST VALUE. Normally 1000, which a 14h continuous run would have hit ($450 already spent this week). Still a runaway guard, just a looser one."
     }
   ],
-  "note": "PLACEHOLDERS, first night on Max 20x (2026-09-16). Nobody knows the new ceiling yet. Run `python quota_budget.py calibrate` after a night or two: if quota blocks reappear, the busiest window IS the real cap and the reserve can be set as a share of it. If no blocks appear, we never reached it and these caps are what limited us."
+  "note": "BURST CONFIG, expires 2026-09-19 10:00. The nightly values are saved beside this file as quota_budget.json.nightly \u2014 restore them after the reset, or the daytime reserve is gone for good."
 }
