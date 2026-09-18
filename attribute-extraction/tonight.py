@@ -258,6 +258,38 @@ def nightly(at: str = "00:00", until: str = "04:00", model: str | None = None,
             return
 
 
+def burst(until: str, model: str | None = None, stages: str = "") -> None:
+    """Work the rotation continuously from NOW until an explicit deadline.
+
+    `run` and `nightly` are bounded by a clock TIME, so neither can express a
+    window longer than one night — `--until 10:00` means the next 10:00, which
+    is why they cannot be used to spend a usage allowance that resets at a
+    fixed moment tomorrow.
+
+    `until` is a full datetime: "2026-09-19 10:00".
+
+    This deliberately spends quota during the day, which the nightly schedule
+    exists to avoid. Use it only when asked to.
+    """
+    plan = tuple(x.strip() for x in stages.split(",") if x.strip()) or NIGHTLY_PLAN
+    stop = dt.datetime.fromisoformat(until)
+    now = dt.datetime.now()
+    if stop <= now:
+        raise SystemExit(f"{stop:%Y-%m-%d %H:%M} is not in the future")
+
+    hours = (stop - now).total_seconds() / 3600
+    print(f"BURST: {now:%Y-%m-%d %H:%M} -> {stop:%Y-%m-%d %H:%M}  "
+          f"({hours:.1f}h, continuous)", flush=True)
+    print(f"  stages, rotating: {' -> '.join(plan)}", flush=True)
+    print("  this spends quota NOW, not only overnight", flush=True)
+
+    done = _one_night(stop, plan, model, set())
+
+    print(f"\n=== {dt.datetime.now():%H:%M} — burst finished "
+          f"({len(done)}/{len(plan)} stages complete) ===", flush=True)
+    subprocess.run([PY, "overnight_run.py", "status"], cwd=HERE)
+
+
 def status(at: str = "00:00") -> None:
     """What is scheduled and what exists so far. Spends nothing."""
     now = dt.datetime.now()
@@ -269,4 +301,5 @@ def status(at: str = "00:00") -> None:
 
 
 if __name__ == "__main__":
-    fire.Fire({"run": run, "nightly": nightly, "status": status})
+    fire.Fire({"run": run, "nightly": nightly, "burst": burst,
+               "status": status})
