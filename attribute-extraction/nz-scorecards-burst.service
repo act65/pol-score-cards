@@ -18,6 +18,10 @@ Environment=PATH=/home/act65/.local/bin:/home/act65/miniconda3/bin:/usr/local/bi
 ExecStart=/home/act65/miniconda3/bin/python tonight.py burst --until "2026-09-19 10:00"
 Restart=on-failure
 RestartSec=30
-ExecStopPost=/bin/systemctl --user start nz-scorecards-nightly.service
+# --no-block is REQUIRED, not tidiness. Without it this deadlocked on
+# 2026-09-19: `systemctl start` waits for its job, but the job is queued
+# behind this unit's own deactivation (Conflicts=), so stop-post timed
+# out after 90s, was killed, and the nightly schedule never came back.
+ExecStopPost=/bin/systemctl --user --no-block start nz-scorecards-nightly.service
 StandardOutput=append:/home/act65/Documents/repos/pol-score-cards/attribute-extraction/nightly.log
 StandardError=append:/home/act65/Documents/repos/pol-score-cards/attribute-extraction/nightly.log
