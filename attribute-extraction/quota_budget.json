@@ -2,14 +2,14 @@
   "windows": [
     {
       "hours": 5,
-      "max_cost_usd": 250.0,
-      "why": "Restored from the burst, but NOT to the old $150 \u2014 that was set when a night cost $96 per 5h, and it would now throttle one. With `questions` finished, windows runs flat out: the busiest 5h of the 2026-09-18/19 burst cost $155.71. $250 clears a full night with room, and still stops a runaway."
+      "max_cost_usd": 400.0,
+      "why": "No reserve (user, 2026-09-19, weekend). The busiest 5h ever recorded is $155.71, so this cannot throttle anything; it exists only to stop a loop."
     },
     {
       "hours": 168,
-      "max_cost_usd": 1800.0,
-      "why": "A week of full nights at ~$200 is ~$1,400, so the old $1,000 would have cut two nights off every week. This is a guard against a loop, not a throttle."
+      "max_cost_usd": 3000.0,
+      "why": "A 23h run adds ~$720 to the $864 already spent this week. The old $1,800 would have bound near the end. Runaway guard only."
     }
   ],
-  "note": "Nightly values, restored 2026-09-19 after the burst. These are now a RUNAWAY GUARD rather than a daytime reserve: the burst ran 14.2h continuously at 2 workers without ever reaching the subscription's cap, so the pipeline cannot take the whole window even if allowed to. The only way to lose throughput now is to set these too low."
+  "note": "NO RESERVE, set 2026-09-19. These are a runaway guard, not a throttle. If a daytime reserve is wanted again, the number that matters is the 5h cap \u2014 a full night's peak is ~$156."
 }
