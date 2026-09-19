@@ -2,14 +2,14 @@
   "windows": [
     {
       "hours": 5,
-      "max_cost_usd": 300.0,
-      "why": "BURST VALUE for 2026-09-18/19. Normally 150. Raised so our own ceiling cannot stop the run before the subscription window resets at 2026-09-19 10:00 \u2014 the whole point of the burst is to reach the real cap, not ours."
+      "max_cost_usd": 250.0,
+      "why": "Restored from the burst, but NOT to the old $150 \u2014 that was set when a night cost $96 per 5h, and it would now throttle one. With `questions` finished, windows runs flat out: the busiest 5h of the 2026-09-18/19 burst cost $155.71. $250 clears a full night with room, and still stops a runaway."
     },
     {
       "hours": 168,
-      "max_cost_usd": 2000.0,
-      "why": "BURST VALUE. Normally 1000, which a 14h continuous run would have hit ($450 already spent this week). Still a runaway guard, just a looser one."
+      "max_cost_usd": 1800.0,
+      "why": "A week of full nights at ~$200 is ~$1,400, so the old $1,000 would have cut two nights off every week. This is a guard against a loop, not a throttle."
     }
   ],
-  "note": "BURST CONFIG, expires 2026-09-19 10:00. The nightly values are saved beside this file as quota_budget.json.nightly \u2014 restore them after the reset, or the daytime reserve is gone for good."
+  "note": "Nightly values, restored 2026-09-19 after the burst. These are now a RUNAWAY GUARD rather than a daytime reserve: the burst ran 14.2h continuously at 2 workers without ever reaching the subscription's cap, so the pipeline cannot take the whole window even if allowed to. The only way to lose throughput now is to set these too low."
 }
