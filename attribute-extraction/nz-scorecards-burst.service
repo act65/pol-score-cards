@@ -2,11 +2,12 @@
 # A one-off continuous run to spend the subscription window before it resets
 # at 2026-09-19 10:00. Deliberately spends quota during the day, which the
 # nightly unit exists to avoid — hence a separate, non-enabled unit.
+# Re-pointed 2026-09-19 for a second, longer burst (~23h).
 #
 # Conflicts= stops the nightly scheduler while this runs; ExecStopPost= starts
 # it again when this finishes, so the normal 23:00-06:00 schedule resumes on
 # its own with nobody needing to remember.
-Description=NZ scorecards burst run (until 2026-09-19 10:00)
+Description=NZ scorecards burst run (until 2026-09-20 09:00)
 Conflicts=nz-scorecards-nightly.service
 After=nz-scorecards-nightly.service
 
@@ -15,7 +16,7 @@ Type=simple
 WorkingDirectory=/home/act65/Documents/repos/pol-score-cards/attribute-extraction
 Environment=PYTHONUNBUFFERED=1
 Environment=PATH=/home/act65/.local/bin:/home/act65/miniconda3/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/home/act65/miniconda3/bin/python tonight.py burst --until "2026-09-19 10:00"
+ExecStart=/home/act65/miniconda3/bin/python tonight.py burst --until "2026-09-20 09:00"
 Restart=on-failure
 RestartSec=30
 # --no-block is REQUIRED, not tidiness. Without it this deadlocked on
