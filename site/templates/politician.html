@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ politician.name }} — NZ Politician Scorecards</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='card.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    {% set party_colors = {
+        'Labour': '#D82A20', 'National': '#00529F', 'Green': '#098137',
+        'Greens': '#098137', 'ACT': '#F5C400', 'NZ First': '#1a1a1a',
+        'Te Pāti Māori': '#B5121B', 'Māori Party': '#B5121B',
+        'Opportunity': '#0a9c96', 'TOP': '#0a9c96'
+    } %}
+    {% set colour = party_colors.get(politician.party, '#475569') %}
+    {% macro glyph(attr) %}{% if attr.svg %}{{ attr.svg|safe }}{% else %}{{ attr.symbol }}{% endif %}{% endmacro %}
+
+    <header class="site-header">
+        <a href="/"><h1>NZ Politician Scorecards</h1></a>
+        <div class="top-right-link"><a href="/">Back to cards</a> &nbsp;·&nbsp; <a href="/party">Parties</a> &nbsp;·&nbsp; <a href="/about">About</a></div>
+    </header>
+
+    <main class="mp-page">
+        <div class="mp-head">
+            <div class="sc-card" style="--party: {{ colour }}; --grade: {{ grade }};">
+                <div class="sc-banner">
+                    <h3 class="sc-name">{{ politician.name }}</h3>
+                    <span class="sc-party">{{ politician.party }}</span>
+                </div>
+                <div class="sc-art">
+                    {% if politician.image %}
+                    <img class="sc-portrait" src="{{ url_for('static', filename=politician.image) }}" alt="{{ politician.name }}">
+                    {% else %}
+                    <span class="sc-initials">{{ politician.name.split()|map('first')|join|upper }}</span>
+                    {% endif %}
+                </div>
+                <div class="sc-stats">
+                    {% for attribute in all_attributes %}
+                        {% if attribute.id in scores %}
+                            {% set sc = scores[attribute.id] %}
+                            {% set tier = 'low' if sc < 40 else ('mid' if sc < 70 else 'high') %}
+                            {% set unver = scores.get(attribute.id ~ '_tier') == 'unresolved' %}
+                            <a class="sc-stat{{ ' unverified' if unver }}" href="#{{ attribute.id }}"
+                               title="{{ attribute.name }}">
+                                <span class="sc-icon">{{ glyph(attribute) }}</span>
+                                <span class="sc-val {{ tier }}">{{ sc }}{% if unver %}<span class="sc-unver">?</span>{% endif %}</span>
+                            </a>
+                        {% else %}
+                            <span class="sc-stat" title="{{ attribute.name }} — not scored">
+                                <span class="sc-icon">{{ glyph(attribute) }}</span>
+                                <span class="sc-val na">—</span>
+                            </span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="mp-summary">
+                <h2>{{ politician.name }}</h2>
+                <p class="mp-sub">{{ politician.party }}{% if politician.role %} · {{ politician.role }}{% endif %}</p>
+                <p class="mp-overall"><strong>{{ overall }}</strong> overall{% if rank %} — {{ rank }}{{ 'st' if rank % 10 == 1 and rank != 11 else ('nd' if rank % 10 == 2 and rank != 12 else ('rd' if rank % 10 == 3 and rank != 13 else 'th')) }} of {{ ranked_of }}{% endif %}</p>
+                <p class="muted">The geometric mean of the {{ sections|length }} attribute
+                   {{ 'scores' if sections|length != 1 else 'score' }} on the card, so one weak
+                   attribute pulls the whole number down. The pass mark on every attribute is 100 —
+                   these are floors, not stretch goals.</p>
+                <p class="muted">Below, a few of {{ politician.name }}'s statements per attribute,
+                   <strong>drawn at random</strong> from everything scored rather than picked to
+                   flatter or to damn. Follow any attribute to see all of them.</p>
+            </div>
+        </div>
+
+        {% for sec in sections %}
+        <section class="mp-attr" id="{{ sec.attribute.id }}">
+            <div class="mp-attr-head">
+                <span class="sc-icon">{{ glyph(sec.attribute) }}</span>
+                <h3>{{ sec.attribute.name }}</h3>
+                <span class="mp-attr-score{{ ' unverified' if sec.unverified }}">{{ sec.score }}{% if sec.unverified %}<span class="sc-unver" title="Unverified: the model's own estimate, not checked against a source.">?</span>{% endif %}</span>
+                <span class="mp-attr-n">from {{ '{:,}'.format(sec.n) }} scored statement{{ 's' if sec.n != 1 }}{% if sec.ci %} · ±{{ sec.ci }}{% endif %}</span>
+            </div>
+            <p class="mp-attr-def">{{ sec.attribute.definition or sec.attribute.blurb }}</p>
+            <ul class="mp-quotes">
+                {% for e in sec.examples %}
+                <li>
+                    <span class="mp-q-score {{ 'low' if e.score < 40 else ('mid' if e.score < 70 else 'high') }}">{{ e.score }}</span>
+                    <div>
+                        <blockquote>“{{ e.text }}”</blockquote>
+                        <p class="mp-q-meta">{{ e.context }}{% if e.source_url %} · <a href="{{ e.source_url }}" target="_blank" rel="noopener">source →</a>{% endif %}</p>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            <p class="mp-more"><a href="{{ url_for('attribute_detail', politician_id=politician.id, attribute=sec.attribute.id) }}">See all {{ '{:,}'.format(sec.n) }} statements behind this score →</a></p>
+        </section>
+        {% endfor %}
+
+        {% if not sections %}
+        <p class="muted">No attribute has enough evidence to score for this politician yet.</p>
+        {% endif %}
+    </main>
+
+    <footer class="site-footer">
+        <p><strong>Prototype.</strong> Scores are automated estimates from a sample of public
+           statements — not verified fact. <a href="/about">About &amp; method →</a></p>
+    </footer>
+</body>
+</html>

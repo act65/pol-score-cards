@@ -8,7 +8,22 @@ numbers printed on the card, and the deviation bars have to share one scale
 across cards or a long bar means a different thing on each.
 """
 
+import pytest
+
 import app
+
+
+@pytest.fixture(autouse=True)
+def _restore_attribute_set():
+    """`_attrs()` below points the module's attribute set at a test-local one.
+
+    It is module state, so without this the stub leaks into every later test in
+    the session — including other files, where `_featured()` then finds no
+    scored attributes and returns an empty grid.
+    """
+    original = app.ATTR_NAMES
+    yield
+    app.ATTR_NAMES = original
 
 
 def _mp(pid, party, scores, geo=None):

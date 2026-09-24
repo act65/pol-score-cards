@@ -506,3 +506,49 @@ a.dl-btn:hover { border-color: #3b82f6; background: #f0f6ff; color: #1e40af; }
 /* Sub-headings inside the dataset page's audit section — dark, not link-blue,
    so they don't read as clickable. */
 .about h4, .data-page h4 { margin: 22px 0 6px; color: #1e293b; font-size: 1.02em; }
+
+/* --- One politician (/politician/<id>) ------------------------------------- */
+.mp-page { max-width: 900px; margin: 0 auto; padding: 18px 20px 30px; }
+.mp-head { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 26px; }
+.mp-summary { flex: 1 1 380px; min-width: 300px; }
+.mp-summary h2 { margin: 0; font-size: 1.6em; color: #0f172a; }
+.mp-sub { margin: 2px 0 10px; color: #64748b; }
+.mp-overall { margin: 0 0 10px; font-size: 1.05em; color: #334155; }
+.mp-overall strong { font-size: 1.6em; color: #0f172a; font-variant-numeric: tabular-nums; }
+
+.mp-attr { padding: 16px 0 6px; border-top: 1px solid #e2e8f0; }
+.mp-attr-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.mp-attr-head .sc-icon { width: 1.4em; height: 1.4em; color: #3d372e; align-self: center; }
+.mp-attr-head h3 { margin: 0; font-size: 1.15em; color: #0f172a; }
+.mp-attr-score { font-size: 1.3em; font-weight: 800; color: #14110d; font-variant-numeric: tabular-nums; }
+.mp-attr-score.unverified { opacity: 0.72; }
+.mp-attr-n { color: #94a3b8; font-size: 0.85em; }
+.mp-attr-def { margin: 4px 0 10px; color: #64748b; font-size: 0.93em; }
+
+.mp-quotes { list-style: none; padding: 0; margin: 0; }
+.mp-quotes li { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 14px; }
+.mp-q-score {
+    flex: none; min-width: 2.4em; padding: 3px 6px; border-radius: 5px;
+    text-align: center; font-weight: 800; font-size: 0.88em; color: #fff;
+    font-variant-numeric: tabular-nums;
+}
+.mp-q-score.low { background: #b45309; }
+.mp-q-score.mid { background: #64748b; }
+.mp-q-score.high { background: #15803d; }
+.mp-quotes blockquote { margin: 0; font-style: italic; color: #1e293b; line-height: 1.5; }
+.mp-q-meta { margin: 3px 0 0; font-size: 0.82em; color: #94a3b8; }
+.mp-more { margin: 2px 0 0; font-size: 0.92em; }
+
+/* --- Evidence page --------------------------------------------------------- */
+.ev-back { color: inherit; text-decoration: none; }
+.ev-back:hover { text-decoration: underline; }
+.ev-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 18px; }
+.ev-head h4 { margin: 0; }
+.ev-sort { font-size: 0.9em; color: #475569; }
+.ev-sort select { font: inherit; padding: 3px 7px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; }
+.ev-order-note { margin: 4px 0 12px; font-size: 0.86em; color: #94a3b8; }
+.ev-unver-note {
+    margin: 12px 0; padding: 10px 14px; font-size: 0.92em; color: #4a4335;
+    background: #fdfaf2; border: 1px solid #e8dfc8; border-left: 3px solid #a8341f;
+    border-radius: 6px;
+}

@@ -31,11 +31,19 @@
                 <span><b>{{ attribute.name }}</b> — <span class="blurb">{{ attribute.blurb or attribute.definition }}</span></span></li>
             {% endfor %}
         </ul>
-        <div class="sc-rarity-key">
-            <span class="rk-label">Rarity (the card's border colour) — overall rank by the geometric mean of all {{ all_attributes|length }} attributes, so one weak attribute drags the card down:</span>
-            {% for name, colour in rarity_tiers %}
-            <span class="rk-item"><span class="rk-swatch" style="--rarity: {{ colour }};"></span>{{ name|capitalize }}</span>
-            {% endfor %}
+        <div class="sc-grade-key">
+            <span class="gk-label">The card's <b>border colour</b> is its overall score — the geometric
+                mean of all {{ all_attributes|length }} attributes, so one weak attribute pulls the whole
+                card down. The pass mark on every attribute is 100, and the scale below runs to 80:</span>
+            <div class="gk-bar" style="background: linear-gradient(to right, {{ grade_ramp|join(', ') }});"></div>
+            <div class="gk-ticks">
+                {% for t in grade_ticks %}
+                <span style="left: {{ 100 * (t - grade_window[0]) / (grade_window[1] - grade_window[0]) }}%">{{ t }}</span>
+                {% endfor %}
+            </div>
+            <span class="gk-note">Every card in this Parliament sits between 43 and 74. A score marked
+                <b class="sc-unver-key">?</b> is the model's own estimate rather than a check against a
+                source — see <a href="/about">about</a>.</span>
         </div>
     </details>
 
@@ -45,7 +53,7 @@
     <div class="sc-controls">
         <label>Order by:
             <select id="sortSel">
-                <option value="rarity">Rarity (overall)</option>
+                <option value="rarity">Overall score</option>
                 {% for attribute in all_attributes %}
                 <option value="{{ attribute.id }}">{{ attribute.name }}</option>
                 {% endfor %}
@@ -56,6 +64,9 @@
                 <option value="desc">Highest first</option>
                 <option value="asc">Lowest first</option>
             </select>
+        </label>
+        <label>Find:
+            <input id="nameSearch" type="search" placeholder="name…" autocomplete="off">
         </label>
         <label>Party:
             <select id="partySel">
@@ -78,23 +89,28 @@
     <div class="politician-list-container">
         {% for item in politicians_data %}
         {% set colour = party_colors.get(item.politician.party, '#475569') %}
-        <div class="sc-card" title="{{ item.rarity_name|capitalize }}{% if item.politician.role %} · {{ item.politician.role }}{% endif %}"
+        {# The banner and portrait link to the politician's own page; the stats
+           below link to their evidence. Two link targets, never nested. #}
+        <div class="sc-card" title="Overall {{ item.overall }} — {{ item.rank }} of {{ shown_count }}{% if item.politician.role %} · {{ item.politician.role }}{% endif %}"
              data-party="{{ item.politician.party }}" data-geo="{{ item.geo }}"
+             data-name="{{ item.politician.name|lower }}"
              data-role="{{ item.politician.leadership or '' }}"
              data-scores='{{ item.scores|tojson }}'
-             style="--party: {{ colour }}; --rarity: {{ item.rarity }};">
-            <div class="sc-banner">
-                <h3 class="sc-name">{{ item.politician.name }}</h3>
-                <span class="sc-party">{{ item.politician.party }}</span>
-            </div>
-            <div class="sc-art">
-                {% if item.politician.image %}
-                <img class="sc-portrait" src="{{ url_for('static', filename=item.politician.image) }}"
-                     alt="{{ item.politician.name }}" loading="lazy">
-                {% else %}
-                <span class="sc-initials">{{ item.politician.name.split()|map('first')|join|upper }}</span>
-                {% endif %}
-            </div>
+             style="--party: {{ colour }}; --grade: {{ item.grade }};">
+            <a class="sc-open" href="{{ url_for('politician_page', politician_id=item.politician.id) }}">
+                <div class="sc-banner">
+                    <h3 class="sc-name">{{ item.politician.name }}</h3>
+                    <span class="sc-party">{{ item.politician.party }}</span>
+                </div>
+                <div class="sc-art">
+                    {% if item.politician.image %}
+                    <img class="sc-portrait" src="{{ url_for('static', filename=item.politician.image) }}"
+                         alt="{{ item.politician.name }}" loading="lazy">
+                    {% else %}
+                    <span class="sc-initials">{{ item.politician.name.split()|map('first')|join|upper }}</span>
+                    {% endif %}
+                </div>
+            </a>
             <div class="sc-stats">
                 {% for attribute in all_attributes %}
                     {% if attribute.id in item.scores %}
@@ -128,12 +144,14 @@
         const sortSel = document.getElementById('sortSel');
         const dirSel = document.getElementById('dirSel');
         const partySel = document.getElementById('partySel');
+        const nameSearch = document.getElementById('nameSearch');
         const roleSel = document.getElementById('roleSel');
         const countEl = document.getElementById('cardCount');
         const cards = Array.from(grid.querySelectorAll('.sc-card')).map(function (el) {
             let scores = {};
             try { scores = JSON.parse(el.dataset.scores || '{}'); } catch (e) {}
             return { el: el, party: el.dataset.party || '', role: el.dataset.role || '',
+                     name: el.dataset.name || '',
                      geo: parseFloat(el.dataset.geo) || 0, scores: scores };
         });
         function sortKey(c, s) {
@@ -144,7 +162,9 @@
         function apply() {
             const s = sortSel.value, p = partySel.value, r = roleSel.value;
             const asc = dirSel.value === 'asc';
+            const q = (nameSearch.value || '').trim().toLowerCase();
             const visible = cards.filter(function (c) {
+                if (q && c.name.indexOf(q) === -1) return false;
                 if (p !== 'all' && c.party !== p) return false;
                 if (r === 'any') return c.role !== '';
                 if (r === 'leader') return c.role === 'leader';
@@ -165,6 +185,7 @@
         [sortSel, dirSel, partySel, roleSel].forEach(function (el) {
             el.addEventListener('change', apply);
         });
+        nameSearch.addEventListener('input', apply);
         apply();
     })();
     </script>

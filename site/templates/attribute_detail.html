@@ -27,28 +27,46 @@
 <body>
     <a href="/"><h1>NZ Politician Scorecards</h1></a>
     <div class="top-right-link">
-        <a href="/about">About</a>
+        <a href="{{ url_for('politician_page', politician_id=politician.id) }}">{{ politician.name }}'s card</a>
+        &nbsp;·&nbsp; <a href="/">All cards</a> &nbsp;·&nbsp; <a href="/about">About</a>
     </div>
     <div class="attribute-detail-container">
-        <h2>{{ politician.name }}</h2>
-        <p>Party: {{ politician.party }}</p>
+        <h2><a class="ev-back" href="{{ url_for('politician_page', politician_id=politician.id) }}">{{ politician.name }}</a></h2>
+        <p>{{ politician.party }}{% if politician.role %} · {{ politician.role }}{% endif %}</p>
         <h3>{{ attribute_info.name }} Score: {{ score }}{% if meta and meta.ci is not none %}
             <span class="ci">±{{ meta.ci }}</span>{% endif %}
             {% if meta and meta.conf %}<span class="conf conf-{{ meta.conf }}">{{ meta.conf }} confidence</span>{% endif %}</h3>
         <p>Description: {{ attribute_info.definition }}</p>
         <p class="aggregate-note">
            {% if meta and meta.n %}Based on <strong>{{ meta.n }}</strong> scored statement{{ '' if meta.n == 1 else 's' }}
-              from Hansard debates and press conferences (each quote's source is shown below){{ ' — treat single-statement scores with caution' if meta.n == 1 else '' }}.
+              from Hansard, the verbatim parliamentary record (every quote links to its sitting day){{ ' — treat single-statement scores with caution' if meta.n == 1 else '' }}.
               The headline number is a <em>bias-adjusted</em> estimate (empirical-Bayes): thin samples are pulled
               toward the typical value for this attribute, and ± is the 95% confidence band. The raw per-statement
               scores are shown below.
            {% else %}The score above aggregates the statements below.{% endif %}</p>
+        {% if scores and scores.get(attribute_info.id ~ '_tier') == 'unresolved' %}
+        <p class="ev-unver-note"><strong>Unverified.</strong> This score is the model's own estimate,
+           not a check against a source. The evidence below is real and quoted; the <em>verdict</em> on
+           each claim is not yet in. <a href="/data">How far the estimate tends to be off →</a></p>
+        {% endif %}
+
         {% if examples %}
-            <h4>Evidence — the statements behind this score:</h4>
+            <div class="ev-head">
+                <h4>Evidence — the {{ '{:,}'.format(examples|length) }} statements behind this score</h4>
+                <label class="ev-sort">Order:
+                    <select id="evSort">
+                        <option value="shuffle">Random</option>
+                        <option value="desc">Highest first</option>
+                        <option value="asc">Lowest first</option>
+                    </select>
+                </label>
+            </div>
+            <p class="ev-order-note">Shown in random order by default. Sorted highest-first, a low score
+               opens with its best moments — which is the opposite of the evidence for it.</p>
             <ul class="evidence-list">
             {% for example in examples %}
                 {% set tier = 'low' if (example.score is not none and example.score < 40) else ('mid' if (example.score is not none and example.score < 70) else 'high') %}
-                <li class="evidence">
+                <li class="evidence" data-score="{{ example.score if example.score is not none else -1 }}">
                     {% if example.score is not none %}
                         <span class="ev-score {{ tier }}">{{ example.score }}</span>
                     {% endif %}
@@ -85,5 +103,29 @@
     <div class="back-link">
         <a href="/">Back to Main Page</a>
     </div>
+    <script>
+    (function () {
+        const sel = document.getElementById('evSort');
+        const list = document.querySelector('.evidence-list');
+        if (!sel || !list) return;
+        const items = Array.from(list.querySelectorAll('.evidence'));
+        // The server already shuffled, seeded on (politician, attribute), so the
+        // page is the same for everyone and stable across reloads. Keep that
+        // order as "Random" rather than reshuffling in the browser.
+        const shuffled = items.slice();
+        function apply() {
+            const mode = sel.value;
+            let order = shuffled;
+            if (mode !== 'shuffle') {
+                order = items.slice().sort(function (a, b) {
+                    const av = parseFloat(a.dataset.score), bv = parseFloat(b.dataset.score);
+                    return mode === 'asc' ? av - bv : bv - av;
+                });
+            }
+            order.forEach(function (el) { list.appendChild(el); });
+        }
+        sel.addEventListener('change', apply);
+    })();
+    </script>
 </body>
 </html>
