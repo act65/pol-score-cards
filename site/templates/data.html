@@ -18,12 +18,9 @@
         <p>Dataset stats haven't been generated yet. Run <code>python gen_data_stats.py</code>.</p>
         {% else %}
         {% set t = stats.totals %}
-        <p class="data-intro">The scores are derived from three sources for the 54th New Zealand
-           Parliament: the <strong>Hansard</strong> debate record (every MP), the transcripts of the
-           weekly <strong>post-Cabinet press conferences</strong> (the PM and senior ministers), and
-           the parties' <strong>press releases</strong>. Statements from all three are blended into
-           each politician's scores; the breakdown below shows exactly how much data sits behind the
-           cards, and where it comes from.</p>
+        <p class="data-intro">Every score comes from one source: the <strong>Hansard</strong> debate
+           record of the 54th New Zealand Parliament, which covers every MP. The breakdown below shows
+           exactly how much data sits behind the cards.</p>
 
         <section class="stat-cards">
             <div class="stat-card"><span class="big">{{ '{:,}'.format(t.statements) }}</span><span class="lbl">evidence statements</span></div>
@@ -36,7 +33,7 @@
         </section>
 
 
-        <h3>The three sources</h3>
+        <h3>The source{{ 's' if stats.per_source|length != 1 }}</h3>
         <div class="source-list">
             {% for s in stats.per_source %}
             <div class="source-block">
@@ -54,10 +51,14 @@
             </div>
             {% endfor %}
         </div>
-        <p class="muted">All three blend into the same scores. Different sources reach different people —
-           a minister draws on all three, a backbencher mostly on Hansard — so read a score alongside its
-           evidence base. (Party-release extraction is still rolling out across the parties.) Scoring each
-           source <em>separately</em> — to show a debate-vs-public delta — is planned for later.</p>
+        <p class="muted">Hansard only, on purpose. Earlier releases blended in party press releases and
+           post-Cabinet press conferences, and that changed a score more than the speaker did — the same
+           MP scored several points higher in a press release than in the House, and the source mix
+           differed sharply by party, so comparing two MPs was not a fair fight. Hansard is the one
+           source that is adversarial, on the record, and covers every MP equally. The other corpora are
+           still <a href="#downloads">downloadable below</a>; they are just not scored here. Scoring each
+           source <em>separately</em> — to show a debate-vs-public delta — is the better version of that
+           idea and is planned for later.</p>
 
         <h3>By party</h3>
         <table class="data-table">
@@ -106,7 +107,7 @@
             </table>
         </details>
 
-        <h3>Download the data</h3>
+        <h3 id="downloads">Download the data</h3>
         <p class="muted">The scored dataset and the raw source corpora, free to reuse (CC-BY-4.0).
            A versioned HuggingFace release is planned; these are the live files behind the site:</p>
         <div class="downloads">

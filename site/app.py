@@ -336,7 +336,8 @@ def download(key):
 
 @app.route('/about')
 def about():
-    return render_template('about.html', attributes=attribute_descriptions)
+    return render_template('about.html', attributes=attribute_descriptions,
+                           min_attributes=MIN_ATTRIBUTES)
 
 
 @app.route('/rules')

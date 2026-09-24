@@ -1,44 +1,39 @@
 {
   "dataset": "nz-pol-scorecards-v2",
-  "source": "Hansard 54th Parliament + Post-Cabinet press conference + Party press release",
-  "windows_scored": 3832,
+  "source": "Hansard 54th Parliament v3.0",
+  "windows_scored": 5300,
   "examples_by_source": {
-    "Hansard": 65075,
-    "Pressers": 5419,
-    "Party releases": 23935
+    "Hansard": 78196
   },
   "date_range": [
-    "2023-10-06",
-    "2026-07-19"
+    "2023-12-05",
+    "2026-04-22"
   ],
-  "politicians": 135,
+  "politicians": 133,
   "attributes": [
-    "Forthrightness",
-    "Strength",
     "Veracity",
-    "Authenticity",
     "Divination",
-    "Charisma",
+    "Focus",
     "Civility",
     "Rigor",
     "Specificity"
   ],
-  "examples": 94429,
+  "examples": 78196,
   "scoring": "all sources blended into one score per (politician, attribute); each quote tagged with its source",
   "bias_mitigation": "empirical-Bayes shrinkage per attribute; n + 95% CI + confidence surfaced",
-  "unresolved_speakers": 30,
+  "unresolved_speakers": 0,
   "files": {
     "politicians.jsonl": {
-      "sha256_16": "03256adaf64c69d8"
+      "sha256_16": "0a4e506835a4f2f0"
     },
     "attributes.jsonl": {
-      "sha256_16": "90561e66012fbfb0"
+      "sha256_16": "90bf6a8c394e107f"
     },
     "scores.jsonl": {
-      "sha256_16": "6fd6356a824382a1"
+      "sha256_16": "23a01c2e0d7f925d"
     },
     "examples.jsonl": {
-      "sha256_16": "4c216da18ee356c5"
+      "sha256_16": "89f6846516f8beda"
     }
   }
 }
