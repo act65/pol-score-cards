@@ -1,53 +1,69 @@
 # site_data_v3 — the v3.0 site dataset
 
-Seven attributes (Charisma absent, Focus in its place); Strength and
-Authenticity deferred to v4. Built from the v3 extraction with:
+**Six published attributes:** Forthrightness, Veracity, Focus, Civility, Rigor,
+Specificity. Charisma is RETIRED, Strength and Authenticity DEFERRED to v4, and
+Divination is WITHHELD — still extracted and measured, but not shown on a card
+until the resolver has scored it (see `attributes.WITHHELD`).
+
+Built with:
 
     cd attribute-extraction
     python build_v2_dataset.py \
         --scores hansard_scores_v3.jsonl \
         --qa_scores forthrightness_scores_v3.jsonl \
         --resolved resolved_v3.jsonl \
+        --use_prior True \
         --out site_data_v3 \
         --corpus_label "Hansard 54th Parliament v3.0"
 
 NOTE there is no `run` subcommand — the file ends in `fire.Fire(run)`, so a
-leading `run` binds positionally to `--scores` and fails later with a confusing
-`'<' not supported between instances of 'int' and 'str'`.
+leading `run` binds positionally to `--scores` and fails 300 lines later with a
+confusing `'<' not supported between instances of 'int' and 'str'`.
 
-Preview it without touching the published data in `site/static/`:
+Preview it without touching the published v2.0 data in `site/static/`:
 
     cd site && SCORECARD_DATA=../attribute-extraction/site_data_v3 python app.py
+
+## `--use_prior True` is doing real work here
+
+Without it, every one of the 70 MPs with a Veracity score had the SAME score
+(79), because 276 resolved veracity claims over 132 MPs is a median evidence n
+of 3 and `bias_adjust` shrank them all onto the prior. The column carried no
+information. With the guesses in: 100% coverage, 17 distinct values.
+
+The cost is that 132 of the 133 Veracity scores are the model's unaided
+`prior_score`, not a checked source. On 312 resolved claims that guess has
+MAE 0.22 against the evidence and is confidently wrong 6% of the time, so the
+card marks every one of them with a superscript `?`, a dimmed value and an
+UNVERIFIED tooltip. Do not publish this publicly without either resolving them
+or keeping that marking.
+
+## Coverage as built (5,300 of 5,548 windows)
+
+| attribute | MPs | | distinct scores |
+|---|---:|---|---:|
+| Veracity | 133 | 100% | 17 |
+| Focus | 132 | 99% | 45 |
+| Rigor | 132 | 99% | 29 |
+| Specificity | 132 | 99% | 33 |
+| Civility | 131 | 98% | 37 |
+| Forthrightness | 74 | 56% | 35 |
+
+132 of 133 MPs reach the grid. Forthrightness needs question/answer pairs where
+the MP is the *responder*, so it covers ministers and spokespeople rather than
+the whole House — a coverage gap, not redundancy: its card-level correlations
+are the most independent of the six (-0.50 with Focus, -0.42 with Specificity,
+0.02 with Civility).
 
 ## What is committed here
 
 `scores.jsonl`, `politicians.jsonl`, `attributes.jsonl` — small, and the useful
-artefact to diff between builds.
+artefact to diff between builds. `examples.jsonl` is NOT committed: 48 MB, and
+regenerable in ~2 minutes by the command above from inputs already tracked. The
+site preview needs it, so run the build once after checkout.
 
-`examples.jsonl` is NOT committed: 49 MB, and regenerable in ~2 minutes by the
-command above from inputs that are already tracked. The site preview needs it,
-so run the build once after checkout.
+## One mislabel left to fix
 
-## Coverage as built (5,300 of 5,548 windows)
-
-| attribute | MPs with a score | |
-|---|---:|---|
-| Focus | 132 | 100% |
-| Rigor | 132 | 100% |
-| Specificity | 132 | 100% |
-| Civility | 131 | 99% |
-| Forthrightness | 74 | 56% — needs Q/A pairs, so ministers mostly |
-| Veracity | 70 | 53% — from 389 resolved claims only |
-| Divination | 29 | 22% — from 389 resolved claims only |
-
-Veracity and Divination are built with `use_prior=False`, so a score here comes
-from a searched verdict, never from the model's guess.
-
-## Two mislabels to fix before this is shown to anyone
-
-1. `Forthrightness_tier` says `text`. It is `record` — scored over question/
-   answer pairs, not speech windows.
-2. `Veracity_tier` / `Divination_tier` say `unresolved` for every row, including
-   rows that came from a resolved verdict. With `use_prior=False` the opposite
-   is true: every score present IS resolved. The label errs on the cautious
-   side, but it is still wrong.
+`Forthrightness_tier` says `text`. It is `record` — scored over question/answer
+pairs, not speech windows. Nothing reads it yet except the unverified marker,
+which keys off `unresolved`, so this is cosmetic for now.

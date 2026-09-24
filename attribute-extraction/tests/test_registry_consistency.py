@@ -58,8 +58,11 @@ def test_the_synced_copies_match_the_shared_source():
 
 
 def test_dataset_builder_reads_the_registry():
+    """PUBLISHED, not ATTRIBUTES: the builder feeds cards, and a WITHHELD
+    attribute is extracted and measured but must not reach one."""
     import build_v2_dataset
-    assert [a for a, _, _ in build_v2_dataset.ATTRIBUTES] == list(attributes.ATTRIBUTES)
+    assert ([a for a, _, _ in build_v2_dataset.ATTRIBUTES]
+            == [a.id for a in attributes.PUBLISHED])
 
 
 def test_no_definition_is_empty():
@@ -120,3 +123,36 @@ def test_the_focus_prompt_protects_opposition_scrutiny():
         text = f.read()
     assert "DO NOT PENALISE OPPOSITION" in text
     assert "Specificity" in text, "must warn about the overlap it is most at risk of"
+
+
+def test_withheld_is_still_extracted():
+    """WITHHELD means "not shown", never "not collected".
+
+    If a withheld attribute fell out of extraction, the claims the resolver
+    needs to un-withhold it would never be written, and the decision would
+    quietly become permanent.
+    """
+    import attributes
+    for aid in attributes.WITHHELD:
+        assert aid in attributes.ATTRIBUTES, f"{aid} must stay in the active set"
+        assert aid in attributes.EXTRACTED_IN_WINDOWS or aid in attributes.PAIRWISE, \
+            f"{aid} is withheld but no longer extracted"
+
+
+def test_published_excludes_withheld_and_deferred():
+    import attributes
+    published = {a.id for a in attributes.PUBLISHED}
+    assert not (published & set(attributes.WITHHELD))
+    assert not (published & set(attributes.DEFERRED))
+    assert not (published & set(attributes.RETIRED))
+    assert published == set(attributes.ATTRIBUTES) - set(attributes.WITHHELD)
+
+
+def test_the_site_dataset_builder_reads_published():
+    """The builder must not drift back to ALL — that is how Charisma survived
+    in the site copy after it was cut."""
+    import pathlib
+    src = pathlib.Path(__file__).resolve().parents[1] / "build_v2_dataset.py"
+    text = src.read_text()
+    assert "attribute_registry.PUBLISHED" in text
+    assert "for a in attribute_registry.ALL]" not in text

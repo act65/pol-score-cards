@@ -51,7 +51,9 @@ import attributes as attribute_registry
 # (attributes.py), which is the single source of truth shared with the
 # extractor. They used to be duplicated here, which is how the site kept
 # describing Charisma after it was cut.
-ATTRIBUTES = [(a.id, a.name, a.definition) for a in attribute_registry.ALL]
+# PUBLISHED, not ALL: a WITHHELD attribute (Divination since 2026-09-24) is
+# still extracted, audited and evaluated, but must not reach a card.
+ATTRIBUTES = [(a.id, a.name, a.definition) for a in attribute_registry.PUBLISHED]
 ID2NAME = {a: n for a, n, _ in ATTRIBUTES}
 
 # These scorecards cover the 54th Parliament. The oral-questions corpus starts

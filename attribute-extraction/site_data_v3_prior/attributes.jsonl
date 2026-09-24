@@ -1,7 +1,0 @@
-{"id": "Forthrightness", "name": "Forthrightness", "definition": "How often the politician directly answers the question asked, rather than dodging or changing the subject."}
-{"id": "Veracity", "name": "Veracity", "definition": "How accurate and non-misleading the politician's factual claims are, checked against sources."}
-{"id": "Divination", "name": "Divination", "definition": "Whether the politician's predictions actually came true, checked against what happened."}
-{"id": "Focus", "name": "Focus", "definition": "Whether the politician engages the policy question or simply attacks the other party."}
-{"id": "Civility", "name": "Civility", "definition": "Commitment to constructive dialogue over personal attacks. Criticising a policy hard is civil; turning on the person is not."}
-{"id": "Rigor", "name": "Rigor", "definition": "Whether conclusions follow logically from their assumptions. Not a fact-check \u2014 the accuracy of the assumptions is Veracity."}
-{"id": "Specificity", "name": "Specificity", "definition": "The meaningfulness of the politician's statements (vague platitudes score low)."}
