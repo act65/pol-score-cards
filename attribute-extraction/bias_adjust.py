@@ -62,12 +62,30 @@ def _var(xs, mu=None):
     return sum((x - mu) ** 2 for x in xs) / (len(xs) - 1)
 
 
+# Pseudo-observations of the pooled within-variance blended into each MP's own.
+# An MP with two statements has a sample variance that is almost pure noise (and
+# can be exactly zero if the two happen to agree), which would hand them a
+# tighter interval than an MP with fifty. Blending regularises that: at n=1 the
+# estimate is the pooled value, and by n≈20 it is essentially the MP's own.
+_VAR_PSEUDO_N = 4.0
+
+
+def _within_var_for(scores, pooled):
+    """This MP's per-statement variance, shrunk toward the attribute's pooled one."""
+    n = len(scores)
+    if n < 2:
+        return pooled
+    own = _var(scores)
+    w = (n - 1) / (n - 1 + _VAR_PSEUDO_N)
+    return max(1e-6, w * own + (1 - w) * pooled)
+
+
 def _attr_prior(groups):
     """Empirical-Bayes prior for one attribute, by method of moments over MPs.
 
     Returns (prior_mean, between_var, within_var). between_var is the spread of
-    *true* MP means; within_var is per-statement noise. The shrinkage weight for
-    an MP with n statements is between/(between + within/n)."""
+    *true* MP means; within_var is the POOLED per-statement noise, used to
+    de-bias between_var and as the prior for each MP's own variance."""
     all_scores = [s for g in groups for s in g]
     prior_mean = _mean(all_scores)
     within_var = _mean([_var(g) for g in groups if len(g) >= 2]) or _var(all_scores)
@@ -98,13 +116,38 @@ def adjust_scores(per_mp_attr):
         for mid, _attr, scores in keys_by_attr[attr]:
             n = len(scores)
             raw = _mean(scores)
-            shrink = between_var / (between_var + within_var / n)
+            # Each MP's OWN spread, not one pooled number for the attribute.
+            # Pooling it made both the shrinkage and the interval a function of
+            # n alone: two MPs with three Rigor statements got the same +/-11
+            # whether their statements ranged over 16 points or 23. An MP who is
+            # consistently middling is better measured than one who swings from
+            # 5 to 95, at the same sample size, and the interval has to say so.
+            mp_within = _within_var_for(scores, within_var)
+            se2 = mp_within / n
+            shrink = between_var / (between_var + se2)
             adj = shrink * raw + (1 - shrink) * prior_mean
-            post_var = 1.0 / (1.0 / between_var + n / within_var)
+            post_var = 1.0 / (1.0 / between_var + 1.0 / se2)
             ci95 = 1.96 * math.sqrt(post_var)
-            conf = "high" if n >= 10 else "medium" if n >= 3 else "low"
-            out[(mid, attr)] = AdjustedScore(n, raw, adj, ci95, conf, shrink)
+            out[(mid, attr)] = AdjustedScore(n, raw, adj, ci95,
+                                             _confidence(ci95, n), shrink)
     return out
+
+
+# Confidence reads off the INTERVAL, not the count. "high confidence, +/-4" on
+# a score whose statements range from 5 to 95 was the old tiering saying only
+# "this MP talks a lot". The n floor stays as a guard: an interval is a model
+# output, and three statements should never be called high confidence however
+# tightly they happen to agree.
+_CONF_HIGH, _CONF_MED = 0.05, 0.12      # half-width on the 0..1 scale
+_CONF_MIN_N = 8
+
+
+def _confidence(ci95: float, n: int) -> str:
+    if ci95 <= _CONF_HIGH and n >= _CONF_MIN_N:
+        return "high"
+    if ci95 <= _CONF_MED and n >= 3:
+        return "medium"
+    return "low"
 
 
 def display_score(adj: AdjustedScore) -> int:

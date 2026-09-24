@@ -109,3 +109,57 @@ def test_prep_day_carries_speaker_across_parts():
     # the orphaned opener of part2 is attributed to Willis (carried), not dropped
     willis = [b for b in blocks if "WILLIS" in b["speaker"]]
     assert willis and "keep delivering" in willis[0]["text"]
+
+
+def test_the_interval_reflects_spread_not_just_sample_size():
+    """Two MPs with the same number of statements, one consistent and one all
+    over the place, must not get the same interval.
+
+    They did: `within_var` was pooled across every MP on an attribute, so the
+    posterior variance reduced to a function of n. Two MPs with three Rigor
+    statements each got the same +/-11 whether their statements ranged over 16
+    points or 23.
+    """
+    population = {(f"o{i}", "rigor"): [0.30 + 0.01 * i] * 12 for i in range(30)}
+    tight = [0.50, 0.50, 0.52, 0.48, 0.50]
+    wide = [0.05, 0.95, 0.50, 0.20, 0.80]
+    adj = adjust_scores({**population,
+                         ("tight", "rigor"): tight,
+                         ("wide", "rigor"): wide})
+
+    assert adj[("tight", "rigor")].n == adj[("wide", "rigor")].n
+    assert adj[("wide", "rigor")].ci95 > adj[("tight", "rigor")].ci95
+
+
+def test_a_noisy_mp_is_shrunk_harder_than_a_consistent_one():
+    """The same logic applies to the score itself: a mean over statements that
+    disagree is weaker evidence of a true mean, so it should be pulled further
+    toward the population."""
+    population = {(f"o{i}", "civility"): [0.30 + 0.01 * i] * 12 for i in range(30)}
+    adj = adjust_scores({**population,
+                         ("tight", "civility"): [0.9, 0.9, 0.88, 0.92, 0.9],
+                         ("wide", "civility"): [0.5, 1.0, 1.0, 1.0, 1.0]})
+
+    assert adj[("tight", "civility")].shrink > adj[("wide", "civility")].shrink
+
+
+def test_confidence_is_not_just_a_count():
+    """`n >= 10 -> high` called an MP well-measured for talking a lot. High
+    confidence now needs a tight interval AND enough statements to trust it."""
+    population = {(f"o{i}", "focus"): [0.30 + 0.01 * i] * 12 for i in range(30)}
+    adj = adjust_scores({**population,
+                         ("noisy", "focus"): [0.0, 1.0] * 15,       # n=30, huge spread
+                         ("steady", "focus"): [0.7, 0.72, 0.68] * 10})
+
+    assert adj[("noisy", "focus")].n == adj[("steady", "focus")].n
+    assert adj[("steady", "focus")].confidence == "high"
+    assert adj[("noisy", "focus")].confidence != "high"
+
+
+def test_two_agreeing_statements_are_not_high_confidence():
+    """A sample variance from n=2 is almost pure noise and can be exactly zero.
+    Without regularisation that buys a tighter interval than fifty statements."""
+    population = {(f"o{i}", "rigor"): [0.30 + 0.01 * i] * 12 for i in range(30)}
+    adj = adjust_scores({**population, ("lucky", "rigor"): [0.6, 0.6]})
+
+    assert adj[("lucky", "rigor")].confidence != "high"
