@@ -49,7 +49,7 @@
            readable — 34 for Civility means nothing until you can see that MPs
            run from 31 to 87 and cluster around 65. #}
         <figure class="strip">
-            <figcaption>Every MP scored on {{ attribute_info.name }} — {{ politician.name }} marked.</figcaption>
+            <figcaption>Every MP scored on {{ attribute_info.name }}</figcaption>
             <div class="strip-plot" style="height: {{ 22 + 7 * strip.rows }}px">
                 <span class="strip-median" style="left: {{ strip.median_x }}%"
                       title="House median {{ strip.median }}"></span>
@@ -61,12 +61,13 @@
                 <span class="strip-lab lo">{{ strip.lo }}</span>
                 <span class="strip-lab hi">{{ strip.hi }}</span>
             </div>
-            <p class="strip-note">
-                {{ strip.n }} MPs. House median <strong>{{ strip.median }}</strong>.
-                {% if strip.mine %}{{ politician.name }} is
-                <strong>{{ strip.mine.score }}</strong>{% if strip.rank %}, {{ strip.rank }}{{ 'st' if strip.rank % 10 == 1 and strip.rank != 11 else ('nd' if strip.rank % 10 == 2 and strip.rank != 12 else ('rd' if strip.rank % 10 == 3 and strip.rank != 13 else 'th')) }} of {{ strip.n }}{% endif %}.{% endif %}
-                The dashed line is the median; the pass mark is 100.
-            </p>
+            <ul class="strip-legend">
+                <li><span class="sl-key sl-other"></span>one MP ({{ strip.n }} scored)</li>
+                {% if strip.mine %}
+                <li><span class="sl-key sl-me"></span>{{ politician.name }} — {{ strip.mine.score }}{% if strip.rank %}, {{ strip.rank }}{{ 'st' if strip.rank % 10 == 1 and strip.rank != 11 else ('nd' if strip.rank % 10 == 2 and strip.rank != 12 else ('rd' if strip.rank % 10 == 3 and strip.rank != 13 else 'th')) }} of {{ strip.n }}{% endif %}</li>
+                {% endif %}
+                <li><span class="sl-key sl-median"></span>House median — {{ strip.median }}</li>
+            </ul>
         </figure>
         {% endif %}
 

@@ -8,29 +8,26 @@ wrong way still shows quotes. Neither raises.
 import app
 
 
-def test_the_grade_ramp_gets_monotonically_darker_and_clamps():
-    """A higher score is more ink. If the ramp ever stops being monotone the
-    border still renders, so nothing else would notice."""
-    lo, hi = app.GRADE_WINDOW
-    assert app._grade_colour(lo) == app._grade_colour(lo - 50), "clamps below"
-    assert app._grade_colour(hi) == app._grade_colour(hi + 50), "clamps above"
-
-    def lightness(score):
-        c = app._grade_colour(score)
-        return sum(int(c[i:i + 2], 16) for i in (1, 3, 5))
-
-    steps = [lightness(v) for v in range(lo, hi + 1, 4)]
-    assert steps == sorted(steps, reverse=True), "higher score, darker border"
-    assert steps[0] > steps[-1], "and the ends actually differ"
-
-
-def test_every_featured_card_gets_a_colour_and_a_rank():
+def test_every_featured_card_is_scored_and_ranked():
     shown, total = app._featured()
     assert shown and total >= len(shown)
     for d in shown:
-        assert d["grade"].startswith("#") and len(d["grade"]) == 7
         assert 1 <= d["rank"] <= len(shown)
         assert d["overall"] == round(d["geo"])
+    # The border carries nothing now, so nothing should be computing a colour.
+    assert not hasattr(app, "_grade_colour")
+
+
+def test_the_card_can_be_read_against_the_house():
+    """The politician page toggles its card between absolute scores and each
+    attribute's distance from the House average, so both numbers have to reach
+    the template or the toggle silently shows em dashes."""
+    shown, _ = app._featured()
+    pid = shown[0]["politician"]["id"]
+    html = app.app.test_client().get(f"/politician/{pid}").get_data(as_text=True)
+    assert 'name="mpMode"' in html
+    assert html.count('data-rel="') == html.count('data-abs="')
+    assert 'data-rel="—"' not in html, "every scored attribute has a House mean"
 
 
 def test_evidence_is_not_served_best_first():
