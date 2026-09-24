@@ -51,10 +51,16 @@ import attributes as attribute_registry
 # (attributes.py), which is the single source of truth shared with the
 # extractor. They used to be duplicated here, which is how the site kept
 # describing Charisma after it was cut.
-# PUBLISHED, not ALL: a WITHHELD attribute (Divination since 2026-09-24) is
+# PUBLISHED, not ALL: a WITHHELD attribute (Forthrightness since 2026-09-25) is
 # still extracted, audited and evaluated, but must not reach a card.
 ATTRIBUTES = [(a.id, a.name, a.definition) for a in attribute_registry.PUBLISHED]
-ID2NAME = {a: n for a, n, _ in ATTRIBUTES}
+PUBLISHED_IDS = {a for a, _n, _d in ATTRIBUTES}
+# Names for every ACTIVE attribute, not just the published ones: the ingest
+# meets whatever is in the score files and must be able to name it. Filtering
+# happens on PUBLISHED_IDS, at the point of ingest, so a withheld attribute
+# reaches neither scores.jsonl nor examples.jsonl. (Keying this off ATTRIBUTES
+# made withholding a record-tier attribute a KeyError rather than an omission.)
+ID2NAME = {a.id: a.name for a in attribute_registry.ALL}
 
 # These scorecards cover the 54th Parliament. The oral-questions corpus starts
 # earlier (2023-07), so 19% of the Q/A pairs are from the 53rd — a different
@@ -101,7 +107,7 @@ def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, date
         dates.add(date)
         url = url_fn(rec, date)
         for attr, exs in rec.get("examples_by_attribute", {}).items():
-            if attr not in ID2NAME:
+            if attr not in PUBLISHED_IDS:
                 continue
             for i, e in enumerate(exs):
                 sc = e.get("score")
@@ -329,9 +335,13 @@ def run(scores="hansard_scores_full.jsonl", out="site_data_v2",
     _ingest(release_rows, release_label, "Party releases", release_url,
             R, per_pair, examples, unresolved, dates, src_counts, use_prior)
 
-    if qa_scores and os.path.exists(qa_scores):
+    # Skipped entirely when Forthrightness is withheld — there is no point
+    # resolving 11k Q/A pairs into a pool nothing will read.
+    if qa_scores and os.path.exists(qa_scores) and "forthrightness" in PUBLISHED_IDS:
         _ingest_qa(_read(qa_scores), R, per_pair, examples, unresolved,
                    dates, src_counts, since=qa_since)
+    elif qa_scores:
+        print("  Q/A: skipped — forthrightness is withheld (attributes.WITHHELD)")
 
     adjusted = bias_adjust.adjust_scores(per_pair)
     record = _record_scores(

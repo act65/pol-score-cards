@@ -168,16 +168,31 @@ def index():
 #     attribute for that reason.
 #   * the party's OVERALL is the geometric mean of the six numbers printed on
 #     its own card, not the average of its members' overalls. The card is then
-#     internally consistent: you can recompute it from what you can see. The two
-#     differ slightly (the geometric mean is not linear), which is why the ticks
-#     on the block are the members' own overalls — the spread is the honest part.
-_SPREAD_PAD = 2          # axis padding either side of the observed range
-
+#     internally consistent: you can recompute it from what you can see. It is
+#     no longer printed on the card (it says little — every party lands between
+#     48 and 61) but it still ranks them, and the table below the cards has it.
+#
+# The block shows each attribute's DISTANCE FROM THE HOUSE MEAN instead. With
+# the overall scores that tightly bunched, "National 59" carries almost no
+# information, while "National -9 Focus, +4 Specificity" is the thing you came
+# to the page for. Bars share one scale across every card, so a long bar means
+# the same distance on each.
 # A one-MP "party" is that MP's own card with a party name on it — and because
 # the list is ranked, it would sit above real caucuses on a sample of one.
 # (Darleen Tana, sitting as an Independent, topped the page before this.) Below
 # the threshold a grouping is named under the table instead of being aggregated.
 MIN_PARTY_MPS = 3
+
+
+def _house_means(shown):
+    """The all-MP mean per attribute — the baseline every party bar is read against."""
+    means = {}
+    for attr in ATTR_NAMES:
+        vals = [d["scores"][attr] for d in shown
+                if isinstance(d["scores"].get(attr), (int, float))]
+        if vals:
+            means[attr] = sum(vals) / len(vals)
+    return means
 
 
 def _party_cards(shown):
@@ -216,37 +231,31 @@ def _party_cards(shown):
     for rank, c in enumerate(cards, 1):
         c["rank"] = rank
 
-    # One shared axis for every block, so the ticks are comparable across cards.
-    every = [v for c in cards for v in c["members"]] or [0, 100]
-    lo, hi = min(every) - _SPREAD_PAD, max(every) + _SPREAD_PAD
-    span = max(hi - lo, 1)
+    # Deviation bars. The widest bar on the page is the largest |delta| any
+    # party has on any attribute, so every bar on every card is to one scale.
+    house = _house_means(shown)
+    # `or 1`: with a single party on the page every deviation is zero by
+    # construction (the party IS the House), and that divided by itself is a 500.
+    widest = max((abs(c["scores"][a] - house[a])
+                  for c in cards for a in c["scores"] if a in house), default=1) or 1
     for c in cards:
-        # A dot plot: MPs on the same integer score stack upward rather than
-        # overprinting, so a 47-MP caucus reads as a shape and not one blob.
-        stack = collections.Counter()
-        dots = []
-        for v in c["members"]:
-            dots.append({"x": round((v - lo) / span * 100, 2),
-                         "bottom": 17 + 7 * stack[v]})
-            stack[v] += 1
-        c["dots"] = dots
-        c["mean_at"] = round((c["overall"] - lo) / span * 100, 2)
-        # The aggregate line is drawn just clear of the tallest stack rather
-        # than the full block height, where it read as a divider splitting the
-        # card in two.
-        c["mean_h"] = 17 + 7 * (max(stack.values()) if stack else 1) + 8
-    return cards, lo, hi, too_small
+        c["dev"] = [{"attr": a,
+                     "delta": round(c["scores"][a] - house[a]),
+                     "width": round(abs(c["scores"][a] - house[a]) / widest * 50, 2)}
+                    for a in c["scores"] if a in house]
+        c["dev_by_attr"] = {d["attr"]: d for d in c["dev"]}
+    return cards, too_small, {a: round(v) for a, v in house.items()}
 
 
 @app.route('/party')
 def party():
     shown, _total = _featured()
-    cards, lo, hi, too_small = _party_cards(shown)
+    cards, too_small, house = _party_cards(shown)
     counted = sum(c["n"] for c in cards)
     return render_template('party.html', party_cards=cards,
                            all_attributes=attribute_descriptions,
-                           spread_lo=lo, spread_hi=hi, too_small=too_small,
-                           min_party_mps=MIN_PARTY_MPS,
+                           too_small=too_small,
+                           min_party_mps=MIN_PARTY_MPS, house=house,
                            mp_count=counted, min_attributes=MIN_ATTRIBUTES)
 
 @app.route('/attribute/<politician_id>/<attribute>')

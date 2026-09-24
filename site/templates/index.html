@@ -32,7 +32,7 @@
             {% endfor %}
         </ul>
         <div class="sc-rarity-key">
-            <span class="rk-label">Rarity (the card's border colour, and the ring around the <b>overall</b> badge) — rank by that overall score, the geometric mean of all {{ all_attributes|length }} attributes, so one weak attribute drags the card down:</span>
+            <span class="rk-label">Rarity (the card's border colour) — overall rank by the geometric mean of all {{ all_attributes|length }} attributes, so one weak attribute drags the card down:</span>
             {% for name, colour in rarity_tiers %}
             <span class="rk-item"><span class="rk-swatch" style="--rarity: {{ colour }};"></span>{{ name|capitalize }}</span>
             {% endfor %}
@@ -45,7 +45,7 @@
     <div class="sc-controls">
         <label>Order by:
             <select id="sortSel">
-                <option value="rarity">Overall score</option>
+                <option value="rarity">Rarity (overall)</option>
                 {% for attribute in all_attributes %}
                 <option value="{{ attribute.id }}">{{ attribute.name }}</option>
                 {% endfor %}
@@ -86,12 +86,6 @@
             <div class="sc-banner">
                 <h3 class="sc-name">{{ item.politician.name }}</h3>
                 <span class="sc-party">{{ item.politician.party }}</span>
-                {# The overall score: the geometric mean the card is ranked by.
-                   Its ring is the rarity colour, so badge and border agree. #}
-                <div class="sc-overall" title="Overall {{ item.overall }} — the geometric mean of this card's {{ all_attributes|length }} attributes. Ranked {{ item.rank }} of {{ shown_count }} ({{ item.rarity_name }}).">
-                    <span class="sc-ovl-val">{{ item.overall }}</span>
-                    <span class="sc-ovl-lab">overall</span>
-                </div>
             </div>
             <div class="sc-art">
                 {% if item.politician.image %}

@@ -9,8 +9,10 @@ needs to say: **not every attribute is scored the same way.**
 
 **Seven active attributes** as of 2026-08-15, of which **six are PUBLISHED** as
 of 2026-09-24. Charisma was RETIRED (r=0.96 with Civility); Strength and
-Authenticity are DEFERRED to v4; Divination is WITHHELD — still extracted and
-measured, but not shown on a card until the resolver has scored it. See the
+Authenticity are DEFERRED to v4; Forthrightness is WITHHELD — still extracted
+and measured, but not shown on a card, because only ministers answer oral
+questions and it therefore scores the government benches and almost no one
+else. See the
 note above each tuple for why. All stay defined so older output still reads.
 
 Three tiers, defined in `ATTRIBUTES.md` (which is the contract — if this file
@@ -157,7 +159,8 @@ DEFERRED = ("strength", "authenticity")
 # The active set — what is extracted, scored and evaluated.
 ALL = tuple(a for a in _DEFINED if a.id not in DEFERRED)
 
-# Extracted and kept, but NOT PUBLISHED on cards (decided 2026-09-24).
+# Extracted and kept, but NOT PUBLISHED on cards (decided 2026-09-24,
+# revised 2026-09-25).
 #
 # This is a third state, and it is deliberately not DEFERRED or RETIRED.
 # RETIRED means cut for redundancy and gone. DEFERRED means out of the active
@@ -165,16 +168,34 @@ ALL = tuple(a for a in _DEFINED if a.id not in DEFERRED)
 # simply not ready to show yet — so extraction MUST continue, or the claims the
 # resolver needs would never be collected.
 #
-# Divination: 1,618 claims but only 113 resolved, so 95% of what a card would
-# show is the model's unaided guess — and on 312 resolved claims that guess has
-# MAE 0.22 against the evidence and is confidently wrong 6% of the time. It was
-# also the weakest column by information content: 29 MPs covered before the
-# guesses were allowed in, all sharing one score, because 113 verdicts over 132
-# MPs is a median evidence n of 1 and the shrinkage collapsed them.
+# Forthrightness (withheld 2026-09-25, and Divination released in its place).
+# The /party page made the reason visible: a 44-point government/opposition gap
+# in the party means, where every other attribute sits within 16. Two causes,
+# and the second is the one that matters:
 #
-# Bringing it back is ~1.5 nights of resolver time (276 calls at 6.48 claims
-# each), not a rebuild. Delete it from this tuple when that has run.
-WITHHELD = ("divination",)
+#   1. A pairing bug. 43 of the 74 scored MPs rest on <=10 Q/A pairs and average
+#      24, against 67 for the 31 with real volume. In those thin rows `asked_by`
+#      and the scored politician are THE SAME PERSON — the "answer" attributed
+#      to the MP is their own next supplementary question. Fixable; see the
+#      Phase D0 entry in V3_TODO.md.
+#
+#   2. Only the executive answers oral questions. Of the 31 MPs with a usable
+#      sample, 31 are government — National 22, ACT 5, NZ First 4, and not one
+#      opposition MP. Fixing the pairing cannot change this: the attribute is
+#      structurally a measure of ministers, so on a 133-card grid it reads as a
+#      bonus for sitting on the government benches.
+#
+# (2) means it cannot be a card attribute for the whole House however well it
+# is extracted. It stays extracted because it IS a good measure of the
+# executive, and an executive-accountability view is worth building later.
+#
+# Divination was withheld here on 2026-09-24 on a bad number: 29 MPs covered.
+# That was the RESOLVED-only count. With `--use_prior` it reaches 127 of 133
+# MPs (95%) at a median of 10 predictions each, its government/opposition gap
+# is -1, and its mean |r| against the other six is 0.17 — the most independent
+# attribute of the seven. It is published, carrying the same unverified mark as
+# Veracity until the resolver runs (~1.5 nights, 276 calls).
+WITHHELD = ("forthrightness",)
 
 # What the cards and the site dataset show. Everything else — the extractor,
 # the audits, the eval harness — reads ALL, so a withheld attribute keeps being

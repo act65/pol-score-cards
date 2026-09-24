@@ -24,9 +24,11 @@
     <h2 class="page-title">Party scorecards</h2>
     <p class="grid-caption">One card per party, aggregated over its {{ mp_count }} featured MPs
        (those with at least {{ min_attributes }} of {{ all_attributes|length }} attributes scored).
-       Ordered by overall score. Each attribute is the plain mean of the party's MPs on that
-       attribute; the <strong>overall</strong> is the geometric mean of the six numbers printed on
-       the card, so you can recompute it from what you can see.</p>
+       Ordered by overall score (the geometric mean of the party's six attribute means — in the
+       table below, since every party lands between {{ party_cards|map(attribute='overall')|min }} and
+       {{ party_cards|map(attribute='overall')|max }} and the headline says little). The bars on each
+       card are what does say something: how far that caucus sits from the <strong>House mean</strong>
+       on each attribute, to one scale across every card.</p>
 
     <div class="politician-list-container">
         {% for card in party_cards %}
@@ -36,28 +38,28 @@
             <div class="sc-banner">
                 <h3 class="sc-name">{{ card.party }}</h3>
                 <span class="sc-party">{{ card.n }} MP{{ 's' if card.n != 1 }}</span>
-                <div class="sc-overall" title="Overall {{ card.overall }} — the geometric mean of this card's {{ all_attributes|length }} attribute means. Ranked {{ card.rank }} of {{ party_cards|length }} parties.">
-                    <span class="sc-ovl-val">{{ card.overall }}</span>
-                    <span class="sc-ovl-lab">overall</span>
-                </div>
             </div>
 
-            {# The colour block IS the art. Inside it, one faint tick per MP at
-               their own overall score, and a solid tick at the party's — so the
-               block carries the party's spread, not just its average. Every card
-               shares one axis ({{ spread_lo }}–{{ spread_hi }}) so they compare. #}
+            {# The colour block IS the art. Inside it, one bar per attribute
+               showing how far this party sits from the House mean — because
+               every party's overall lands within a few points of every other,
+               so the profile is the information and the headline is not. #}
             <div class="sc-art sc-block">
-                <div class="sc-spread"
-                     title="Each dot is one {{ card.party }} MP's own overall score ({{ card.members|min }}–{{ card.members|max }}); the line is the party's, {{ card.overall }}.">
-                    <div class="sc-spread-track">
-                        <span class="sc-mean-line" style="left: {{ card.mean_at }}%; height: {{ card.mean_h }}px"></span>
-                        {% for dot in card.dots %}
-                        <span class="sc-dot" style="left: {{ dot.x }}%; bottom: {{ dot.bottom }}px"></span>
-                        {% endfor %}
-                        <span class="sc-spread-axis"></span>
-                        <span class="sc-spread-lab lo">{{ spread_lo }}</span>
-                        <span class="sc-spread-lab hi">{{ spread_hi }}</span>
+                <div class="sc-dev">
+                    {% for attribute in all_attributes %}
+                    {% set d = card.dev_by_attr.get(attribute.id) %}
+                    <div class="sc-dev-row{{ ' na' if not d }}"
+                         title="{{ attribute.name }} — {{ card.party }} {{ card.scores.get(attribute.id, 'not scored') }} against a House mean of {{ house.get(attribute.id, '—') }}{{ ', %+d' % d.delta if d }}.{{ ' UNVERIFIED: mostly the model\'s own estimates.' if card.unver.get(attribute.id) }}">
+                        <span class="sc-icon">{{ glyph(attribute) }}</span>
+                        <span class="sc-dev-track">
+                            {% if d %}
+                            <span class="sc-dev-bar" style="{% if d.delta < 0 %}right: 50%{% else %}left: 50%{% endif %}; width: {{ d.width }}%"></span>
+                            {% endif %}
+                        </span>
+                        <span class="sc-dev-num">{% if d %}{{ '%+d' % d.delta }}{% if card.unver.get(attribute.id) %}<span class="sc-dev-unver" aria-label="unverified">?</span>{% endif %}{% else %}—{% endif %}</span>
                     </div>
+                    {% endfor %}
+                    <div class="sc-dev-foot">vs the House mean</div>
                 </div>
             </div>
 
@@ -103,6 +105,16 @@
             <td class="num">{{ card.members|min }}–{{ card.members|max }}</td>
         </tr>
         {% endfor %}
+        <tr class="house-row">
+            <td></td>
+            <td><em>House mean</em></td>
+            <td class="num">{{ mp_count }}</td>
+            <td class="num">—</td>
+            {% for attribute in all_attributes %}
+            <td class="num">{{ house.get(attribute.id, '—') }}</td>
+            {% endfor %}
+            <td class="num">—</td>
+        </tr>
         </tbody>
     </table>
 
@@ -117,8 +129,11 @@
         <p><strong>Read these as descriptions of a caucus, not of a party's policy.</strong>
            A party's number is the average of how its MPs argue in the House — bigger
            caucuses regress toward the middle, and a small one is one or two people.
-           Party means sit close together; the <em>spread</em> inside each block is the
-           more interesting part. <a href="/about">About &amp; method →</a></p>
+           The overall scores sit within eight points of each other, so the bars, not the
+           ranking, are what is worth reading. Two of the six — Veracity and Divination,
+           marked <strong>?</strong> — are still the model's own estimates rather than
+           checked sources, and averaging them over a caucus does not check them.
+           <a href="/about">About &amp; method →</a></p>
     </footer>
 </body>
 </html>
