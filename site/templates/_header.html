@@ -1,0 +1,14 @@
+{# The site header, everywhere. It used to be written out per template, with a
+   different set of links on each one — "Back to cards" here, "All cards"
+   there, the game missing from four pages — so a reader could not learn where
+   anything was. Set `nav_active` before including to mark the current page. #}
+<header class="site-header">
+    <a href="/"><h1>NZ Politician Scorecards</h1></a>
+    <nav class="site-nav">
+        <a href="/"{{ ' class=on'|safe if nav_active == 'mps' }}>MPs</a>
+        <a href="/party"{{ ' class=on'|safe if nav_active == 'parties' }}>Parties</a>
+        <a href="/rules"{{ ' class=on'|safe if nav_active == 'game' }}>Game</a>
+        <a href="/data"{{ ' class=on'|safe if nav_active == 'data' }}>Data</a>
+        <a href="/about"{{ ' class=on'|safe if nav_active == 'about' }}>About</a>
+    </nav>
+</header>

@@ -8,10 +8,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <header class="site-header">
-        <a href="/"><h1>NZ Politician Scorecards</h1></a>
-        <div class="top-right-link"><a href="/data">The dataset</a> &nbsp;·&nbsp; <a href="/party">Parties</a> &nbsp;·&nbsp; <a href="/">Back to cards</a></div>
-    </header>
+    {% set nav_active = 'about' %}
+    {% include '_header.html' %}
 
     <main class="about">
         <p>NZ Politician Scorecards is a data-driven way to assess New Zealand politicians.

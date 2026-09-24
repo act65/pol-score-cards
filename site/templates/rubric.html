@@ -8,10 +8,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <header class="site-header">
-        <a href="/"><h1>NZ Politician Scorecards</h1></a>
-        <div class="top-right-link"><a href="/">Back to cards</a> &nbsp;·&nbsp; <a href="/about">About</a></div>
-    </header>
+    {% set nav_active = 'about' %}
+    {% include '_header.html' %}
 
     <main class="about rubric">
         <div class="rub-head">

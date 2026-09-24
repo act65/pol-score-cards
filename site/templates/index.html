@@ -18,10 +18,8 @@
     {# An attribute's heraldic glyph (SVG), falling back to its emoji. #}
     {% macro glyph(attr) %}{% if attr.svg %}{{ attr.svg|safe }}{% else %}{{ attr.symbol }}{% endif %}{% endmacro %}
 
-    <header class="site-header">
-        <a href="/"><h1>NZ Politician Scorecards</h1></a>
-        <div class="top-right-link"><a href="/party">Parties</a> &nbsp;·&nbsp; <a href="/data">The dataset</a> &nbsp;·&nbsp; <a href="/rules">The card game</a> &nbsp;·&nbsp; <a href="/about">About</a></div>
-    </header>
+    {% set nav_active = 'mps' %}
+    {% include '_header.html' %}
 
     <details class="legend-wrap" open>
         <summary>Attribute key — what the symbols mean (click a name for how it is scored)</summary>
