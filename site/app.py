@@ -126,6 +126,7 @@ def index():
     parties = sorted({d["politician"].get("party") for d in shown if d["politician"].get("party")})
     return render_template('index.html', politicians_data=shown,
                            all_attributes=attribute_descriptions,
+                           house=_house_means(shown),
                            parties=parties, shown_count=len(shown),
                            total_count=total, min_attributes=MIN_ATTRIBUTES)
 

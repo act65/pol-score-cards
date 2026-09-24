@@ -30,6 +30,17 @@
        card are what does say something: how far that caucus sits from the <strong>House mean</strong>
        on each attribute, to one scale across every card.</p>
 
+    <div class="sc-controls">
+        <label>Show:
+            <select id="modeSel">
+                <option value="abs">Scores</option>
+                <option value="rel">vs the House</option>
+            </select>
+        </label>
+        <span class="muted">The bars in each block always show the distance from the House average;
+            this switches the numbers underneath to match.</span>
+    </div>
+
     <div class="politician-list-container">
         {% for card in party_cards %}
         {% set colour = party_colors.get(card.party, '#475569') %}
@@ -71,10 +82,14 @@
                         {% set n = card.counts[attribute.id] %}
                         {% set unver = card.unver.get(attribute.id) %}
                         {% set thin = n * 2 < card.n %}
+                        {% set d = card.dev_by_attr.get(attribute.id) %}
                         <span class="sc-stat{{ ' unverified' if unver }}{{ ' thin' if thin }}"
-                              title="{{ attribute.name }} — mean of {{ n }} of {{ card.n }} {{ card.party }} MPs{{ ' (thin: most of the caucus is not scored on it)' if thin }}. {{ attribute.blurb or attribute.definition }}{{ ' — UNVERIFIED: mostly the model\'s own estimates, not checked against sources.' if unver }}">
+                              title="{{ attribute.name }} {{ score }}{% if d %} ({{ '%+d' % d.delta }} vs the House){% endif %} — mean of {{ n }} of {{ card.n }} {{ card.party }} MPs{{ ' (thin: most of the caucus is not scored on it)' if thin }}. {{ attribute.blurb or attribute.definition }}{{ ' — UNVERIFIED: mostly the model\'s own estimates, not checked against sources.' if unver }}">
                             <span class="sc-icon">{{ glyph(attribute) }}</span>
-                            <span class="sc-val {{ tier }}">{{ score }}{% if unver %}<span class="sc-unver" aria-label="unverified">?</span>{% endif %}</span>
+                            <span class="sc-val {{ tier }}"
+                                  data-abs="{{ score }}"
+                                  data-rel="{{ ('%+d' % d.delta) if d else '—' }}"
+                                  data-rel-tier="{{ 'low' if (d and d.delta < -5) else ('high' if (d and d.delta > 5) else 'mid') }}">{{ score }}{% if unver %}<span class="sc-unver" aria-label="unverified">?</span>{% endif %}</span>
                         </span>
                     {% else %}
                         <span class="sc-stat" title="{{ attribute.name }} — no {{ card.party }} MP is scored on it">
@@ -135,5 +150,24 @@
            checked sources, and averaging them over a caucus does not check them.
            <a href="/about">About &amp; method →</a></p>
     </footer>
+    <script>
+    (function () {
+        // The same toggle the card grid and each politician's page carry.
+        const modeSel = document.getElementById('modeSel');
+        const vals = Array.from(document.querySelectorAll('.sc-val[data-abs]'));
+        if (!modeSel || !vals.length) return;
+        const marks = vals.map(function (el) { return el.querySelector('.sc-unver'); });
+        modeSel.addEventListener('change', function () {
+            const rel = modeSel.value === 'rel';
+            vals.forEach(function (el, i) {
+                el.textContent = rel ? el.dataset.rel : el.dataset.abs;
+                if (marks[i]) el.appendChild(marks[i]);
+                el.classList.remove('low', 'mid', 'high');
+                el.classList.add(rel ? el.dataset.relTier : (
+                    +el.dataset.abs < 40 ? 'low' : (+el.dataset.abs < 70 ? 'mid' : 'high')));
+            });
+        });
+    })();
+    </script>
 </body>
 </html>

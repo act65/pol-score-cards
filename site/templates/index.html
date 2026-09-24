@@ -74,6 +74,12 @@
                 <option value="leader">Party leaders only</option>
             </select>
         </label>
+        <label>Show:
+            <select id="modeSel">
+                <option value="abs">Scores</option>
+                <option value="rel">vs the House</option>
+            </select>
+        </label>
         <span id="cardCount"></span>
     </div>
 
@@ -111,11 +117,15 @@
                            checked source. It MUST stay visibly distinct from a searched
                            verdict — see the prior_score note in CLAUDE.md. #}
                         {% set unver = item.scores.get(attribute.id ~ '_tier') == 'unresolved' %}
+                        {% set delta = (score - house[attribute.id])|round|int if attribute.id in house else None %}
                         <a class="sc-stat{{ ' unverified' if unver }}"
-                           title="{{ attribute.name }} — {{ attribute.blurb or attribute.definition }}{{ ' — UNVERIFIED: the model\'s own estimate, not checked against a source.' if unver }} (click for evidence)"
+                           title="{{ attribute.name }} {{ score }}{% if delta is not none %} ({{ '%+d' % delta }} vs the House){% endif %} — {{ attribute.blurb or attribute.definition }}{{ ' — UNVERIFIED: the model\'s own estimate, not checked against a source.' if unver }} (click for evidence)"
                            href="{{ url_for('attribute_detail', politician_id=item.politician.id, attribute=attribute.id) }}">
                             <span class="sc-icon">{{ glyph(attribute) }}</span>
-                            <span class="sc-val {{ tier }}">{{ score }}{% if unver %}<span class="sc-unver" aria-label="unverified">?</span>{% endif %}</span>
+                            <span class="sc-val {{ tier }}"
+                                  data-abs="{{ score }}"
+                                  data-rel="{{ ('%+d' % delta) if delta is not none else '—' }}"
+                                  data-rel-tier="{{ 'low' if (delta is not none and delta < -5) else ('high' if (delta is not none and delta > 5) else 'mid') }}">{{ score }}{% if unver %}<span class="sc-unver" aria-label="unverified">?</span>{% endif %}</span>
                         </a>
                     {% else %}
                         <span class="sc-stat" title="{{ attribute.name }}">
@@ -177,6 +187,23 @@
             el.addEventListener('change', apply);
         });
         nameSearch.addEventListener('input', apply);
+
+        // Absolute scores, or each attribute's distance from the House average.
+        // Both values ship in the markup, so switching is local.
+        const modeSel = document.getElementById('modeSel');
+        const vals = Array.from(grid.querySelectorAll('.sc-val[data-abs]'));
+        const marks = vals.map(function (el) { return el.querySelector('.sc-unver'); });
+        function applyMode() {
+            const rel = modeSel.value === 'rel';
+            vals.forEach(function (el, i) {
+                el.textContent = rel ? el.dataset.rel : el.dataset.abs;
+                if (marks[i]) el.appendChild(marks[i]);
+                el.classList.remove('low', 'mid', 'high');
+                el.classList.add(rel ? el.dataset.relTier : (
+                    +el.dataset.abs < 40 ? 'low' : (+el.dataset.abs < 70 ? 'mid' : 'high')));
+            });
+        }
+        modeSel.addEventListener('change', applyMode);
         apply();
     })();
     </script>

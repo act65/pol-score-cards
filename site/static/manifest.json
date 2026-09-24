@@ -1,13 +1,13 @@
 {
   "dataset": "nz-pol-scorecards-v2",
   "source": "Hansard 54th Parliament v3.0",
-  "windows_scored": 5300,
+  "windows_scored": 5366,
   "examples_by_source": {
-    "Hansard": 78196
+    "Hansard": 79436
   },
   "date_range": [
     "2023-12-05",
-    "2026-04-22"
+    "2026-05-12"
   ],
   "politicians": 133,
   "attributes": [
@@ -18,7 +18,7 @@
     "Rigor",
     "Specificity"
   ],
-  "examples": 78196,
+  "examples": 79436,
   "scoring": "all sources blended into one score per (politician, attribute); each quote tagged with its source",
   "bias_mitigation": "empirical-Bayes shrinkage per attribute; n + 95% CI + confidence surfaced",
   "unresolved_speakers": 0,
@@ -30,10 +30,10 @@
       "sha256_16": "90bf6a8c394e107f"
     },
     "scores.jsonl": {
-      "sha256_16": "23a01c2e0d7f925d"
+      "sha256_16": "38b208d76094723b"
     },
     "examples.jsonl": {
-      "sha256_16": "89f6846516f8beda"
+      "sha256_16": "441da25db9c5bce7"
     }
   }
 }

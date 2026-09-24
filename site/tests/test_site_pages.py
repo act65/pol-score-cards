@@ -18,6 +18,18 @@ def test_every_featured_card_is_scored_and_ranked():
     assert not hasattr(app, "_grade_colour")
 
 
+def test_every_page_with_cards_can_be_read_against_the_house():
+    """The grid, a party card and a politician's card all carry the same
+    toggle, and all three need both values in the markup or it shows dashes."""
+    c = app.app.test_client()
+    shown, _ = app._featured()
+    pid = shown[0]["politician"]["id"]
+    for route in ("/", "/party", f"/politician/{pid}"):
+        html = c.get(route).get_data(as_text=True)
+        assert html.count('data-rel="') == html.count('data-abs="') > 0, route
+        assert 'data-rel="—"' not in html, route
+
+
 def test_the_card_can_be_read_against_the_house():
     """The politician page toggles its card between absolute scores and each
     attribute's distance from the House average, so both numbers have to reach

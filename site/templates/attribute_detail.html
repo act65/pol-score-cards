@@ -41,9 +41,11 @@
         <p class="aggregate-note">
            {% if meta and meta.n %}Based on <strong>{{ meta.n }}</strong> scored statement{{ '' if meta.n == 1 else 's' }}
               from Hansard, the verbatim parliamentary record (every quote links to its sitting day){{ ' — treat single-statement scores with caution' if meta.n == 1 else '' }}.
-              The headline number is a <em>bias-adjusted</em> estimate (empirical-Bayes): thin samples are pulled
-              toward the typical value for this attribute, and ± is the 95% confidence band. The raw per-statement
-              scores are shown below.
+              The headline number is a <em>bias-adjusted</em> estimate (empirical-Bayes): a sample that is
+              thin, or that disagrees with itself, is pulled toward the typical value for this attribute.
+              <strong>± is the interval on the average, not the spread of the statements.</strong> A tight
+              interval means the average is well pinned down — it does not mean the statements agree with
+              each other, which is what the chart below shows.
            {% else %}The score above aggregates the statements below.{% endif %}</p>
         {% if spread %}
         {# The distribution the score is made of. One number standing for

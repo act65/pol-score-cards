@@ -2,11 +2,11 @@
   "totals": {
     "politicians": 133,
     "attributes": 6,
-    "statements": 78196,
-    "windows_scored": 5300,
+    "statements": 79436,
+    "windows_scored": 5366,
     "date_range": [
       "2023-12-05",
-      "2026-04-22"
+      "2026-05-12"
     ]
   },
   "per_source": [
@@ -14,7 +14,7 @@
       "source": "Hansard \u2014 parliamentary debates",
       "desc": "The official verbatim record of debate in the House. Adversarial, on-the-record, and covering every MP \u2014 the backbone of the dataset.",
       "url": "https://www.parliament.nz/en/pb/hansard-debates/rhr/",
-      "statements": 78196,
+      "statements": 79436,
       "share": 100.0
     }
   ],
@@ -30,44 +30,44 @@
     {
       "party": "National",
       "mps": 48,
-      "statements": 27482,
-      "share": 35.1,
+      "statements": 28035,
+      "share": 35.3,
       "mean_score": 58
     },
     {
       "party": "Labour",
       "mps": 39,
-      "statements": 26343,
-      "share": 33.7,
+      "statements": 26675,
+      "share": 33.6,
       "mean_score": 65
     },
     {
       "party": "Green",
       "mps": 18,
-      "statements": 10102,
+      "statements": 10264,
       "share": 12.9,
-      "mean_score": 65
+      "mean_score": 64
     },
     {
       "party": "ACT",
       "mps": 11,
-      "statements": 6198,
+      "statements": 6298,
       "share": 7.9,
       "mean_score": 59
     },
     {
       "party": "NZ First",
       "mps": 9,
-      "statements": 5320,
+      "statements": 5372,
       "share": 6.8,
       "mean_score": 57
     },
     {
       "party": "Te P\u0101ti M\u0101ori",
       "mps": 7,
-      "statements": 2705,
+      "statements": 2746,
       "share": 3.5,
-      "mean_score": 59
+      "mean_score": 60
     },
     {
       "party": "Independent",
@@ -82,243 +82,264 @@
       "id": "nicola-willis",
       "name": "Nicola Willis",
       "party": "National",
-      "statements": 2563,
+      "statements": 2620,
       "n_attrs": 6
     },
     {
       "id": "luxon",
       "name": "Christopher Luxon",
       "party": "National",
-      "statements": 2295,
+      "statements": 2346,
       "n_attrs": 6
     },
     {
       "id": "chris-bishop",
       "name": "Chris Bishop",
       "party": "National",
-      "statements": 2160,
+      "statements": 2201,
       "n_attrs": 6
     },
     {
       "id": "duncan-webb",
       "name": "Duncan Webb",
       "party": "Labour",
-      "statements": 2000,
+      "statements": 2016,
       "n_attrs": 6
     },
     {
       "id": "simeon-brown",
       "name": "Simeon Brown",
       "party": "National",
-      "statements": 1752,
+      "statements": 1783,
       "n_attrs": 6
     },
     {
       "id": "ginny-andersen",
       "name": "Ginny Andersen",
       "party": "Labour",
-      "statements": 1747,
+      "statements": 1764,
       "n_attrs": 6
     },
     {
       "id": "seymour",
       "name": "David Seymour",
       "party": "ACT",
-      "statements": 1641,
+      "statements": 1657,
       "n_attrs": 6
     },
     {
       "id": "peters",
       "name": "Winston Peters",
       "party": "NZ First",
-      "statements": 1397,
+      "statements": 1416,
       "n_attrs": 6
     },
     {
       "id": "lawrence-xu-nan",
       "name": "Lawrence Xu-Nan",
       "party": "Green",
-      "statements": 1378,
+      "statements": 1400,
       "n_attrs": 6
     },
     {
       "id": "arena-williams",
       "name": "Arena Williams",
       "party": "Labour",
-      "statements": 1285,
+      "statements": 1311,
       "n_attrs": 6
     },
     {
       "id": "deborah-russell",
       "name": "Deborah Russell",
       "party": "Labour",
-      "statements": 1283,
+      "statements": 1286,
       "n_attrs": 6
     },
     {
       "id": "chris-hipkins",
       "name": "Chris Hipkins",
       "party": "Labour",
-      "statements": 1184,
+      "statements": 1196,
       "n_attrs": 6
     },
     {
       "id": "paul-goldsmith",
       "name": "Paul Goldsmith",
       "party": "National",
-      "statements": 1167,
+      "statements": 1193,
       "n_attrs": 6
     },
     {
       "id": "louise-upston",
       "name": "Louise Upston",
       "party": "National",
-      "statements": 1130,
+      "statements": 1149,
       "n_attrs": 6
     },
     {
       "id": "barbara-edmonds",
       "name": "Barbara Edmonds",
       "party": "Labour",
-      "statements": 1118,
+      "statements": 1127,
       "n_attrs": 6
     },
     {
       "id": "rachel-brooking",
       "name": "Rachel Brooking",
       "party": "Labour",
-      "statements": 1117,
-      "n_attrs": 6
-    },
-    {
-      "id": "julie-anne-genter",
-      "name": "Julie Anne Genter",
-      "party": "Green",
-      "statements": 1088,
+      "statements": 1127,
       "n_attrs": 6
     },
     {
       "id": "erica-stanford",
       "name": "Erica Stanford",
       "party": "National",
-      "statements": 1080,
+      "statements": 1105,
+      "n_attrs": 6
+    },
+    {
+      "id": "julie-anne-genter",
+      "name": "Julie Anne Genter",
+      "party": "Green",
+      "statements": 1101,
       "n_attrs": 6
     },
     {
       "id": "willie-jackson",
       "name": "Willie Jackson",
       "party": "Labour",
-      "statements": 1045,
-      "n_attrs": 6
-    },
-    {
-      "id": "andy-foster",
-      "name": "Andy Foster",
-      "party": "NZ First",
-      "statements": 997,
-      "n_attrs": 6
-    },
-    {
-      "id": "simon-watts",
-      "name": "Simon Watts",
-      "party": "National",
-      "statements": 993,
+      "statements": 1069,
       "n_attrs": 6
     },
     {
       "id": "tangi-utikere",
       "name": "Tangi Utikere",
       "party": "Labour",
-      "statements": 993,
+      "statements": 1041,
+      "n_attrs": 6
+    },
+    {
+      "id": "simon-watts",
+      "name": "Simon Watts",
+      "party": "National",
+      "statements": 1030,
+      "n_attrs": 6
+    },
+    {
+      "id": "andy-foster",
+      "name": "Andy Foster",
+      "party": "NZ First",
+      "statements": 1008,
       "n_attrs": 6
     },
     {
       "id": "kieran-mcanulty",
       "name": "Kieran McAnulty",
       "party": "Labour",
-      "statements": 978,
-      "n_attrs": 6
-    },
-    {
-      "id": "camilla-belich",
-      "name": "Camilla Belich",
-      "party": "Labour",
-      "statements": 961,
-      "n_attrs": 6
-    },
-    {
-      "id": "shane-jones",
-      "name": "Shane Jones",
-      "party": "NZ First",
-      "statements": 937,
+      "statements": 998,
       "n_attrs": 6
     },
     {
       "id": "tama-potaka",
       "name": "Tama Potaka",
       "party": "National",
-      "statements": 926,
+      "statements": 996,
+      "n_attrs": 6
+    },
+    {
+      "id": "camilla-belich",
+      "name": "Camilla Belich",
+      "party": "Labour",
+      "statements": 965,
+      "n_attrs": 6
+    },
+    {
+      "id": "shane-jones",
+      "name": "Shane Jones",
+      "party": "NZ First",
+      "statements": 941,
       "n_attrs": 6
     },
     {
       "id": "ingrid-leary",
       "name": "Ingrid Leary",
       "party": "Labour",
-      "statements": 914,
+      "statements": 925,
       "n_attrs": 6
     },
     {
       "id": "megan-woods",
       "name": "Megan Woods",
       "party": "Labour",
-      "statements": 911,
+      "statements": 918,
       "n_attrs": 6
     },
     {
       "id": "steve-abel",
       "name": "Steve Abel",
       "party": "Green",
-      "statements": 899,
-      "n_attrs": 6
-    },
-    {
-      "id": "helen-white",
-      "name": "Helen White",
-      "party": "Labour",
-      "statements": 898,
-      "n_attrs": 6
-    },
-    {
-      "id": "ricardo-menendez-march",
-      "name": "Ricardo Men\u00e9ndez March",
-      "party": "Green",
-      "statements": 896,
-      "n_attrs": 6
-    },
-    {
-      "id": "swarbrick",
-      "name": "Chl\u00f6e Swarbrick",
-      "party": "Green",
-      "statements": 872,
+      "statements": 917,
       "n_attrs": 6
     },
     {
       "id": "james-meager",
       "name": "James Meager",
       "party": "National",
-      "statements": 847,
+      "statements": 914,
+      "n_attrs": 6
+    },
+    {
+      "id": "helen-white",
+      "name": "Helen White",
+      "party": "Labour",
+      "statements": 905,
+      "n_attrs": 6
+    },
+    {
+      "id": "ricardo-menendez-march",
+      "name": "Ricardo Men\u00e9ndez March",
+      "party": "Green",
+      "statements": 904,
+      "n_attrs": 6
+    },
+    {
+      "id": "swarbrick",
+      "name": "Chl\u00f6e Swarbrick",
+      "party": "Green",
+      "statements": 877,
       "n_attrs": 6
     },
     {
       "id": "willow-jean-prime",
       "name": "Willow-Jean Prime",
       "party": "Labour",
-      "statements": 820,
+      "statements": 834,
+      "n_attrs": 6
+    },
+    {
+      "id": "nicole-mckee",
+      "name": "Nicole McKee",
+      "party": "ACT",
+      "statements": 798,
       "n_attrs": 6
     },
     {
       "id": "chris-penk",
       "name": "Chris Penk",
+      "party": "National",
+      "statements": 791,
+      "n_attrs": 6
+    },
+    {
+      "id": "casey-costello",
+      "name": "Casey Costello",
+      "party": "NZ First",
+      "statements": 782,
+      "n_attrs": 6
+    },
+    {
+      "id": "cameron-brewer",
+      "name": "Cameron Brewer",
       "party": "National",
       "statements": 781,
       "n_attrs": 6
@@ -328,27 +349,6 @@
       "name": "Tamatha Paul",
       "party": "Green",
       "statements": 779,
-      "n_attrs": 6
-    },
-    {
-      "id": "cameron-brewer",
-      "name": "Cameron Brewer",
-      "party": "National",
-      "statements": 775,
-      "n_attrs": 6
-    },
-    {
-      "id": "casey-costello",
-      "name": "Casey Costello",
-      "party": "NZ First",
-      "statements": 771,
-      "n_attrs": 6
-    },
-    {
-      "id": "nicole-mckee",
-      "name": "Nicole McKee",
-      "party": "ACT",
-      "statements": 765,
       "n_attrs": 6
     },
     {
@@ -362,14 +362,14 @@
       "id": "scott-willis",
       "name": "Scott Willis",
       "party": "Green",
-      "statements": 697,
+      "statements": 719,
       "n_attrs": 6
     },
     {
       "id": "debbie-ngarewa-packer",
       "name": "Debbie Ngarewa-Packer",
       "party": "Te P\u0101ti M\u0101ori",
-      "statements": 664,
+      "statements": 673,
       "n_attrs": 6
     },
     {
@@ -383,7 +383,14 @@
       "id": "shanan-halbert",
       "name": "Shanan Halbert",
       "party": "Labour",
-      "statements": 642,
+      "statements": 650,
+      "n_attrs": 6
+    },
+    {
+      "id": "brooke-van-velden",
+      "name": "Brooke van Velden",
+      "party": "ACT",
+      "statements": 643,
       "n_attrs": 6
     },
     {
@@ -394,10 +401,10 @@
       "n_attrs": 6
     },
     {
-      "id": "brooke-van-velden",
-      "name": "Brooke van Velden",
-      "party": "ACT",
-      "statements": 633,
+      "id": "tom-rutherford",
+      "name": "Tom Rutherford",
+      "party": "National",
+      "statements": 609,
       "n_attrs": 6
     },
     {
@@ -415,23 +422,16 @@
       "n_attrs": 6
     },
     {
-      "id": "tom-rutherford",
-      "name": "Tom Rutherford",
-      "party": "National",
-      "statements": 593,
+      "id": "phil-twyford",
+      "name": "Phil Twyford",
+      "party": "Labour",
+      "statements": 596,
       "n_attrs": 6
     },
     {
       "id": "mariameno-kapa-kingi",
       "name": "Mariameno Kapa-Kingi",
       "party": "Te P\u0101ti M\u0101ori",
-      "statements": 581,
-      "n_attrs": 6
-    },
-    {
-      "id": "phil-twyford",
-      "name": "Phil Twyford",
-      "party": "Labour",
       "statements": 581,
       "n_attrs": 6
     },
@@ -446,14 +446,21 @@
       "id": "simon-court",
       "name": "Simon Court",
       "party": "ACT",
-      "statements": 565,
+      "statements": 570,
       "n_attrs": 6
     },
     {
       "id": "vanushi-walters",
       "name": "Vanushi Walters",
       "party": "Labour",
-      "statements": 560,
+      "statements": 568,
+      "n_attrs": 6
+    },
+    {
+      "id": "cameron-luxton",
+      "name": "Cameron Luxton",
+      "party": "ACT",
+      "statements": 565,
       "n_attrs": 6
     },
     {
@@ -464,38 +471,45 @@
       "n_attrs": 6
     },
     {
-      "id": "cameron-luxton",
-      "name": "Cameron Luxton",
-      "party": "ACT",
-      "statements": 552,
-      "n_attrs": 6
-    },
-    {
       "id": "rima-nakhle",
       "name": "Rima Nakhle",
       "party": "National",
-      "statements": 547,
+      "statements": 550,
       "n_attrs": 6
     },
     {
       "id": "reuben-davidson",
       "name": "Reuben Davidson",
       "party": "Labour",
-      "statements": 534,
+      "statements": 547,
       "n_attrs": 6
     },
     {
       "id": "glen-bennett",
       "name": "Glen Bennett",
       "party": "Labour",
-      "statements": 529,
+      "statements": 542,
       "n_attrs": 6
     },
     {
       "id": "davidson",
       "name": "Marama Davidson",
       "party": "Green",
-      "statements": 518,
+      "statements": 536,
+      "n_attrs": 6
+    },
+    {
+      "id": "lan-pham",
+      "name": "Lan Pham",
+      "party": "Green",
+      "statements": 527,
+      "n_attrs": 6
+    },
+    {
+      "id": "dan-bidois",
+      "name": "Dan Bidois",
+      "party": "National",
+      "statements": 526,
       "n_attrs": 6
     },
     {
@@ -506,38 +520,24 @@
       "n_attrs": 6
     },
     {
-      "id": "lan-pham",
-      "name": "Lan Pham",
-      "party": "Green",
-      "statements": 517,
-      "n_attrs": 6
-    },
-    {
-      "id": "dan-bidois",
-      "name": "Dan Bidois",
-      "party": "National",
-      "statements": 515,
-      "n_attrs": 6
-    },
-    {
       "id": "damien-o'connor",
       "name": "Damien O'Connor",
       "party": "Labour",
-      "statements": 513,
+      "statements": 517,
       "n_attrs": 6
     },
     {
       "id": "priyanca-radhakrishnan",
       "name": "Priyanca Radhakrishnan",
       "party": "Labour",
-      "statements": 502,
+      "statements": 506,
       "n_attrs": 6
     },
     {
       "id": "francisco-hernandez",
       "name": "Francisco Hernandez",
       "party": "Green",
-      "statements": 500,
+      "statements": 504,
       "n_attrs": 6
     },
     {
@@ -551,7 +551,7 @@
       "id": "matt-doocey",
       "name": "Matt Doocey",
       "party": "National",
-      "statements": 473,
+      "statements": 475,
       "n_attrs": 6
     },
     {
@@ -565,7 +565,7 @@
       "id": "tim-costley",
       "name": "Tim Costley",
       "party": "National",
-      "statements": 467,
+      "statements": 469,
       "n_attrs": 6
     },
     {
@@ -583,38 +583,38 @@
       "n_attrs": 6
     },
     {
+      "id": "todd-mcclay",
+      "name": "Todd McClay",
+      "party": "National",
+      "statements": 458,
+      "n_attrs": 6
+    },
+    {
       "id": "tracey-mclellan",
       "name": "Tracey McLellan",
       "party": "Labour",
-      "statements": 450,
+      "statements": 458,
       "n_attrs": 6
     },
     {
       "id": "mark-patterson",
       "name": "Mark Patterson",
       "party": "NZ First",
-      "statements": 443,
+      "statements": 450,
       "n_attrs": 6
     },
     {
       "id": "carl-bates",
       "name": "Carl Bates",
       "party": "National",
-      "statements": 442,
-      "n_attrs": 6
-    },
-    {
-      "id": "todd-mcclay",
-      "name": "Todd McClay",
-      "party": "National",
-      "statements": 440,
+      "statements": 447,
       "n_attrs": 6
     },
     {
       "id": "teanau-tuiono",
       "name": "Teanau Tuiono",
       "party": "Green",
-      "statements": 423,
+      "statements": 437,
       "n_attrs": 6
     },
     {
@@ -628,7 +628,7 @@
       "id": "jan-tinetti",
       "name": "Jan Tinetti",
       "party": "Labour",
-      "statements": 408,
+      "statements": 416,
       "n_attrs": 6
     },
     {
@@ -649,7 +649,7 @@
       "id": "hana-rawhiti-maipi-clarke",
       "name": "Hana-Rawhiti Maipi-Clarke",
       "party": "Te P\u0101ti M\u0101ori",
-      "statements": 363,
+      "statements": 371,
       "n_attrs": 6
     },
     {
@@ -660,6 +660,13 @@
       "n_attrs": 6
     },
     {
+      "id": "celia-wade-brown",
+      "name": "Celia Wade-Brown",
+      "party": "Green",
+      "statements": 339,
+      "n_attrs": 6
+    },
+    {
       "id": "collins",
       "name": "Judith Collins",
       "party": "National",
@@ -667,17 +674,10 @@
       "n_attrs": 6
     },
     {
-      "id": "celia-wade-brown",
-      "name": "Celia Wade-Brown",
-      "party": "Green",
-      "statements": 331,
-      "n_attrs": 6
-    },
-    {
       "id": "hamish-campbell",
       "name": "Hamish Campbell",
       "party": "National",
-      "statements": 327,
+      "statements": 330,
       "n_attrs": 6
     },
     {
@@ -705,7 +705,7 @@
       "id": "cushla-tangaere-manuel",
       "name": "Cushla Tangaere-Manuel",
       "party": "Labour",
-      "statements": 293,
+      "statements": 295,
       "n_attrs": 6
     },
     {
@@ -723,15 +723,22 @@
       "n_attrs": 6
     },
     {
-      "id": "grant-mccallum",
-      "name": "Grant McCallum",
+      "id": "vanessa-weenink",
+      "name": "Vanessa Weenink",
       "party": "National",
-      "statements": 274,
+      "statements": 277,
       "n_attrs": 6
     },
     {
-      "id": "vanessa-weenink",
-      "name": "Vanessa Weenink",
+      "id": "andrew-hoggard",
+      "name": "Andrew Hoggard",
+      "party": "ACT",
+      "statements": 276,
+      "n_attrs": 6
+    },
+    {
+      "id": "grant-mccallum",
+      "name": "Grant McCallum",
       "party": "National",
       "statements": 274,
       "n_attrs": 6
@@ -744,10 +751,10 @@
       "n_attrs": 6
     },
     {
-      "id": "andrew-hoggard",
-      "name": "Andrew Hoggard",
-      "party": "ACT",
-      "statements": 260,
+      "id": "katie-nimon",
+      "name": "Katie Nimon",
+      "party": "National",
+      "statements": 262,
       "n_attrs": 6
     },
     {
@@ -755,13 +762,6 @@
       "name": "Stuart Smith",
       "party": "National",
       "statements": 259,
-      "n_attrs": 6
-    },
-    {
-      "id": "katie-nimon",
-      "name": "Katie Nimon",
-      "party": "National",
-      "statements": 257,
       "n_attrs": 6
     },
     {
@@ -775,14 +775,21 @@
       "id": "carlos-cheung",
       "name": "Carlos Cheung",
       "party": "National",
-      "statements": 250,
+      "statements": 252,
       "n_attrs": 6
     },
     {
       "id": "joseph-mooney",
       "name": "Joseph Mooney",
       "party": "National",
-      "statements": 243,
+      "statements": 245,
+      "n_attrs": 6
+    },
+    {
+      "id": "laura-mcclure",
+      "name": "Laura McClure",
+      "party": "ACT",
+      "statements": 234,
       "n_attrs": 6
     },
     {
@@ -793,17 +800,17 @@
       "n_attrs": 6
     },
     {
-      "id": "laura-mcclure",
-      "name": "Laura McClure",
-      "party": "ACT",
-      "statements": 227,
-      "n_attrs": 6
-    },
-    {
       "id": "takutai-kemp",
       "name": "Takutai Kemp",
       "party": "Te P\u0101ti M\u0101ori",
       "statements": 219,
+      "n_attrs": 6
+    },
+    {
+      "id": "nicola-grigg",
+      "name": "Nicola Grigg",
+      "party": "National",
+      "statements": 215,
       "n_attrs": 6
     },
     {
@@ -817,14 +824,7 @@
       "id": "mike-butterick",
       "name": "Mike Butterick",
       "party": "National",
-      "statements": 206,
-      "n_attrs": 6
-    },
-    {
-      "id": "nicola-grigg",
-      "name": "Nicola Grigg",
-      "party": "National",
-      "statements": 205,
+      "statements": 214,
       "n_attrs": 6
     },
     {
@@ -852,7 +852,7 @@
       "id": "jenny-salesa",
       "name": "Jenny Salesa",
       "party": "Labour",
-      "statements": 176,
+      "statements": 180,
       "n_attrs": 6
     },
     {
@@ -894,7 +894,7 @@
       "id": "suze-redmayne",
       "name": "Suze Redmayne",
       "party": "National",
-      "statements": 144,
+      "statements": 148,
       "n_attrs": 6
     },
     {
@@ -919,24 +919,24 @@
       "n_attrs": 6
     },
     {
-      "id": "melissa-lee",
-      "name": "Melissa Lee",
-      "party": "National",
-      "statements": 102,
-      "n_attrs": 6
-    },
-    {
       "id": "oriini-kaipara",
       "name": "Oriini Kaipara",
       "party": "Te P\u0101ti M\u0101ori",
-      "statements": 91,
-      "n_attrs": 5
+      "statements": 115,
+      "n_attrs": 6
+    },
+    {
+      "id": "melissa-lee",
+      "name": "Melissa Lee",
+      "party": "National",
+      "statements": 105,
+      "n_attrs": 6
     },
     {
       "id": "greg-fleming",
       "name": "Greg Fleming",
       "party": "National",
-      "statements": 84,
+      "statements": 89,
       "n_attrs": 6
     },
     {
@@ -947,17 +947,17 @@
       "n_attrs": 6
     },
     {
+      "id": "mike-davidson",
+      "name": "Mike Davidson",
+      "party": "Green",
+      "statements": 67,
+      "n_attrs": 6
+    },
+    {
       "id": "benjamin-doyle",
       "name": "Benjamin Doyle",
       "party": "Green",
       "statements": 59,
-      "n_attrs": 6
-    },
-    {
-      "id": "mike-davidson",
-      "name": "Mike Davidson",
-      "party": "Green",
-      "statements": 47,
       "n_attrs": 6
     },
     {
@@ -971,7 +971,21 @@
       "id": "maureen-pugh",
       "name": "Maureen Pugh",
       "party": "National",
-      "statements": 30,
+      "statements": 41,
+      "n_attrs": 6
+    },
+    {
+      "id": "dan-rosewarne",
+      "name": "Dan Rosewarne",
+      "party": "Labour",
+      "statements": 26,
+      "n_attrs": 6
+    },
+    {
+      "id": "georgie-dansey",
+      "name": "Georgie Dansey",
+      "party": "Labour",
+      "statements": 17,
       "n_attrs": 5
     },
     {
@@ -982,25 +996,11 @@
       "n_attrs": 5
     },
     {
-      "id": "georgie-dansey",
-      "name": "Georgie Dansey",
-      "party": "Labour",
-      "statements": 14,
-      "n_attrs": 5
-    },
-    {
       "id": "kelvin-davis",
       "name": "Kelvin Davis",
       "party": "Labour",
       "statements": 14,
       "n_attrs": 6
-    },
-    {
-      "id": "dan-rosewarne",
-      "name": "Dan Rosewarne",
-      "party": "Labour",
-      "statements": 12,
-      "n_attrs": 5
     },
     {
       "id": "barbara-kuriger",
@@ -1013,8 +1013,8 @@
   "instrument": {
     "quotes": {
       "sampled": 800,
-      "checkable": 78271,
-      "statements": 78271,
+      "checkable": 79369,
+      "statements": 79369,
       "sitting_days": 196,
       "totals": {
         "n": 800,
@@ -1032,8 +1032,8 @@
           "truncated": 0
         },
         "veracity": {
-          "n": 245,
-          "verbatim": 245,
+          "n": 243,
+          "verbatim": 243,
           "spliced": 0,
           "missing": 0,
           "truncated": 0
@@ -1046,8 +1046,8 @@
           "truncated": 0
         },
         "focus": {
-          "n": 149,
-          "verbatim": 149,
+          "n": 150,
+          "verbatim": 150,
           "spliced": 0,
           "missing": 0,
           "truncated": 0
@@ -1060,8 +1060,8 @@
           "truncated": 0
         },
         "specificity": {
-          "n": 163,
-          "verbatim": 163,
+          "n": 164,
+          "verbatim": 164,
           "spliced": 0,
           "missing": 0,
           "truncated": 0
@@ -1077,76 +1077,76 @@
     "overlap": {
       "coverage": {
         "civility": {
-          "n": 8521,
+          "n": 8622,
           "mean": 0.5994
         },
         "specificity": {
-          "n": 16890,
-          "mean": 0.6458
+          "n": 17132,
+          "mean": 0.6459
         },
         "rigor": {
-          "n": 12374,
-          "mean": 0.465
+          "n": 12552,
+          "mean": 0.4653
         },
         "focus": {
-          "n": 13587,
-          "mean": 0.6974
+          "n": 13808,
+          "mean": 0.6976
         }
       },
       "pairs": [
         {
           "a": "focus",
           "b": "civility",
-          "r": 0.6619924412686063,
-          "n_both": 2145,
-          "share_a": 0.1578714948112166,
-          "share_b": 0.2517310174862105,
-          "jaccard": 0.10744878024345038
+          "r": 0.663107930327092,
+          "n_both": 2176,
+          "share_a": 0.15758980301274622,
+          "share_b": 0.252377638598933,
+          "jaccard": 0.10743556828280833
         },
         {
           "a": "focus",
           "b": "rigor",
-          "r": 0.5750915664073061,
-          "n_both": 2268,
-          "share_a": 0.16692426584234932,
-          "share_b": 0.18328753838694037,
-          "jaccard": 0.09572447558350568
+          "r": 0.5765062417853981,
+          "n_both": 2302,
+          "share_a": 0.1667149478563152,
+          "share_b": 0.1833970681963034,
+          "jaccard": 0.09568542688502785
         },
         {
           "a": "focus",
           "b": "specificity",
-          "r": 0.6083760545432424,
-          "n_both": 3082,
-          "share_a": 0.22683447412968277,
-          "share_b": 0.18247483718176435,
-          "jaccard": 0.11250228143821865
+          "r": 0.6095489540104162,
+          "n_both": 3138,
+          "share_a": 0.2272595596755504,
+          "share_b": 0.1831660051365865,
+          "jaccard": 0.112869577728221
         },
         {
           "a": "civility",
           "b": "rigor",
-          "r": 0.49057459635005285,
-          "n_both": 752,
-          "share_a": 0.08825255251731018,
-          "share_b": 0.06077258768385324,
-          "jaccard": 0.03733306855979745
+          "r": 0.49035895009029684,
+          "n_both": 759,
+          "share_a": 0.08803061934585943,
+          "share_b": 0.060468451242829825,
+          "jaccard": 0.03717854518736223
         },
         {
           "a": "civility",
           "b": "specificity",
-          "r": -0.14199734181385099,
-          "n_both": 266,
-          "share_a": 0.03121699331064429,
-          "share_b": 0.015748963883955004,
-          "jaccard": 0.010578643865579638
+          "r": -0.13204257223092128,
+          "n_both": 267,
+          "share_a": 0.030967292971468337,
+          "share_b": 0.015584870417931357,
+          "jaccard": 0.010475928904931927
         },
         {
           "a": "rigor",
           "b": "specificity",
-          "r": 0.5928960971892937,
-          "n_both": 992,
-          "share_a": 0.08016809439146598,
-          "share_b": 0.058732978093546474,
-          "jaccard": 0.03508771929824561
+          "r": 0.5947511753951559,
+          "n_both": 1008,
+          "share_a": 0.08030592734225621,
+          "share_b": 0.05883726360028018,
+          "jaccard": 0.03515134607337146
         }
       ],
       "min_n": 30,
@@ -1154,56 +1154,56 @@
         {
           "a": "focus",
           "b": "civility",
-          "r": 0.6619924412686063,
-          "n_both": 2145,
-          "share_a": 0.1578714948112166,
-          "share_b": 0.2517310174862105,
-          "jaccard": 0.10744878024345038
+          "r": 0.663107930327092,
+          "n_both": 2176,
+          "share_a": 0.15758980301274622,
+          "share_b": 0.252377638598933,
+          "jaccard": 0.10743556828280833
         },
         {
           "a": "focus",
           "b": "specificity",
-          "r": 0.6083760545432424,
-          "n_both": 3082,
-          "share_a": 0.22683447412968277,
-          "share_b": 0.18247483718176435,
-          "jaccard": 0.11250228143821865
+          "r": 0.6095489540104162,
+          "n_both": 3138,
+          "share_a": 0.2272595596755504,
+          "share_b": 0.1831660051365865,
+          "jaccard": 0.112869577728221
         },
         {
           "a": "rigor",
           "b": "specificity",
-          "r": 0.5928960971892937,
-          "n_both": 992,
-          "share_a": 0.08016809439146598,
-          "share_b": 0.058732978093546474,
-          "jaccard": 0.03508771929824561
+          "r": 0.5947511753951559,
+          "n_both": 1008,
+          "share_a": 0.08030592734225621,
+          "share_b": 0.05883726360028018,
+          "jaccard": 0.03515134607337146
         },
         {
           "a": "focus",
           "b": "rigor",
-          "r": 0.5750915664073061,
-          "n_both": 2268,
-          "share_a": 0.16692426584234932,
-          "share_b": 0.18328753838694037,
-          "jaccard": 0.09572447558350568
+          "r": 0.5765062417853981,
+          "n_both": 2302,
+          "share_a": 0.1667149478563152,
+          "share_b": 0.1833970681963034,
+          "jaccard": 0.09568542688502785
         },
         {
           "a": "civility",
           "b": "rigor",
-          "r": 0.49057459635005285,
-          "n_both": 752,
-          "share_a": 0.08825255251731018,
-          "share_b": 0.06077258768385324,
-          "jaccard": 0.03733306855979745
+          "r": 0.49035895009029684,
+          "n_both": 759,
+          "share_a": 0.08803061934585943,
+          "share_b": 0.060468451242829825,
+          "jaccard": 0.03717854518736223
         },
         {
           "a": "civility",
           "b": "specificity",
-          "r": -0.14199734181385099,
-          "n_both": 266,
-          "share_a": 0.03121699331064429,
-          "share_b": 0.015748963883955004,
-          "jaccard": 0.010578643865579638
+          "r": -0.13204257223092128,
+          "n_both": 267,
+          "share_a": 0.030967292971468337,
+          "share_b": 0.015584870417931357,
+          "jaccard": 0.010475928904931927
         }
       ],
       "redundant": []
@@ -1257,7 +1257,7 @@
   "downloads": [
     {
       "label": "Attribute scores + evidence (JSONL)",
-      "note": "78,196 scored, sourced statements",
+      "note": "79,436 scored, sourced statements",
       "url": "/download/examples"
     },
     {
