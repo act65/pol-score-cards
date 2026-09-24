@@ -31,20 +31,10 @@
                 <span><b>{{ attribute.name }}</b> — <span class="blurb">{{ attribute.blurb or attribute.definition }}</span></span></li>
             {% endfor %}
         </ul>
-        <div class="sc-grade-key">
-            <span class="gk-label">The card's <b>border colour</b> is its overall score — the geometric
-                mean of all {{ all_attributes|length }} attributes, so one weak attribute pulls the whole
-                card down. The pass mark on every attribute is 100, and the scale below runs to 80:</span>
-            <div class="gk-bar" style="background: linear-gradient(to right, {{ grade_ramp|join(', ') }});"></div>
-            <div class="gk-ticks">
-                {% for t in grade_ticks %}
-                <span style="left: {{ 100 * (t - grade_window[0]) / (grade_window[1] - grade_window[0]) }}%">{{ t }}</span>
-                {% endfor %}
-            </div>
-            <span class="gk-note">Every card in this Parliament sits between 43 and 74. A score marked
-                <b class="sc-unver-key">?</b> is the model's own estimate rather than a check against a
-                source — see <a href="/about">about</a>.</span>
-        </div>
+        <p class="sc-key-note">A card's <b>overall score</b> is the geometric mean of all
+            {{ all_attributes|length }} attributes, so one weak attribute pulls the whole card down.
+            Open a card to see it. A score marked <b class="sc-unver-key">?</b> is the model's own
+            estimate rather than a check against a source — see <a href="/about">about</a>.</p>
     </details>
 
     <p class="grid-caption">Featuring {{ shown_count }} of {{ total_count }} politicians
@@ -96,7 +86,7 @@
              data-name="{{ item.politician.name|lower }}"
              data-role="{{ item.politician.leadership or '' }}"
              data-scores='{{ item.scores|tojson }}'
-             style="--party: {{ colour }}; --grade: {{ item.grade }};">
+             style="--party: {{ colour }};">
             <a class="sc-open" href="{{ url_for('politician_page', politician_id=item.politician.id) }}">
                 <div class="sc-banner">
                     <h3 class="sc-name">{{ item.politician.name }}</h3>

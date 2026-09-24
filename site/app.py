@@ -49,51 +49,11 @@ for _a in attribute_descriptions:
     _a["svg"] = _entry.get("svg", "")
     _a["blurb"] = _entry.get("blurb", "")
 
-# --- Grade ------------------------------------------------------------------
-# A card's overall strength is the GEOMETRIC mean of its attribute scores (so a
-# single weak attribute drags the whole card down — you can't be strong by being
-# lopsided). That number sets the card's border colour, on a continuous ramp
-# over a fixed window.
+# The card's border is a fixed neutral. It carried the overall score on a
+# colour ramp for a while, and before that a five-tier rarity; both encoded one
+# number that the card already prints, at the cost of the only other colour on
+# a deliberately monochrome design. The six stats are the information.
 #
-# This replaced a five-tier rarity ranking (legendary/epic/rare/uncommon/common
-# in exponential buckets). Two things were wrong with it. It put 117 of 132
-# cards in one tier, so the border said nothing about 89% of the House. And
-# "rarity" means scarcity in a card game but quality here, so calling the Prime
-# Minister's card *common* read as a verdict the data had not delivered.
-#
-# The window is ABSOLUTE and wider than the observed spread on purpose. Every
-# card in this Parliament lands between 43 and 74, and a ramp stretched to fit
-# that would imply the top of it is good. The pass mark is 100. The bar in the
-# legend shows the same window, so a reader can see how little of it is used.
-GRADE_WINDOW = (40, 80)
-# A single-hue INK ramp, pale to near-black — not bronze/silver/gold.
-#
-# Two reasons. The card is monochrome ink on white with the party chip as its
-# only colour, and a medal ramp added a second colour system competing with it.
-# And a gold border for the best card implies the best card is good: it is 74
-# against a pass mark of 100. Ink carries no such claim, and it is the encoding
-# the card already uses one level down — `.sc-val` runs faint grey for a low
-# stat to bold black for a high one. This is the same idea at card scale.
-_GRADE_STOPS = [(0.0, (169, 162, 150)),   # faint
-                (1.0, (20, 17, 13))]      # bold black
-
-
-def _grade_colour(score):
-    """Interpolate the ink ramp at `score`."""
-    lo, hi = GRADE_WINDOW
-    t = min(1.0, max(0.0, (float(score) - lo) / (hi - lo)))
-    for (t0, c0), (t1, c1) in zip(_GRADE_STOPS, _GRADE_STOPS[1:]):
-        if t <= t1:
-            k = 0.0 if t1 == t0 else (t - t0) / (t1 - t0)
-            return "#%02x%02x%02x" % tuple(
-                round(a + (b - a) * k) for a, b in zip(c0, c1))
-    return "#%02x%02x%02x" % _GRADE_STOPS[-1][1]
-
-
-# Ticks for the colour bar in the legend.
-GRADE_TICKS = list(range(GRADE_WINDOW[0], GRADE_WINDOW[1] + 1, 10))
-
-
 def _geo_mean(scores):
     vals = []
     for k, v in (scores or {}).items():
@@ -108,12 +68,10 @@ def _geo_mean(scores):
     return math.exp(sum(math.log(x) for x in vals) / len(vals))
 
 
-def _assign_grades(items):
-    """Score each card and give it its border colour."""
+def _score_cards(items):
     for it in items:
         it["geo"] = _geo_mean(it.get("scores"))
         it["overall"] = round(it["geo"])
-        it["grade"] = _grade_colour(it["overall"])
 
 
 # Only feature politicians with enough scored attributes — a card with 2 of 9
@@ -156,7 +114,7 @@ def _featured():
                                 "n_attrs": _n_attrs(score)})
     shown = [d for d in politician_data if d["n_attrs"] >= MIN_ATTRIBUTES]
     shown.sort(key=lambda d: d["n_attrs"], reverse=True)   # richest cards first
-    _assign_grades(shown)
+    _score_cards(shown)
     for rank, d in enumerate(sorted(shown, key=lambda d: d["geo"], reverse=True), 1):
         d["rank"] = rank
     return shown, len(politician_data)
@@ -168,9 +126,6 @@ def index():
     parties = sorted({d["politician"].get("party") for d in shown if d["politician"].get("party")})
     return render_template('index.html', politicians_data=shown,
                            all_attributes=attribute_descriptions,
-                           grade_ticks=GRADE_TICKS, grade_window=GRADE_WINDOW,
-                           grade_ramp=[_grade_colour(v) for v in
-                                       range(GRADE_WINDOW[0], GRADE_WINDOW[1] + 1, 4)],
                            parties=parties, shown_count=len(shown),
                            total_count=total, min_attributes=MIN_ATTRIBUTES)
 
@@ -348,7 +303,7 @@ def politician_page(politician_id):
     }
     return render_template('politician.html', politician=politician,
                            sections=sections, scores=scores, house=house,
-                           overall=round(geo), grade=_grade_colour(round(geo)),
+                           overall=round(geo),
                            rank=rank, ranked_of=len(shown), profile=profile,
                            all_attributes=attribute_descriptions)
 

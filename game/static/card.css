@@ -28,9 +28,9 @@
 
 .sc-card {
     --party: #475569;            /* overridden per-card via inline style */
-    --grade: #4b5563;            /* the OUTER BORDER colour. On the site it is
-                                    the card's overall score on a bronze-to-gold
-                                    ramp; the game sets it per card. */
+    --grade: #d5cfc2;            /* the OUTER BORDER colour. The site leaves this
+                                    alone — a plain neutral frame — and the game
+                                    sets it per card. */
     position: relative;
     display: flex;
     flex-direction: column;
@@ -338,40 +338,6 @@ a.sc-stat:hover .sc-val { text-decoration: underline; }
    fades rather than the number gaining a mark. */
 .sc-stat.thin { opacity: 0.5; }
 
-/* ----- Grade key: the border-colour scale --------------------------------
-   Replaces the five rarity swatches. The bar is the same bronze->silver->gold
-   ramp the borders are drawn from, over the same absolute window — so a reader
-   can see both what a colour means and how little of the scale the House
-   actually occupies.                                                        */
-.sc-grade-key {
-    margin-top: 12px;
-    padding-top: 11px;
-    border-top: 1px solid #e2e8f0;
-    font-size: 0.85em;
-    color: #475569;
-}
-.sc-grade-key .gk-label { display: block; color: #64748b; margin-bottom: 8px; }
-.sc-grade-key .gk-label b { color: #334155; }
-.gk-bar {
-    height: 12px;
-    border-radius: 3px;
-    border: 1px solid rgba(0, 0, 0, 0.12);
-}
-.gk-ticks {
-    position: relative;
-    height: 1.35em;
-    margin-top: 2px;
-}
-.gk-ticks span {
-    position: absolute;
-    transform: translateX(-50%);
-    font-size: 0.82em;
-    font-weight: 700;
-    color: #94a3b8;
-    font-variant-numeric: tabular-nums;
-}
-.gk-note { display: block; margin-top: 2px; color: #94a3b8; font-size: 0.92em; }
-
 /* The whole banner + portrait is one link to the politician's page. The stats
    below stay separate links to their evidence — never nested inside this one. */
 a.sc-open {
@@ -390,3 +356,11 @@ a.sc-open:hover .sc-name { text-decoration: underline; }
     color: #a8341f;
     font-weight: 800;
 }
+.sc-key-note {
+    margin: 12px 0 0;
+    padding-top: 11px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.85em;
+    color: #64748b;
+}
+.sc-key-note b { color: #334155; }

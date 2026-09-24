@@ -626,4 +626,24 @@ a.dl-btn:hover { border-color: #3b82f6; background: #f0f6ff; color: #1e40af; }
 .strip-lab { position: absolute; bottom: 0; font-size: 0.72em; font-weight: 700; color: #94a3b8; }
 .strip-lab.lo { left: 0; }
 .strip-lab.hi { right: 0; }
-.strip-note { margin: 4px 0 0; font-size: 0.85em; color: #64748b; }
+.strip-legend {
+    display: flex; flex-wrap: wrap; gap: 6px 20px;
+    margin: 6px 0 0; padding: 0; list-style: none;
+    font-size: 0.83em; color: #64748b;
+}
+.strip-legend li { display: inline-flex; align-items: center; gap: 7px; }
+.sl-key { flex: none; display: inline-block; }
+.sl-other { width: 6px; height: 6px; border-radius: 50%; background: #aeb9c6; }
+.sl-me {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #a8341f; border: 2px solid #fff; box-shadow: 0 0 0 1px #a8341f;
+}
+.sl-median { width: 0; height: 13px; border-left: 1px dashed #94a3b8; }
+
+/* Absolute / relative toggle under the card on a politician's page. */
+.mp-card-col { flex: none; }
+.mp-mode {
+    display: flex; gap: 14px; margin: 10px 0 0; font-size: 0.85em; color: #475569;
+    justify-content: center;
+}
+.mp-mode label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }

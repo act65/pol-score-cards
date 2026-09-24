@@ -24,7 +24,8 @@
 
     <main class="mp-page">
         <div class="mp-head">
-            <div class="sc-card" style="--party: {{ colour }}; --grade: {{ grade }};">
+            <div class="mp-card-col">
+            <div class="sc-card" id="mpCard" style="--party: {{ colour }};">
                 <div class="sc-banner">
                     <h3 class="sc-name">{{ politician.name }}</h3>
                     <span class="sc-party">{{ politician.party }}</span>
@@ -42,10 +43,14 @@
                             {% set sc = scores[attribute.id] %}
                             {% set tier = 'low' if sc < 40 else ('mid' if sc < 70 else 'high') %}
                             {% set unver = scores.get(attribute.id ~ '_tier') == 'unresolved' %}
+                            {% set delta = (sc - house[attribute.id])|round|int if attribute.id in house else None %}
                             <a class="sc-stat{{ ' unverified' if unver }}" href="#{{ attribute.id }}"
-                               title="{{ attribute.name }}">
+                               title="{{ attribute.name }} — {{ sc }}{% if delta is not none %}, {{ '%+d' % delta }} against the House average of {{ house[attribute.id]|round|int }}{% endif %}">
                                 <span class="sc-icon">{{ glyph(attribute) }}</span>
-                                <span class="sc-val {{ tier }}">{{ sc }}{% if unver %}<span class="sc-unver">?</span>{% endif %}</span>
+                                <span class="sc-val {{ tier }}"
+                                      data-abs="{{ sc }}"
+                                      data-rel="{{ ('%+d' % delta) if delta is not none else '—' }}"
+                                      data-rel-tier="{{ 'low' if (delta is not none and delta < -5) else ('high' if (delta is not none and delta > 5) else 'mid') }}">{{ sc }}{% if unver %}<span class="sc-unver">?</span>{% endif %}</span>
                             </a>
                         {% else %}
                             <span class="sc-stat" title="{{ attribute.name }} — not scored">
@@ -55,6 +60,14 @@
                         {% endif %}
                     {% endfor %}
                 </div>
+            </div>
+
+            {% if house %}
+            <div class="mp-mode">
+                <label><input type="radio" name="mpMode" value="abs" checked> Scores</label>
+                <label><input type="radio" name="mpMode" value="rel"> vs the House</label>
+            </div>
+            {% endif %}
             </div>
 
             <div class="mp-summary">
@@ -95,30 +108,6 @@
             </div>
         </div>
 
-        {% if house %}
-        <section class="mp-profile">
-            <h3>Against the House</h3>
-            <p class="muted">How far {{ politician.name }} sits from the average MP on each
-               attribute. Same scale on every bar.</p>
-            <div class="mp-dev">
-                {% for sec in sections %}
-                {% if sec.delta is defined %}
-                <div class="mp-dev-row">
-                    <span class="sc-icon">{{ glyph(sec.attribute) }}</span>
-                    <span class="mp-dev-name">{{ sec.attribute.name }}</span>
-                    <span class="mp-dev-track">
-                        <span class="mp-dev-bar {{ 'neg' if sec.delta < 0 else 'pos' }}"
-                              style="{% if sec.delta < 0 %}right: 50%{% else %}left: 50%{% endif %}; width: {{ sec.bar }}%"></span>
-                    </span>
-                    <span class="mp-dev-num">{{ '%+d' % sec.delta }}</span>
-                </div>
-                {% endif %}
-                {% endfor %}
-            </div>
-            <p class="muted mp-dev-foot">House average, on each attribute, is the centre line.</p>
-        </section>
-        {% endif %}
-
         <p class="muted mp-sample-note">Below, a few of {{ politician.name }}'s statements per
            attribute, <strong>drawn at random</strong> from everything scored rather than picked to
            flatter or to damn. Follow any attribute to see all of them, and where this score sits
@@ -152,6 +141,31 @@
         <p class="muted">No attribute has enough evidence to score for this politician yet.</p>
         {% endif %}
     </main>
+
+    <script>
+    (function () {
+        // The card itself switches between absolute scores and each attribute's
+        // distance from the House average — rather than a second figure repeating
+        // the same six numbers beside it.
+        const vals = Array.from(document.querySelectorAll('#mpCard .sc-val[data-abs]'));
+        const radios = Array.from(document.querySelectorAll('input[name="mpMode"]'));
+        if (!vals.length || !radios.length) return;
+        const marks = vals.map(function (el) {
+            return el.querySelector('.sc-unver');
+        });
+        function apply() {
+            const rel = document.querySelector('input[name="mpMode"]:checked').value === 'rel';
+            vals.forEach(function (el, i) {
+                el.textContent = rel ? el.dataset.rel : el.dataset.abs;
+                if (marks[i]) el.appendChild(marks[i]);
+                el.classList.remove('low', 'mid', 'high');
+                el.classList.add(rel ? el.dataset.relTier : (
+                    +el.dataset.abs < 40 ? 'low' : (+el.dataset.abs < 70 ? 'mid' : 'high')));
+            });
+        }
+        radios.forEach(function (r) { r.addEventListener('change', apply); });
+    })();
+    </script>
 
     <footer class="site-footer">
         <p><strong>Prototype.</strong> Scores are automated estimates from a sample of public
