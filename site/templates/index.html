@@ -32,7 +32,7 @@
             {% endfor %}
         </ul>
         <div class="sc-rarity-key">
-            <span class="rk-label">Rarity (the card's border colour) — overall rank by the geometric mean of all nine attributes:</span>
+            <span class="rk-label">Rarity (the card's border colour) — overall rank by the geometric mean of all {{ all_attributes|length }} attributes:</span>
             {% for name, colour in rarity_tiers %}
             <span class="rk-item"><span class="rk-swatch" style="--rarity: {{ colour }};"></span>{{ name|capitalize }}</span>
             {% endfor %}
@@ -40,7 +40,7 @@
     </details>
 
     <p class="grid-caption">Featuring {{ shown_count }} of {{ total_count }} politicians
-       with at least {{ min_attributes }} of 9 attributes scored.</p>
+       with at least {{ min_attributes }} of {{ all_attributes|length }} attributes scored.</p>
 
     <div class="sc-controls">
         <label>Order by:
@@ -86,10 +86,15 @@
                     {% if attribute.id in item.scores %}
                         {% set score = item.scores[attribute.id] %}
                         {% set tier = 'low' if score < 40 else ('mid' if score < 70 else 'high') %}
-                        <a class="sc-stat" title="{{ attribute.name }} — {{ attribute.blurb or attribute.definition }} (click for evidence)"
+                        {# `unresolved` means the score is the model's own estimate, not a
+                           checked source. It MUST stay visibly distinct from a searched
+                           verdict — see the prior_score note in CLAUDE.md. #}
+                        {% set unver = item.scores.get(attribute.id ~ '_tier') == 'unresolved' %}
+                        <a class="sc-stat{{ ' unverified' if unver }}"
+                           title="{{ attribute.name }} — {{ attribute.blurb or attribute.definition }}{{ ' — UNVERIFIED: the model\'s own estimate, not checked against a source.' if unver }} (click for evidence)"
                            href="{{ url_for('attribute_detail', politician_id=item.politician.id, attribute=attribute.id) }}">
                             <span class="sc-icon">{{ glyph(attribute) }}</span>
-                            <span class="sc-val {{ tier }}">{{ score }}</span>
+                            <span class="sc-val {{ tier }}">{{ score }}{% if unver %}<span class="sc-unver" aria-label="unverified">?</span>{% endif %}</span>
                         </a>
                     {% else %}
                         <span class="sc-stat" title="{{ attribute.name }}">

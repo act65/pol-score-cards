@@ -15,7 +15,7 @@
 
     <main class="about">
         <p>NZ Politician Scorecards is a data-driven way to assess New Zealand politicians.
-           Every politician is scored on nine attributes, and <strong>every score links to the
+           Every politician is scored on {{ attributes|length }} attributes, and <strong>every score links to the
            actual statements behind it</strong> — click any stat on a card to read the quotes,
            context, and the reasoning for that score.</p>
 
@@ -25,7 +25,7 @@
            legible: to measure not <em>what</em> a politician believes, but <em>how</em> they
            conduct themselves — honestly or evasively, rigorously or carelessly, civilly or not.</p>
 
-        <h2>The nine attributes</h2>
+        <h2>The {{ attributes|length }} attributes</h2>
         <p>All attributes are oriented so that <strong>higher is better</strong>, and are chosen to
            be politically neutral — they measure conduct, not policy positions.</p>
         <ul class="about-attrs">
@@ -41,11 +41,11 @@
         <h2>How the cards work</h2>
         <p>Each stat is scored 0–100. A card's <b>rarity</b> (shown by its <b>border colour</b>:
            legendary, epic, rare, uncommon, common) is the politician's overall rank by the
-           <b>geometric mean</b> of their nine attributes — so a single weak attribute drags the whole
+           <b>geometric mean</b> of their {{ attributes|length }} attributes — so a single weak attribute drags the whole
            card down; you can't be "legendary" by being lopsided. The rarest tiers are deliberately
            the smallest.</p>
         <p>The front page features politicians with enough data to be meaningful (at least six of the
-           nine attributes scored). You can re-order the cards by overall rarity or by any single
+           {{ attributes|length }} attributes scored). You can re-order the cards by overall rarity or by any single
            attribute, and filter by party.</p>
 
         <h2>Methodology</h2>
