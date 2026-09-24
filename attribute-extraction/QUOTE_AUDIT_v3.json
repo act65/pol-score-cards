@@ -1,7 +1,7 @@
 {
   "sampled": 800,
-  "checkable": 79369,
-  "statements": 79369,
+  "checkable": 82602,
+  "statements": 82602,
   "sitting_days": 196,
   "totals": {
     "n": 800,
@@ -19,22 +19,22 @@
       "truncated": 0
     },
     "veracity": {
-      "n": 243,
-      "verbatim": 243,
+      "n": 248,
+      "verbatim": 248,
       "spliced": 0,
       "missing": 0,
       "truncated": 0
     },
     "rigor": {
-      "n": 131,
-      "verbatim": 131,
+      "n": 129,
+      "verbatim": 129,
       "spliced": 0,
       "missing": 0,
       "truncated": 0
     },
     "focus": {
-      "n": 150,
-      "verbatim": 150,
+      "n": 147,
+      "verbatim": 147,
       "spliced": 0,
       "missing": 0,
       "truncated": 0
