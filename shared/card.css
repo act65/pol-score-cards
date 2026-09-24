@@ -224,3 +224,17 @@ a.sc-stat:hover .sc-val { text-decoration: underline; }
     border-radius: 4px;
     background: #fff;
 }
+
+/* ----- Unverified scores -------------------------------------------------
+   A search-tier attribute (Veracity, Divination) whose score came from the
+   model's unaided `prior_score` rather than a searched verdict. Measured on
+   312 resolved claims the guess has MAE 0.22 against the evidence and is
+   confidently wrong 6% of the time, so it must never read as a check. */
+.sc-stat.unverified .sc-val { opacity: 0.72; }
+.sc-unver {
+    font-size: 0.7em;
+    vertical-align: super;
+    margin-left: 1px;
+    color: #a8341f;
+    font-weight: 600;
+}
