@@ -3,34 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NZ Politician Scorecards</title>
+    <title>{{ politician.name }} — {{ attribute_info.name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='card.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-        .ci { font-size: 0.7em; color: #6b7280; font-weight: 400; }
-        .conf { font-size: 0.6em; font-weight: 600; text-transform: uppercase;
-                letter-spacing: 0.04em; padding: 0.15em 0.5em; border-radius: 1em;
-                vertical-align: middle; margin-left: 0.4em; }
-        .conf-high { background: #d1fae5; color: #065f46; }
-        .conf-medium { background: #fef3c7; color: #92400e; }
-        .conf-low { background: #fee2e2; color: #991b1b; }
-        /* Forthrightness evidence is a PAIR. The question is set back and
-           quieter than the answer, so the eye lands on what the politician
-           said while still reading what they were asked. */
-        .ev-question { color: #4b5563; font-size: 0.95em; line-height: 1.5;
-                       border-left: 3px solid #d1d5db; padding: 0.1em 0 0.1em 0.75em;
-                       margin: 0 0 0.5em 0; }
-        .ev-qlabel { display: inline-block; font-weight: 700; font-size: 0.75em;
-                     letter-spacing: 0.06em; color: #6b7280; margin-right: 0.5em;
-                     vertical-align: 0.1em; }
-    </style>
 </head>
 <body>
-    <a href="/"><h1>NZ Politician Scorecards</h1></a>
-    <div class="top-right-link">
-        <a href="{{ url_for('politician_page', politician_id=politician.id) }}">{{ politician.name }}'s card</a>
-        &nbsp;·&nbsp; <a href="/">All cards</a> &nbsp;·&nbsp; <a href="/about">About</a>
-    </div>
-    <div class="attribute-detail-container">
+    <header class="site-header">
+        <a href="/"><h1>NZ Politician Scorecards</h1></a>
+        <div class="top-right-link">
+            <a href="{{ url_for('politician_page', politician_id=politician.id) }}">{{ politician.name }}'s card</a>
+            &nbsp;·&nbsp; <a href="/">All cards</a> &nbsp;·&nbsp; <a href="/about">About</a>
+        </div>
+    </header>
+
+    <main class="attribute-detail-container">
         <h2><a class="ev-back" href="{{ url_for('politician_page', politician_id=politician.id) }}">{{ politician.name }}</a></h2>
         <p>{{ politician.party }}{% if politician.role %} · {{ politician.role }}{% endif %}</p>
         <h3>{{ attribute_info.name }} Score: {{ score }}{% if meta and meta.ci is not none %}
@@ -128,12 +114,17 @@
             {% endfor %}
             </ul>
         {% else %}
-            <p>No specific examples available for this attribute for this politician.</p>
+            <p class="muted">No statements have been scored for this attribute yet.</p>
         {% endif %}
-    </div>
-    <div class="back-link">
-        <a href="/">Back to Main Page</a>
-    </div>
+
+        <div class="back-link"><a href="{{ url_for('politician_page', politician_id=politician.id) }}">← Back to {{ politician.name }}'s card</a></div>
+    </main>
+
+    <footer class="site-footer">
+        <p><strong>Prototype.</strong> Scores are automated estimates from a sample of public
+           statements — not verified fact. <a href="/about">About &amp; method →</a></p>
+    </footer>
+
     <script>
     (function () {
         const sel = document.getElementById('evSort');

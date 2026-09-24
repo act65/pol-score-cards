@@ -6,8 +6,12 @@ body {
     line-height: 1.6;
 }
 
-h1, h2, h3, h4 {
-    color: #007bff; /* Primary blue color */
+/* One heading colour for the whole site. This was #007bff, a leftover primary
+   blue, and every page then overrode it in its own block — so any page that
+   forgot (the rubric pages, the evidence pages) rendered its headings as
+   links. Ink is the card's own colour; blue is reserved for things you click. */
+h1, h2, h3, h4, h5 {
+    color: #0f172a;
 }
 
 a {
@@ -89,7 +93,7 @@ h1 {
     line-height: 1.6;
     color: #1e293b;
 }
-.about h2 { margin-top: 30px; color: #0f172a; }
+.about h2 { margin-top: 30px; }
 .about-attrs { list-style: none; padding: 0; }
 .about-attrs li { display: flex; align-items: center; gap: 11px; padding: 6px 0; }
 .about-attrs .sc-icon { flex: none; width: 1.7em; height: 1.7em; color: #7a611f; }
@@ -211,10 +215,7 @@ h1 {
 
 .site-header h1 a, .site-header a { text-decoration: none; }
 
-.score {
-    font-weight: bold;
-    color: #007bff; /* Highlighted score color */
-}
+.score { font-weight: bold; }
 
 .view-details {
     margin-top: 15px;
@@ -238,38 +239,27 @@ h1 {
 
 /* ... (Your existing CSS) ... */
 
+/* Same measure and rhythm as /about, /rubric and a politician's page — this
+   used to be a heavy white card with a drop shadow, alone on the site. */
 .attribute-detail-container {
-    max-width: 800px; /* Limit the width for better readability */
-    margin: 50px auto; /* Center the container with top and bottom margin */
-    padding: 30px;
-    background-color: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border: 1px solid #ddd;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 8px 24px 48px;
+    line-height: 1.6;
+    color: #1e293b;
 }
 
 .attribute-detail-container h2 {
-    color: #28a745; /* Green for politician name */
-    font-size: 2.2em;
-    margin-bottom: 10px;
+    font-size: 1.9em;
+    margin-bottom: 4px;
 }
 
-.attribute-detail-container p {
-    color: #555;
-    margin-bottom: 15px;
-    line-height: 1.7;
-}
+.attribute-detail-container p { margin-bottom: 14px; line-height: 1.65; }
 
 .attribute-detail-container h3 {
-    color: #007bff; /* Blue for attribute info */
-    font-size: 1.6em;
-    margin-top: 20px;
+    font-size: 1.45em;
+    margin-top: 22px;
     margin-bottom: 10px;
-}
-
-.attribute-detail-container h3 span {
-    font-weight: bold;
-    color: #dc3545; /* Red for the score value */
 }
 
 .attribute-detail-container p.description {
@@ -365,9 +355,11 @@ h1 {
     border-radius: 8px;
     color: #fff;
 }
-.ev-score.low  { background: #d64545; }
-.ev-score.mid  { background: #cf8a2e; }
-.ev-score.high { background: #2f9e52; }
+/* One score-badge palette across every page that shows a scored statement:
+   the evidence list, a politician's samples and the rubric illustrations. */
+.ev-score.low  { background: #b45309; }
+.ev-score.mid  { background: #64748b; }
+.ev-score.high { background: #15803d; }
 .ev-body { flex: 1; }
 .ev-quote {
     margin: 0 0 6px;
@@ -395,8 +387,8 @@ h1 {
     padding: 8px 24px 48px;
     color: #1e293b;
 }
-.data-page h2 { color: #0f172a; margin-bottom: 6px; }
-.data-page h3 { color: #0f172a; margin-top: 38px; }
+.data-page h2 { margin-bottom: 6px; }
+.data-page h3 { margin-top: 38px; }
 .data-intro { color: #334155; max-width: 720px; }
 .data-page .muted { color: #64748b; font-size: 0.9em; }
 
@@ -505,10 +497,10 @@ a.dl-btn:hover { border-color: #3b82f6; background: #f0f6ff; color: #1e40af; }
 
 /* Sub-headings inside the dataset page's audit section — dark, not link-blue,
    so they don't read as clickable. */
-.about h4, .data-page h4 { margin: 22px 0 6px; color: #1e293b; font-size: 1.02em; }
+.about h4, .data-page h4 { margin: 22px 0 6px; font-size: 1.02em; }
 
 /* --- One politician (/politician/<id>) ------------------------------------- */
-.mp-page { max-width: 900px; margin: 0 auto; padding: 18px 20px 30px; }
+.mp-page { max-width: 860px; margin: 0 auto; padding: 8px 24px 48px; line-height: 1.6; color: #1e293b; }
 .mp-head { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 26px; }
 .mp-summary { flex: 1 1 380px; min-width: 300px; }
 .mp-summary h2 { margin: 0; font-size: 1.6em; color: #0f172a; }
@@ -634,3 +626,30 @@ a.dl-btn:hover { border-color: #3b82f6; background: #f0f6ff; color: #1e40af; }
 .attr-link { color: inherit; text-decoration: none; border-bottom: 1px dotted #94a3b8; }
 .attr-link:hover { border-bottom-color: #334155; }
 .mp-attr-def .attr-link, .attribute-detail-container .attr-link { font-size: 0.92em; color: #2563eb; border-bottom: none; }
+
+/* --- Evidence page: the confidence pill, the CI, and the Q/A pair ----------
+   These lived in an inline <style> block on attribute_detail.html, which is
+   how that page drifted away from the rest of the site's look. */
+.attribute-detail-container .ci { font-size: 0.66em; color: #6b7280; font-weight: 400; }
+.conf {
+    font-size: 0.56em; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; padding: 0.2em 0.6em; border-radius: 1em;
+    vertical-align: middle; margin-left: 0.5em;
+}
+.conf-high { background: #e7efe9; color: #2f5d43; }
+.conf-medium { background: #f4efe2; color: #7a6428; }
+.conf-low { background: #f6e9e6; color: #8a3a2c; }
+
+/* A Forthrightness example is a PAIR. The question is set back and quieter
+   than the answer, so the eye lands on what the politician said while still
+   reading what they were asked. */
+.ev-question {
+    color: #4b5563; font-size: 0.95em; line-height: 1.5;
+    border-left: 3px solid #d1d5db; padding: 0.1em 0 0.1em 0.75em;
+    margin: 0 0 0.5em 0;
+}
+.ev-qlabel {
+    display: inline-block; font-weight: 700; font-size: 0.75em;
+    letter-spacing: 0.06em; color: #6b7280; margin-right: 0.5em;
+    vertical-align: 0.1em;
+}
