@@ -1012,56 +1012,56 @@
   ],
   "instrument": {
     "quotes": {
-      "sampled": 2000,
+      "sampled": 800,
       "checkable": 78271,
       "statements": 78271,
       "sitting_days": 196,
       "totals": {
-        "n": 2000,
-        "verbatim": 2000,
+        "n": 800,
+        "verbatim": 800,
         "spliced": 0,
         "missing": 0,
         "truncated": 0
       },
       "per_attribute": {
         "divination": {
-          "n": 52,
-          "verbatim": 52,
+          "n": 19,
+          "verbatim": 19,
           "spliced": 0,
           "missing": 0,
           "truncated": 0
         },
         "veracity": {
-          "n": 624,
-          "verbatim": 624,
+          "n": 245,
+          "verbatim": 245,
           "spliced": 0,
           "missing": 0,
           "truncated": 0
         },
         "rigor": {
-          "n": 327,
-          "verbatim": 327,
+          "n": 131,
+          "verbatim": 131,
           "spliced": 0,
           "missing": 0,
           "truncated": 0
         },
         "focus": {
-          "n": 349,
-          "verbatim": 349,
+          "n": 149,
+          "verbatim": 149,
           "spliced": 0,
           "missing": 0,
           "truncated": 0
         },
         "civility": {
-          "n": 212,
-          "verbatim": 212,
+          "n": 93,
+          "verbatim": 93,
           "spliced": 0,
           "missing": 0,
           "truncated": 0
         },
         "specificity": {
-          "n": 436,
-          "verbatim": 436,
+          "n": 163,
+          "verbatim": 163,
           "spliced": 0,
           "missing": 0,
           "truncated": 0
@@ -1097,7 +1097,7 @@
         {
           "a": "focus",
           "b": "civility",
-          "r": 0.6619924412686058,
+          "r": 0.6619924412686063,
           "n_both": 2145,
           "share_a": 0.1578714948112166,
           "share_b": 0.2517310174862105,
@@ -1106,7 +1106,7 @@
         {
           "a": "focus",
           "b": "rigor",
-          "r": 0.5750915664073082,
+          "r": 0.5750915664073061,
           "n_both": 2268,
           "share_a": 0.16692426584234932,
           "share_b": 0.18328753838694037,
@@ -1115,7 +1115,7 @@
         {
           "a": "focus",
           "b": "specificity",
-          "r": 0.6083760545432395,
+          "r": 0.6083760545432424,
           "n_both": 3082,
           "share_a": 0.22683447412968277,
           "share_b": 0.18247483718176435,
@@ -1124,7 +1124,7 @@
         {
           "a": "civility",
           "b": "rigor",
-          "r": 0.4905745963500535,
+          "r": 0.49057459635005285,
           "n_both": 752,
           "share_a": 0.08825255251731018,
           "share_b": 0.06077258768385324,
@@ -1133,7 +1133,7 @@
         {
           "a": "civility",
           "b": "specificity",
-          "r": -0.141997341813851,
+          "r": -0.14199734181385099,
           "n_both": 266,
           "share_a": 0.03121699331064429,
           "share_b": 0.015748963883955004,
@@ -1142,7 +1142,7 @@
         {
           "a": "rigor",
           "b": "specificity",
-          "r": 0.5928960971892957,
+          "r": 0.5928960971892937,
           "n_both": 992,
           "share_a": 0.08016809439146598,
           "share_b": 0.058732978093546474,
@@ -1154,7 +1154,7 @@
         {
           "a": "focus",
           "b": "civility",
-          "r": 0.6619924412686058,
+          "r": 0.6619924412686063,
           "n_both": 2145,
           "share_a": 0.1578714948112166,
           "share_b": 0.2517310174862105,
@@ -1163,7 +1163,7 @@
         {
           "a": "focus",
           "b": "specificity",
-          "r": 0.6083760545432395,
+          "r": 0.6083760545432424,
           "n_both": 3082,
           "share_a": 0.22683447412968277,
           "share_b": 0.18247483718176435,
@@ -1172,7 +1172,7 @@
         {
           "a": "rigor",
           "b": "specificity",
-          "r": 0.5928960971892957,
+          "r": 0.5928960971892937,
           "n_both": 992,
           "share_a": 0.08016809439146598,
           "share_b": 0.058732978093546474,
@@ -1181,7 +1181,7 @@
         {
           "a": "focus",
           "b": "rigor",
-          "r": 0.5750915664073082,
+          "r": 0.5750915664073061,
           "n_both": 2268,
           "share_a": 0.16692426584234932,
           "share_b": 0.18328753838694037,
@@ -1190,7 +1190,7 @@
         {
           "a": "civility",
           "b": "rigor",
-          "r": 0.4905745963500535,
+          "r": 0.49057459635005285,
           "n_both": 752,
           "share_a": 0.08825255251731018,
           "share_b": 0.06077258768385324,
@@ -1199,7 +1199,7 @@
         {
           "a": "civility",
           "b": "specificity",
-          "r": -0.141997341813851,
+          "r": -0.14199734181385099,
           "n_both": 266,
           "share_a": 0.03121699331064429,
           "share_b": 0.015748963883955004,
@@ -1269,16 +1269,6 @@
       "label": "Raw Hansard corpus (JSONL)",
       "note": "speaker debate transcripts",
       "url": "/download/hansard"
-    },
-    {
-      "label": "Raw press-conference corpus (JSON)",
-      "note": "post-Cabinet transcripts \u2014 not scored",
-      "url": "/download/pressers"
-    },
-    {
-      "label": "Raw party press releases (ZIP)",
-      "note": "all six parties \u2014 not scored",
-      "url": "/download/releases"
     }
   ]
 }
