@@ -24,19 +24,24 @@ Preview it without touching the published v2.0 data in `site/static/`:
 
     cd site && SCORECARD_DATA=../attribute-extraction/site_data_v3 python app.py
 
-## Coverage as built (5,300 of 5,548 windows)
+## Coverage as built (5,548 of 5,548 windows — the term is complete)
 
 | attribute | MPs | | distinct | unverified |
 |---|---:|---|---:|---:|
-| Veracity | 133 | 100% | 17 | 133 |
-| Divination | 127 | 95% | 16 | 127 |
-| Focus | 132 | 99% | 45 | 0 |
-| Rigor | 132 | 99% | 29 | 0 |
+| Veracity | 133 | 100% | 16 | 133 |
+| Divination | 130 | 98% | 15 | 130 |
+| Focus | 132 | 99% | 47 | 0 |
+| Rigor | 132 | 99% | 30 | 0 |
 | Specificity | 132 | 99% | 33 | 0 |
-| Civility | 131 | 98% | 37 | 0 |
+| Civility | 132 | 99% | 36 | 0 |
 
-132 of 133 MPs reach the grid. No attribute's government/opposition gap exceeds
-16 points, and four of the six are within 6.
+132 of 133 MPs reach the grid (the grid needs 4 of the 6; 130 carry all six).
+No attribute's government/opposition gap exceeds 16 points — the widest are
+Focus (-15.7) and Specificity (-10.5), and three of the six are within 6.
+
+`unverified` counts scores still shown from `prior_score`: Veracity and
+Divination are the two search-tier attributes, and the resolver has returned
+389 searched verdicts so far, so both still carry the `?` mark on the card.
 
 ## Why Forthrightness is withheld and Divination is not
 
