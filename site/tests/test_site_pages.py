@@ -62,7 +62,8 @@ def test_every_route_answers():
     pid = shown[0]["politician"]["id"]
     attr = app.attribute_descriptions[0]["id"]
     for route in ("/", "/party", "/data", "/about", "/rules",
-                  f"/politician/{pid}", f"/attribute/{pid}/{attr}"):
+                  f"/politician/{pid}", f"/attribute/{pid}/{attr}",
+                  f"/rubric/{attr}"):
         assert c.get(route).status_code == 200, route
     assert c.get("/politician/not-an-mp").status_code == 404
     assert c.get(f"/attribute/{pid}/Charisma").status_code == 404, \

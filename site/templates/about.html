@@ -68,7 +68,7 @@
             {% for attribute in attributes %}
             <li>
                 <span class="sc-icon">{% if attribute.svg %}{{ attribute.svg|safe }}{% else %}{{ attribute.symbol }}{% endif %}</span>
-                <span><b>{{ attribute.name }}</b> — {{ attribute.definition or attribute.blurb }}</span>
+                <span><a class="attr-link" href="{{ url_for('rubric', attribute=attribute.id) }}"><b>{{ attribute.name }}</b></a> — {{ attribute.definition or attribute.blurb }}</span>
             </li>
             {% endfor %}
         </ul>

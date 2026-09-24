@@ -245,6 +245,44 @@ def _shuffled(examples, *seed_parts):
     return out
 
 
+# --- Rubrics ----------------------------------------------------------------
+# One page per attribute: the question it asks, what it skips, the scale, and
+# invented examples showing where the boundaries are.
+#
+# rubrics.json is a READING of attribute-extraction/prompts/<id>.txt, not the
+# instrument itself. The prompt is what the model is actually given; this is the
+# same rubric written for a person. tests/test_rubrics.py checks the two have
+# not drifted apart on the one line that matters — the question each attribute
+# asks — and that every published attribute has a page.
+_RUBRICS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             "rubrics.json")
+_PROMPTS_URL = ("https://github.com/act65/pol-score-cards/blob/main/"
+                "attribute-extraction/prompts")
+
+
+def _rubrics():
+    try:
+        with open(_RUBRICS_PATH, encoding="utf-8") as f:
+            return {k: v for k, v in json.load(f).items()
+                    if not k.startswith("_")}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+RUBRICS = _rubrics()
+
+
+@app.route('/rubric/<attribute>')
+def rubric(attribute):
+    info = data_access_jsonl.get_attribute_description(attribute)
+    rub = RUBRICS.get(attribute)
+    if info is None or rub is None:
+        return "Attribute not found", 404
+    return render_template('rubric.html', attribute=info, rubric=rub,
+                           all_attributes=attribute_descriptions,
+                           prompt_url=f"{_PROMPTS_URL}/{attribute.lower()}.txt")
+
+
 @app.route('/politician/<politician_id>')
 def politician_page(politician_id):
     politician = data_access_jsonl.get_politician(politician_id)
@@ -285,26 +323,10 @@ def politician_page(politician_id):
     # them is the "one weak attribute drags the card down" effect made visible —
     # a lopsided card has a wide gap, an even one has almost none.
     house = _house_means(shown)
-    vals = [sec["score"] for sec in sections]
-    widest = max((abs(sec["score"] - house[sec["attribute"]["name"]])
-                  for sec in sections
-                  if sec["attribute"]["name"] in house), default=1) or 1
-    for sec in sections:
-        name = sec["attribute"]["name"]
-        if name in house:
-            sec["delta"] = round(sec["score"] - house[name])
-            sec["bar"] = round(abs(sec["delta"]) / widest * 50, 2)
-    profile = {
-        "geo": round(geo),
-        "arith": round(sum(vals) / len(vals)) if vals else 0,
-        "low": min(vals) if vals else 0,
-        "high": max(vals) if vals else 0,
-        "house_geo": round(_geo_mean({a: v for a, v in house.items()})),
-    }
     return render_template('politician.html', politician=politician,
                            sections=sections, scores=scores, house=house,
                            overall=round(geo),
-                           rank=rank, ranked_of=len(shown), profile=profile,
+                           rank=rank, ranked_of=len(shown),
                            all_attributes=attribute_descriptions)
 
 
@@ -334,44 +356,45 @@ def attribute_detail(politician_id, attribute):
                            score=score, meta=meta,
                            all_attributes=attribute_descriptions,
                            scores=scores,
-                           strip=_attribute_strip(attribute, politician_id))
+                           spread=_score_spread(politician_id, attribute,
+                                                score if isinstance(score, (int, float)) else None))
 
 
-# --- Where one score sits among the rest ------------------------------------
-# A number is not readable on its own: 34 for Civility means nothing until you
-# know the House runs 20 to 84 and sits around 64. So the evidence page opens
-# with a strip of every MP's score on that attribute, this MP marked. Same dot
-# idiom as the party cards, one axis, no axes furniture.
-_STRIP_PAD = 3
+# --- The spread behind one score --------------------------------------------
+# A card score is one number standing for hundreds of statements, and the number
+# alone hides whether those statements agree. 34 could be every statement at 34,
+# or half at 5 and half at 70 — a very different claim about an MP. So the
+# evidence page opens with the distribution of the scores it is made of, with
+# the headline number marked on the same axis.
+#
+# A histogram rather than a dot per statement: these run to 859 statements for
+# one (MP, attribute), which no dot plot survives.
+_HIST_BINS = 20          # 20 bins of 5 points each, over 0-100
 
 
-def _attribute_strip(attribute, politician_id):
-    shown, _total = _featured()
-    pairs = [(d["politician"]["id"], d["scores"][attribute]) for d in shown
-             if isinstance(d["scores"].get(attribute), (int, float))]
-    if len(pairs) < 5:
+def _score_spread(politician_id, attribute, headline):
+    examples = data_access_jsonl.get_examples(politician_id, attribute)
+    vals = [e["score"] for e in examples
+            if isinstance(e.get("score"), (int, float))]
+    if len(vals) < 8:
         return None
-    vals = [v for _pid, v in pairs]
-    lo, hi = min(vals) - _STRIP_PAD, max(vals) + _STRIP_PAD
-    span = max(hi - lo, 1)
-    stack = collections.Counter()
-    dots = []
-    for pid, v in sorted(pairs, key=lambda t: t[1]):
-        dots.append({"x": round((v - lo) / span * 100, 2),
-                     "row": stack[v],
-                     "me": pid == politician_id,
-                     "score": v})
-        stack[v] += 1
-    mine = next((d for d in dots if d["me"]), None)
-    ranked = sorted(vals, reverse=True)
+    width = 100 / _HIST_BINS
+    counts = [0] * _HIST_BINS
+    for v in vals:
+        counts[min(_HIST_BINS - 1, int(v / width))] += 1
+    tallest = max(counts) or 1
+    mean = sum(vals) / len(vals)
     return {
-        "dots": dots,
-        "lo": lo, "hi": hi, "n": len(pairs),
-        "rows": (max(stack.values()) if stack else 1),
+        "n": len(vals),
+        "bins": [{"left": round(i * width, 2), "width": round(width, 2),
+                  "height": round(100 * c / tallest, 1), "count": c,
+                  "lo": round(i * width), "hi": round((i + 1) * width)}
+                 for i, c in enumerate(counts)],
+        "headline": headline,
+        "mean": round(mean),
         "median": sorted(vals)[len(vals) // 2],
-        "median_x": round((sorted(vals)[len(vals) // 2] - lo) / span * 100, 2),
-        "mine": mine,
-        "rank": (ranked.index(mine["score"]) + 1) if mine else None,
+        "worst": min(vals),
+        "best": max(vals),
     }
 
 

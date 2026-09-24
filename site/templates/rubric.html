@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ attribute.name }} — how it is scored</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='card.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="site-header">
+        <a href="/"><h1>NZ Politician Scorecards</h1></a>
+        <div class="top-right-link"><a href="/">Back to cards</a> &nbsp;·&nbsp; <a href="/about">About</a></div>
+    </header>
+
+    <main class="about rubric">
+        <div class="rub-head">
+            <span class="sc-icon rub-icon">{% if attribute.svg %}{{ attribute.svg|safe }}{% else %}{{ attribute.symbol }}{% endif %}</span>
+            <div>
+                <h2>{{ attribute.name }}</h2>
+                <p class="rub-question">{{ rubric.question }}</p>
+            </div>
+        </div>
+
+        <p class="rub-summary">{{ rubric.summary }}</p>
+
+        <h3>What gets skipped</h3>
+        <p>Not every statement is eligible. {{ rubric.skipped }} A statement that cannot fail an
+           attribute tells you nothing about the speaker, so it is left out rather than scored.</p>
+
+        <h3>The scale</h3>
+        <table class="data-table rub-scale">
+            <thead><tr><th class="num">Score</th><th>Anchor</th><th>What it means</th></tr></thead>
+            <tbody>
+            {% for step in rubric.scale %}
+            <tr>
+                <td class="num"><span class="rub-score {{ 'low' if step.score < 40 else ('mid' if step.score < 70 else 'high') }}">{{ step.score }}</span></td>
+                <td><strong>{{ step.label }}</strong></td>
+                <td>{{ step.text }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <h3>Where the line falls</h3>
+        <p class="muted">These quotes are <strong>invented</strong> — written to show where the
+           boundaries are, not said by anyone. For real examples, open any MP's
+           {{ attribute.name }} score on a card.</p>
+        <ul class="rub-examples">
+            {% for ex in rubric.examples %}
+            <li>
+                <span class="rub-ex-score {{ 'none' if ex.score is none else ('low' if ex.score < 40 else ('mid' if ex.score < 70 else 'high')) }}">{{ ex.score if ex.score is not none else '—' }}</span>
+                <div>
+                    <blockquote>“{{ ex.quote }}”</blockquote>
+                    <p class="rub-why">{{ ex.why }}</p>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <h3>What this is <em>not</em></h3>
+        <p>Each attribute asks one question and is required to ignore the others. Where two would
+           penalise the same thing, exactly one owns it — otherwise a single bad sentence would be
+           counted three times, and the card's overall score compounds that.</p>
+        <ul class="rub-not">
+            {% for n in rubric.not_this %}
+            <li><a href="{{ url_for('rubric', attribute=n.attr) }}"><strong>{{ n.attr }}</strong></a> — {{ n.text }}</li>
+            {% endfor %}
+        </ul>
+
+        {% if rubric.note %}
+        <div class="rub-note">{{ rubric.note }}</div>
+        {% endif %}
+
+        <h3>The rubric itself</h3>
+        <p>This page is the rubric written for a person. What the model is actually given is a
+           plain-text prompt, and it is the thing that decides a score:
+           <a href="{{ prompt_url }}" target="_blank" rel="noopener">{{ attribute.name|lower }}.txt</a>.</p>
+
+        <nav class="rub-nav">
+            <span>The other attributes:</span>
+            {% for a in all_attributes %}{% if a.id != attribute.id %}<a href="{{ url_for('rubric', attribute=a.id) }}">{{ a.name }}</a>{% endif %}{% endfor %}
+        </nav>
+
+        <div class="back-link"><a href="/">← Back to the cards</a></div>
+    </main>
+
+    <footer class="site-footer">
+        <p><strong>Prototype.</strong> Scores are automated estimates from a sample of public
+           statements — not verified fact. <a href="/about">About &amp; method →</a></p>
+    </footer>
+</body>
+</html>

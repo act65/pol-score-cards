@@ -77,34 +77,10 @@
                    <strong>{{ overall }}</strong><span class="mp-ov-outof">/ 100</span>
                    {% if rank %}<span class="mp-ov-rank">ranked {{ rank }}{{ 'st' if rank % 10 == 1 and rank != 11 else ('nd' if rank % 10 == 2 and rank != 12 else ('rd' if rank % 10 == 3 and rank != 13 else 'th')) }} of {{ ranked_of }}</span>{% endif %}</p>
 
-                {# The geometric mean made visible. Each bar is one attribute; the
-                   two markers are the arithmetic and the geometric mean of those
-                   same bars. The gap between them IS the effect — an even card
-                   has almost none, a lopsided one has a wide one. #}
-                <div class="mp-geo">
-                    <div class="mp-geo-track">
-                        {% for sec in sections %}
-                        <span class="mp-geo-tick" style="left: {{ sec.score }}%"
-                              title="{{ sec.attribute.name }} {{ sec.score }}"></span>
-                        {% endfor %}
-                        <span class="mp-geo-mark arith" style="left: {{ profile.arith }}%"
-                              title="Plain average of the {{ sections|length }} attributes: {{ profile.arith }}"></span>
-                        <span class="mp-geo-mark geo" style="left: {{ profile.geo }}%"
-                              title="Geometric mean — the card's overall score: {{ profile.geo }}"></span>
-                    </div>
-                    <div class="mp-geo-axis"><span>0</span><span>50</span><span>100 = the standard</span></div>
-                    <p class="muted mp-geo-note">Each tick is one attribute. The
-                        <b class="k-arith">plain average</b> of them is {{ profile.arith }}; the
-                        <b class="k-geo">geometric mean</b>, which is the card's score, is
-                        {{ profile.geo }}.
-                        {% if profile.arith - profile.geo >= 2 %}It sits {{ profile.arith - profile.geo }}
-                        lower because {{ politician.name }} is uneven — the weakest attribute
-                        ({{ profile.low }}) pulls harder than the strongest ({{ profile.high }}) pushes.
-                        {% else %}The two are almost the same because the attributes are close
-                        together; an uneven card would show a visible gap.{% endif %}
-                        The pass mark on every attribute is 100 — these are floors, not stretch
-                        goals.</p>
-                </div>
+                <p class="muted">The geometric mean of the {{ sections|length }} attribute
+                   {{ 'scores' if sections|length != 1 else 'score' }} on the card, so one weak
+                   attribute pulls the whole number down. The pass mark on every attribute is
+                   100 — these are floors, not stretch goals.</p>
             </div>
         </div>
 
@@ -121,7 +97,8 @@
                 <span class="mp-attr-score{{ ' unverified' if sec.unverified }}">{{ sec.score }}{% if sec.unverified %}<span class="sc-unver" title="Unverified: the model's own estimate, not checked against a source.">?</span>{% endif %}</span>
                 <span class="mp-attr-n">from {{ '{:,}'.format(sec.n) }} scored statement{{ 's' if sec.n != 1 }}{% if sec.ci %} · ±{{ sec.ci }}{% endif %}</span>
             </div>
-            <p class="mp-attr-def">{{ sec.attribute.definition or sec.attribute.blurb }}</p>
+            <p class="mp-attr-def">{{ sec.attribute.definition or sec.attribute.blurb }}
+               <a class="attr-link" href="{{ url_for('rubric', attribute=sec.attribute.id) }}">how it is scored →</a></p>
             <ul class="mp-quotes">
                 {% for e in sec.examples %}
                 <li>
