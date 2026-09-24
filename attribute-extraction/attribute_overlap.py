@@ -172,6 +172,20 @@ def run(scores: str | list | None = None, out: str | None = None,
         with open(path, "w") as f:
             f.write("\n".join(lines) + "\n")
         print(f"\nwrote {path}")
+        # Machine-readable sidecar for the site's /data page — see the same
+        # note in check_quotes.py about not parsing the markdown back out.
+        side = os.path.splitext(path)[0] + ".json"
+        with open(side, "w") as f:
+            json.dump({
+                "coverage": {a: {"n": len(v),
+                                 "mean": round(sum(v.values()) / len(v), 4)}
+                             for a, v in by_attr.items()},
+                "pairs": [{k: p[k] for k in ("a", "b", "r", "n_both",
+                                             "share_a", "share_b", "jaccard")
+                           if k in p} for p in pairs],
+                "min_n": min_n,
+            }, f, indent=2)
+        print(f"wrote {side}")
 
 
 def _render(by_attr, pairs, paths, min_n) -> list[str]:

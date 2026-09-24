@@ -9,12 +9,12 @@ Sources: hansard_scores_v3.jsonl
 
 | attribute | statements scored | mean | share of all scored |
 |---|---:|---:|---:|
-| focus | 13,577 | 0.70 | 32% |
-| civility | 8,519 | 0.60 | 20% |
-| rigor | 12,365 | 0.47 | 29% |
-| specificity | 16,881 | 0.65 | 40% |
+| focus | 13,587 | 0.70 | 32% |
+| civility | 8,521 | 0.60 | 20% |
+| rigor | 12,374 | 0.47 | 29% |
+| specificity | 16,890 | 0.65 | 40% |
 
-42,183 distinct statements, 51,342 statement-attribute scores. 21% of statements are scored by more than one attribute.
+42,207 distinct statements, 51,372 statement-attribute scores. 21% of statements are scored by more than one attribute.
 
 ## Score correlation (Pearson r on co-scored statements)
 
@@ -41,12 +41,12 @@ high `r` over a large share is genuine redundancy.
 
 | pair | r | co-scored | share of each | selection overlap |
 |---|---:|---:|---:|---:|
-| focus / civility | 0.66 | 2,145 (13,577 / 8,519) | 16% / 25% | 0.11 |
-| focus / specificity | 0.61 | 3,080 (13,577 / 16,881) | 23% / 18% | 0.11 |
-| rigor / specificity | 0.59 | 991 (12,365 / 16,881) | 8% / 6% | 0.04 |
-| focus / rigor | 0.58 | 2,265 (13,577 / 12,365) | 17% / 18% | 0.10 |
-| civility / rigor | 0.49 | 752 (8,519 / 12,365) | 9% / 6% | 0.04 |
-| civility / specificity | -0.14 | 266 (8,519 / 16,881) | 3% / 2% | 0.01 |
+| focus / civility | 0.66 | 2,145 (13,587 / 8,521) | 16% / 25% | 0.11 |
+| focus / specificity | 0.61 | 3,082 (13,587 / 16,890) | 23% / 18% | 0.11 |
+| rigor / specificity | 0.59 | 992 (12,374 / 16,890) | 8% / 6% | 0.04 |
+| focus / rigor | 0.58 | 2,268 (13,587 / 12,374) | 17% / 18% | 0.10 |
+| civility / rigor | 0.49 | 752 (8,521 / 12,374) | 9% / 6% | 0.04 |
+| civility / specificity | -0.14 | 266 (8,521 / 16,890) | 3% / 2% | 0.01 |
 
 ## Most-shared selections (Jaccard)
 

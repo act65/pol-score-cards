@@ -53,49 +53,54 @@
         <h2>Methodology</h2>
         <p>Every score comes from <b>Hansard</b>, the verbatim parliamentary record, and nothing else.
            The transcript of this Parliament is cut into windows of debate and each one is read by a
-           large language model (Claude), which pulls out the statements that bear on an attribute and
-           scores each against a fixed rubric. Every score keeps the quoted statement, its date, its
-           context and a short explanation — which is what the evidence pages show.</p>
-        <p>One source, on purpose. Earlier versions mixed in party press releases and
-           post-Cabinet press conferences, and that turned out to change a score more than the
-           speaker did: the same MP scored several points higher in a press release than in the
-           House, and the mix of sources differed sharply by party, so cross-MP comparison was not a
-           fair fight. Hansard is the only source that is adversarial, on the record, and covers
-           every MP equally. The other corpora are still published on the
-           <a href="/data">dataset page</a> — they are just not scored here.</p>
+           large language model — <b>Claude Opus 5</b> (<code>claude-opus-5</code>) — which pulls out the
+           statements that bear on an attribute and scores each against a fixed rubric. Every score
+           keeps the quoted statement, its date, its context and a short explanation, which is what the
+           evidence pages show.</p>
+        <p>The rubrics are not a secret, and a score is only as good as the rubric behind it. One
+           prompt per attribute, plain text, in the repo:
+           <a href="https://github.com/act65/pol-score-cards/tree/main/attribute-extraction/prompts" target="_blank" rel="noopener">attribute-extraction/prompts</a>.
+           The rest of the pipeline — the extractor, the resolver, the bias adjustment and the audits
+           behind the numbers on the <a href="/data">dataset page</a> — is in the same repository:
+           <a href="https://github.com/act65/pol-score-cards" target="_blank" rel="noopener">github.com/act65/pol-score-cards</a>.</p>
+        <p>One source, on purpose. Hansard is the only source that is adversarial, on the record,
+           and covers every MP equally — a party press release tells you what a party wants you to
+           think, Hansard tells you how they behave when someone is arguing back. Measuring every MP
+           in the same room is what makes two cards comparable. Other corpora we hold are published on
+           the <a href="/data">dataset page</a>; they are not scored.</p>
         <p>A quoted statement is checked against its own transcript before it is allowed on the site:
            anything that is not verbatim, is spliced together from fragments, or does not begin and
            end on a sentence boundary is dropped. The displayed number is a <em>shrunk</em> average —
            thin evidence is deliberately pulled toward the population middle, so a single flattering
            quote cannot make a card, and each attribute carries its evidence count and a confidence
            level for that reason.</p>
-        <h2>How well does it work? We don't know yet.</h2>
-        <p><b>The scoring is not currently validated.</b> There is an evaluation harness, but the
-           test sets it runs against turned out to be <em>invented</em> statements attributed to
-           fictional politicians — American council-meeting speech, with no New Zealand speaker and
-           not one line of Hansard in them. The accuracy figures they produce (civility
-           <code>r</code>&nbsp;=&nbsp;0.88, veracity <code>r</code>&nbsp;=&nbsp;0.73, on fourteen
-           labelled statements each) measure the model on a different task from the one we run here,
-           so <b>treat every accuracy figure as unvalidated</b>. A replacement set sampled from the
-           real corpus has been drawn but is not yet labelled. There is also only one labeller, so we
-           have no inter-rater agreement to report.</p>
-        <p>What we can say comes from the rubrics themselves, and the six attributes do not all stand
-           on the same ground. <b>Civility, Rigor, Specificity and Focus</b> are judgeable from the
-           text alone — everything needed to score them is in the sentence.</p>
+        <h2>How well does it work?</h2>
+        <p>Three checks run over the dataset itself, and the numbers are on the
+           <a href="/data">dataset page</a>: every scored statement is verified to be a verbatim quote
+           from its own sitting day; every pair of attributes is correlated to make sure the six are
+           measuring six things rather than one thing counted six times; and the model's unaided
+           estimate is compared against what searching for evidence actually finds.</p>
+        <p>What none of that establishes is whether a score agrees with a human reading the same
+           sentence. An evaluation set sampled from this corpus is <strong>not yet labelled</strong>,
+           so there is no accuracy figure here and none is claimed.</p>
+        <p>The six attributes also do not all stand on the same ground. <b>Civility, Rigor,
+           Specificity and Focus</b> are judgeable from the text alone — everything needed to score
+           them is in the sentence.</p>
         <p><b>Veracity and Divination are not.</b> Deciding whether a claim is true, or whether a
-           prediction came off, means going and checking a source. Those two now emit a specific
-           claim plus what would falsify it, and a separate step searches for the evidence and
-           assigns the score. <b>That step has not finished running.</b> Until it does, both are shown
-           from the model's own unaided estimate, and every one of them is marked on the card with a
-           superscript <b>?</b>, a dimmed number and an "unverified" note. <b>Read a <b>?</b> score as
-           the model's guess, not as a fact-check</b> — on the claims that have been checked, the guess
-           is off by more than half a band about six times in a hundred.</p>
-        <p>Three attributes shown in earlier versions are not here, and it is worth saying why.
+           prediction came off, means going and checking a source. Those two emit a specific claim plus
+           what would falsify it, and a separate step searches for the evidence and assigns the score.
+           <b>That step has not finished running.</b> Until it does, both are shown from the model's own
+           unaided estimate, and every one of them is marked on the card with a superscript <b>?</b>, a
+           dimmed number and an "unverified" note. <b>Read a <b>?</b> score as the model's guess, not as
+           a fact-check</b> — on the claims that have been checked, the guess is off by half a band or
+           more about six times in a hundred.</p>
+        <p>Three attributes are measured but not shown on a card, for three different reasons.
            <b>Charisma</b> was cut: it correlated at 0.96 with Civility, so one insult was being
            counted twice. <b>Strength</b> and <b>Authenticity</b> are on hold until the voting,
-           bill and promise records they need are joined properly — as shown before, they filed a low
-           score under the <em>speaker</em> even when the statement described someone else's broken
-           promise, which penalised MPs for scrutinising opponents. <b>Forthrightness</b> ("do they
+           bill and promise records they need are joined properly. Both also file a low score under the
+           <em>speaker</em> even when the statement describes someone else's broken promise, which
+           penalises MPs for the act of scrutinising opponents — that has to be fixed before either is
+           worth showing. <b>Forthrightness</b> ("do they
            answer the question asked?") is measured but withheld: it is scored over question-and-answer
            pairs, and in practice only ministers answer questions in the House, so of the MPs with
            enough evidence to score, every single one sat on the government benches. It cannot be

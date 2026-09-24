@@ -124,6 +124,48 @@ def _jsonl(name):
     return [json.loads(l) for l in open(path, encoding="utf-8") if l.strip()]
 
 
+# --- Instrument checks ------------------------------------------------------
+# The three audits that can be run without a human labeller, each of which
+# writes a JSON sidecar next to its markdown report:
+#
+#   check_quotes.py      is every scored statement really in the transcript?
+#   attribute_overlap.py are these six attributes measuring six things, or one?
+#   resolve.py compare   does searching for evidence beat the model's guess?
+#
+# Read from disk rather than recomputed here: they need the raw corpus and the
+# resolver output, neither of which the site ships. A missing file means that
+# audit has not been re-run, and the section is simply omitted rather than
+# shown stale.
+_EXTRACTION = os.path.join(os.path.dirname(HERE), "attribute-extraction")
+_AUDITS = {
+    "quotes": "QUOTE_AUDIT_v3.json",
+    "overlap": "ATTRIBUTE_OVERLAP_v3.json",
+    "resolver": "GUESS_VS_SEARCH.json",
+}
+
+
+def _instrument_checks() -> dict:
+    out = {}
+    for key, name in _AUDITS.items():
+        path = os.path.join(_EXTRACTION, name)
+        try:
+            with open(path) as f:
+                out[key] = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            continue
+    if "quotes" in out:
+        t = out["quotes"]["totals"]
+        n = t["n"] or 1
+        out["quotes"]["pct"] = {k: round(100 * t[k] / n, 1)
+                                for k in ("verbatim", "spliced", "missing", "truncated")}
+    if "overlap" in out:
+        pairs = [p for p in out["overlap"]["pairs"] if p.get("r") is not None]
+        pairs.sort(key=lambda p: -abs(p["r"]))
+        out["overlap"]["top_pairs"] = pairs[:6]
+        out["overlap"]["redundant"] = [p for p in pairs if abs(p["r"]) >= 0.85]
+    return out
+
+
 def _corpus_stats():
     """Raw Hansard corpus size, if the corpus file is on disk (data subproject)."""
     if not os.path.exists(CORPUS):
@@ -285,10 +327,10 @@ def main():
              "statements": c,
              "share": round(100.0 * c / max(1, total_statements), 1)}
             for s, c in by_source.most_common()],
-        "party_distribution_svg": party_dist_svg,
         "party_urls": {p: PARTY_URLS.get(p) for p in party_mean},
         "per_party": per_party,
         "per_politician": per_pol,
+        "instrument": _instrument_checks(),
         "corpus": _corpus_stats(),
         "presser_corpus": _presser_corpus_stats(),
         "release_corpus": _release_corpus_stats(),
@@ -299,16 +341,14 @@ def main():
              "note": "bias-adjusted score per attribute", "url": "/download/scores"},
             {"label": "Raw Hansard corpus (JSONL)",
              "note": "speaker debate transcripts", "url": "/download/hansard"},
-            # Scraped, published, but NOT scored in this release — v3.0 is
-            # Hansard-only so that every MP is measured in the same room (a
-            # press release used to score several points higher than a speech,
-            # and the source mix differed by party). Offered as raw corpora, and
-            # labelled so nobody reads them as part of the scores above.
+            # Scraped and published, but NOT scored: the scores are Hansard-only
+            # so that every MP is measured in the same room. Offered as raw
+            # corpora, labelled so nobody reads them as part of the scores above.
             {"label": "Raw press-conference corpus (JSON)",
-             "note": "post-Cabinet transcripts — not scored in v3.0",
+             "note": "post-Cabinet transcripts — not scored",
              "url": "/download/pressers"},
             {"label": "Raw party press releases (ZIP)",
-             "note": "all six parties — not scored in v3.0",
+             "note": "all six parties — not scored",
              "url": "/download/releases"},
         ],
     }

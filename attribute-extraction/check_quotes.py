@@ -42,7 +42,10 @@ import fire
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CORPUS = os.path.join(HERE, "..", "data", "corpus")
-DEFAULT_SCORES = os.path.join(HERE, "hansard_scores_full.jsonl")
+# v3.0. The default used to be hansard_scores_full.jsonl — the RETIRED v2.0
+# file, which predates the hard quote gate in extract.py. Auditing it and
+# reading the result as a v3.0 number turns a 100% verbatim rate into 85%.
+DEFAULT_SCORES = os.path.join(HERE, "hansard_scores_v3.jsonl")
 DEFAULT_CORPUS = os.path.join(CORPUS, "hansard_v2.json")
 
 # Hansard uses curly quotes and en dashes; the model tends to emit straight
@@ -161,6 +164,19 @@ def run(scores: str = DEFAULT_SCORES, corpus: str = DEFAULT_CORPUS,
         with open(path, "w") as f:
             f.write("\n".join(lines) + "\n")
         print(f"\nwrote {path}")
+        # A machine-readable sidecar beside the report. The site's /data page
+        # shows these numbers, and parsing a markdown table to get them would
+        # break the first time the table changed shape.
+        tot = {k: sum(a[k] for a in per_attr.values())
+               for k in ("n", "verbatim", "spliced", "missing", "truncated")}
+        side = os.path.splitext(path)[0] + ".json"
+        with open(side, "w") as f:
+            json.dump({"sampled": len(sample), "checkable": len(checkable),
+                       "statements": len(statements), "sitting_days": len(days),
+                       "totals": tot,
+                       "per_attribute": {k: dict(v) for k, v in per_attr.items()}},
+                      f, indent=2)
+        print(f"wrote {side}")
 
 
 def _render(per_attr, misses, sample, checkable, statements, days) -> list[str]:

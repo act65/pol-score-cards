@@ -2,32 +2,32 @@
 
 Does searching for evidence beat the model's unaided guess? The guess (`prior_score`) was written at extraction time, before any lookup, and was withheld from the resolver — so these are independent.
 
-128 verdicts; 59 have both a guess and a resolved score.
+389 verdicts; 312 have both a guess and a resolved score.
 
 ## Verdicts
 
 | verdict | n | share |
 |---|---:|---:|
-| not_yet_due | 68 | 53% |
-| correct | 24 | 19% |
-| wrong | 12 | 9% |
-| true | 11 | 9% |
-| partly_correct | 8 | 6% |
-| partly_true | 3 | 2% |
-| uncheckable | 1 | 1% |
-| false | 1 | 1% |
+| true | 170 | 44% |
+| partly_true | 82 | 21% |
+| not_yet_due | 68 | 17% |
+| correct | 24 | 6% |
+| false | 16 | 4% |
+| wrong | 12 | 3% |
+| uncheckable | 9 | 2% |
+| partly_correct | 8 | 2% |
 
-**54% returned no score** (`uncheckable` / `not_yet_due`). That is a real answer, not a failure — but it is also the share of claims where searching bought nothing.
+**20% returned no score** (`uncheckable` / `not_yet_due`). That is a real answer, not a failure — but it is also the share of claims where searching bought nothing.
 
 ## Agreement
 
 | metric | value |
 |---|---:|
-| Pearson r (guess vs searched) | 0.53 |
-| mean absolute gap | 0.283 |
-| median absolute gap | 0.250 |
-| agree within 0.25 | 53% |
-| disagree by >= 0.5 | 11 of 59 |
+| Pearson r (guess vs searched) | 0.64 |
+| mean absolute gap | 0.220 |
+| median absolute gap | 0.200 |
+| agree within 0.25 | 69% |
+| disagree by >= 0.5 | 19 of 312 |
 
 **How to read this.** A high `r` with a small gap means the guess already tracks the evidence, and the search is an expensive way to confirm what the model knew. A low `r`, or a handful of large flips, means the guess is confidently wrong somewhere — which is exactly the failure mode the site cannot afford, and justifies the cost.
 
@@ -66,5 +66,5 @@ Does searching for evidence beat the model's unaided guess? The guess (`prior_sc
 
 ## Sourcing
 
-128/128 verdicts cite at least one URL (100%). A resolved score with no source cannot be audited by a reader and should not be published.
+389/389 verdicts cite at least one URL (100%). A resolved score with no source cannot be audited by a reader and should not be published.
 

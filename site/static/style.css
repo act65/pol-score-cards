@@ -502,3 +502,7 @@ a.dl-btn:hover { border-color: #3b82f6; background: #f0f6ff; color: #1e40af; }
     border-left: 3px solid #c9a227;
     border-radius: 6px;
 }
+
+/* Sub-headings inside the dataset page's audit section — dark, not link-blue,
+   so they don't read as clickable. */
+.about h4, .data-page h4 { margin: 22px 0 6px; color: #1e293b; font-size: 1.02em; }
