@@ -49,20 +49,46 @@ for _a in attribute_descriptions:
     _a["svg"] = _entry.get("svg", "")
     _a["blurb"] = _entry.get("blurb", "")
 
-# --- Rarity -----------------------------------------------------------------
+# --- Grade ------------------------------------------------------------------
 # A card's overall strength is the GEOMETRIC mean of its attribute scores (so a
-# single weak attribute drags the whole card down — you can't be "rare" by being
-# lopsided). Cards are then ranked across the whole roster and dropped into
-# exponentially-sized buckets: the very best card is legendary, the next 2 epic,
-# next 4 rare, next 8 uncommon, and everyone else common. Rarest = smallest bucket.
-RARITY_TIERS = [
-    ("legendary", "#b8860b"),   # dark goldenrod
-    ("epic",      "#6b21a8"),   # purple
-    ("rare",      "#1e5fa0"),   # blue
-    ("uncommon",  "#2f7d4f"),   # green
-    ("common",    "#4b5563"),   # slate
-]
-_RARITY_SIZES = [1, 2, 4, 8]    # exp buckets for the top tiers; common gets the rest
+# single weak attribute drags the whole card down — you can't be strong by being
+# lopsided). That number sets the card's border colour, on a continuous
+# bronze -> silver -> gold ramp over a fixed window.
+#
+# This replaced a five-tier rarity ranking (legendary/epic/rare/uncommon/common
+# in exponential buckets). Two things were wrong with it. It put 117 of 132
+# cards in one tier, so the border said nothing about 89% of the House. And
+# "rarity" means scarcity in a card game but quality here, so calling the Prime
+# Minister's card *common* read as a verdict the data had not delivered.
+#
+# The window is ABSOLUTE and wider than the observed spread on purpose. Every
+# card in this Parliament lands between 43 and 74, and a ramp stretched to fit
+# that would imply the top of it is good. The pass mark is 100. The colour bar
+# in the legend shows the same window, so a reader can see how little of it is
+# occupied.
+GRADE_WINDOW = (40, 80)
+# The silver stop is deliberately darker than a real silver: the page behind a
+# card is light grey, and a pale mid-ramp border made every middling card look
+# unfinished rather than middling.
+_GRADE_STOPS = [(0.0, (122, 74, 33)),     # bronze
+                (0.5, (141, 148, 156)),   # silver
+                (1.0, (201, 162, 39))]    # gold
+
+
+def _grade_colour(score):
+    """Interpolate the bronze->silver->gold ramp at `score`."""
+    lo, hi = GRADE_WINDOW
+    t = min(1.0, max(0.0, (float(score) - lo) / (hi - lo)))
+    for (t0, c0), (t1, c1) in zip(_GRADE_STOPS, _GRADE_STOPS[1:]):
+        if t <= t1:
+            k = 0.0 if t1 == t0 else (t - t0) / (t1 - t0)
+            return "#%02x%02x%02x" % tuple(
+                round(a + (b - a) * k) for a, b in zip(c0, c1))
+    return "#%02x%02x%02x" % _GRADE_STOPS[-1][1]
+
+
+# Ticks for the colour bar in the legend.
+GRADE_TICKS = list(range(GRADE_WINDOW[0], GRADE_WINDOW[1] + 1, 10))
 
 
 def _geo_mean(scores):
@@ -79,25 +105,12 @@ def _geo_mean(scores):
     return math.exp(sum(math.log(x) for x in vals) / len(vals))
 
 
-def _assign_rarity(items):
-    """Rank items by geometric-mean score and tag each with a rarity tier/colour."""
+def _assign_grades(items):
+    """Score each card and give it its border colour."""
     for it in items:
         it["geo"] = _geo_mean(it.get("scores"))
-    ranked = sorted(items, key=lambda it: it["geo"], reverse=True)
-    # exponentially-sized buckets from the top; the last tier absorbs the remainder
-    counts, remaining = [], len(ranked)
-    for size in _RARITY_SIZES:
-        take = min(size, remaining)
-        counts.append(take)
-        remaining -= take
-    counts.append(remaining)   # common
-    idx = 0
-    for tier, count in enumerate(counts):
-        name, colour = RARITY_TIERS[tier]
-        for _ in range(count):
-            ranked[idx]["rarity"] = colour
-            ranked[idx]["rarity_name"] = name
-            idx += 1
+        it["overall"] = round(it["geo"])
+        it["grade"] = _grade_colour(it["overall"])
 
 
 # Only feature politicians with enough scored attributes — a card with 2 of 9
@@ -140,11 +153,8 @@ def _featured():
                                 "n_attrs": _n_attrs(score)})
     shown = [d for d in politician_data if d["n_attrs"] >= MIN_ATTRIBUTES]
     shown.sort(key=lambda d: d["n_attrs"], reverse=True)   # richest cards first
-    _assign_rarity(shown)                                  # rarity ranked among the featured set
-    # The geometric mean is now shown as a number, not just implied by the border
-    # colour, so give it a rank too — "62" means little without "12th of 132".
+    _assign_grades(shown)
     for rank, d in enumerate(sorted(shown, key=lambda d: d["geo"], reverse=True), 1):
-        d["overall"] = round(d["geo"])
         d["rank"] = rank
     return shown, len(politician_data)
 
@@ -154,7 +164,10 @@ def index():
     shown, total = _featured()
     parties = sorted({d["politician"].get("party") for d in shown if d["politician"].get("party")})
     return render_template('index.html', politicians_data=shown,
-                           all_attributes=attribute_descriptions, rarity_tiers=RARITY_TIERS,
+                           all_attributes=attribute_descriptions,
+                           grade_ticks=GRADE_TICKS, grade_window=GRADE_WINDOW,
+                           grade_ramp=[_grade_colour(v) for v in
+                                       range(GRADE_WINDOW[0], GRADE_WINDOW[1] + 1, 4)],
                            parties=parties, shown_count=len(shown),
                            total_count=total, min_attributes=MIN_ATTRIBUTES)
 
@@ -258,6 +271,59 @@ def party():
                            min_party_mps=MIN_PARTY_MPS, house=house,
                            mp_count=counted, min_attributes=MIN_ATTRIBUTES)
 
+# --- Evidence ordering ------------------------------------------------------
+# Examples are STORED highest-score first. Rendering them in that order means a
+# card scoring 34 opens with a wall of 95s, so the page that exists to show you
+# the evidence shows you the opposite of it. The default is a shuffle instead —
+# seeded on (politician, attribute) so the page is stable, shareable and the
+# same for everyone, rather than reshuffling under a reader on reload. Sorting
+# high-to-low and low-to-high is a control on the page.
+def _shuffled(examples, *seed_parts):
+    out = list(examples)
+    random.Random("|".join(str(p) for p in seed_parts)).shuffle(out)
+    return out
+
+
+@app.route('/politician/<politician_id>')
+def politician_page(politician_id):
+    politician = data_access_jsonl.get_politician(politician_id)
+    if politician is None:
+        return "Politician not found", 404
+    if not politician.get("image"):
+        politician["image"] = _portrait_for(politician_id)
+
+    scores = data_access_jsonl.get_scores(politician_id) or {}
+    geo = _geo_mean(scores)
+    counts = data_access_jsonl.example_counts(politician_id)
+
+    # A handful of statements per attribute, shuffled, so the page is a fair
+    # sample of how this MP argues rather than a highlight reel.
+    sections = []
+    for attr in attribute_descriptions:
+        name = attr["name"]
+        if not isinstance(scores.get(name), (int, float)):
+            continue
+        picked = _shuffled(data_access_jsonl.get_examples(politician_id, name),
+                           politician_id, name)[:3]
+        sections.append({
+            "attribute": attr,
+            "score": scores[name],
+            "n": counts.get(name, 0),
+            "unverified": scores.get(f"{name}_tier") == "unresolved",
+            "ci": scores.get(f"{name}_ci"),
+            "examples": picked,
+        })
+
+    shown, _total = _featured()
+    rank = next((d["rank"] for d in shown
+                 if d["politician"]["id"] == politician_id), None)
+    return render_template('politician.html', politician=politician,
+                           sections=sections, scores=scores,
+                           overall=round(geo), grade=_grade_colour(round(geo)),
+                           rank=rank, ranked_of=len(shown),
+                           all_attributes=attribute_descriptions)
+
+
 @app.route('/attribute/<politician_id>/<attribute>')
 def attribute_detail(politician_id, attribute):
     politician = data_access_jsonl.get_politician(politician_id)
@@ -275,13 +341,15 @@ def attribute_detail(politician_id, attribute):
             "conf": scores.get(f"{attribute}_conf"),
             "ci": scores.get(f"{attribute}_ci")}
 
-    if politician:
-        examples = data_access_jsonl.get_examples(politician_id, attribute)
-        return render_template('attribute_detail.html', politician=politician,
-                               attribute_info=attribute_info, examples=examples,
-                               score=score, meta=meta)
-    else:
+    if not politician:
         return "Politician not found", 404
+    examples = _shuffled(data_access_jsonl.get_examples(politician_id, attribute),
+                         politician_id, attribute)
+    return render_template('attribute_detail.html', politician=politician,
+                           attribute_info=attribute_info, examples=examples,
+                           score=score, meta=meta,
+                           all_attributes=attribute_descriptions,
+                           scores=scores)
 
 
 def _load_dataset_stats():

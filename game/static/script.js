@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
         cardDiv.style.setProperty('--party', partyColour(cardData.party));
         // Rarity is computed server-side over the whole deck (geometric mean +
         // exponential buckets) and drives the banner colour.
-        cardDiv.style.setProperty('--rarity', cardData.rarity || '#4b5563');
+        cardDiv.style.setProperty('--grade', cardData.rarity || '#4b5563');
 
         if (locationType === 'hand') {
             cardDiv.classList.add('hand-card');

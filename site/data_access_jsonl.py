@@ -1,3 +1,15 @@
+"""Read the four dataset JSONL files, once, and index them for lookup.
+
+Every accessor used to re-read and re-parse its file on each call, which meant
+an evidence page rebuilt all 78,196 examples from disk to return the ~300 it
+shows, and the front page re-read the scores file once per politician. Locally
+that is 0.4s a request; on a 512MB host it is the whole memory budget.
+
+The files are static between deploys, so they are loaded at import and kept in
+dicts keyed the way the site asks for them. Nothing else about the interface
+changed.
+"""
+
 import json
 import os
 
@@ -29,48 +41,57 @@ def load_jsonl(fname):
         print(f"Error: {path} not found.")
     return data
 
+
+# --- Loaded once, at import -------------------------------------------------
+_POLITICIANS = load_jsonl('static/politicians.jsonl')
+_ATTRIBUTES = load_jsonl('static/attributes.jsonl')
+_SCORES = load_jsonl('static/scores.jsonl')
+_EXAMPLES = load_jsonl('static/examples.jsonl')
+
+_BY_ID = {p['id']: p for p in _POLITICIANS}
+_SCORE_BY_ID = {s['politician_id']: s for s in _SCORES}
+
+# (politician_id, attribute) -> [example, ...], in the order they were written.
+_EXAMPLES_BY_PAIR = {}
+for _e in _EXAMPLES:
+    _EXAMPLES_BY_PAIR.setdefault((_e.get('politician_id'), _e.get('attribute')), []).append(_e)
+
+
 def get_all_politicians():
-    return load_jsonl('static/politicians.jsonl')
+    return _POLITICIANS
 
 def get_all_attributes():
-    return load_jsonl('static/attributes.jsonl')
+    return _ATTRIBUTES
 
 def get_all_scores():
-    return load_jsonl('static/scores.jsonl')
+    return _SCORES
 
 def get_all_examples():
-    return load_jsonl('static/examples.jsonl')
+    return _EXAMPLES
 
 def get_politician(politician_id):
-    politicians = get_all_politicians()
-    return next((p for p in politicians if p['id'] == politician_id), None)
+    return _BY_ID.get(politician_id)
 
 def get_attribute(attribute_name):
-    attributes = get_all_attributes()
-    return next((a for a in attributes if a['name'] == attribute_name), None)
-    # next((attr[attribute] for attr in attribute_descriptions if attribute in attr), None)
+    return next((a for a in _ATTRIBUTES if a['name'] == attribute_name), None)
 
 def get_attribute_description(attribute_name):
-    descriptions = get_all_attributes()
-    return next((d for d in descriptions if d['id'] == attribute_name), None)
+    return next((d for d in _ATTRIBUTES if d['id'] == attribute_name), None)
 
 def get_scores(politician_id):
-    scores = get_all_scores()
-    politician_scores = next((s for s in scores if s['politician_id'] == politician_id), None)
-    if politician_scores:
-        return politician_scores
-    return None
+    return _SCORE_BY_ID.get(politician_id)
 
 def get_examples(politician_id, attribute_name):
+    """Every scored statement behind one (politician, attribute) score.
+
+    Returned in stored order, which is highest-score first. Callers that show
+    these to a reader must not present them in that order — the best quotes
+    first is the opposite of the evidence for a low score. See `app.index`.
     """
-    Returns: list[dict]
-    Example return value:
-    [
-        {"text": "Example 1 of attribute for politician.", "source": "Stuff"},
-        {"text": "Example 2 of attribute for politician.", "source": "Newshub"},
-        {"text": "Example 3 of attribute for politician.", "source": "RNZ"},
-    ]
-    """
-    examples = get_all_examples()
-    politician_examples = [e for e in examples if ((e['politician_id'] == politician_id) and (e['attribute'] == attribute_name))]
-    return politician_examples
+    return _EXAMPLES_BY_PAIR.get((politician_id, attribute_name), [])
+
+
+def example_counts(politician_id):
+    """attribute -> how many statements sit behind that score."""
+    return {attr: len(v) for (pid, attr), v in _EXAMPLES_BY_PAIR.items()
+            if pid == politician_id}
