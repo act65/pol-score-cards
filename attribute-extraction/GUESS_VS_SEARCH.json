@@ -1,0 +1,20 @@
+{
+  "verdicts": 389,
+  "paired": 312,
+  "verdict_counts": {
+    "true": 170,
+    "wrong": 12,
+    "partly_true": 82,
+    "uncheckable": 9,
+    "partly_correct": 8,
+    "not_yet_due": 68,
+    "correct": 24,
+    "false": 16
+  },
+  "unscored_share": 0.1979,
+  "pearson_r": 0.6376,
+  "mean_abs_gap": 0.2202,
+  "agree_within_025": 0.6891,
+  "disagree_05_plus": 19,
+  "cited_share": 1.0
+}

@@ -7,3 +7,10 @@
 # ceiling the run had already been hitting.
 !quota_budget.json
 !forthrightness_scores_v3_attempts.json
+# Audit sidecars. The markdown reports beside them are already tracked; these
+# are the same numbers in machine form, and site/gen_data_stats.py reads them
+# to build the "How we check the instrument" section on /data. Untracked, a
+# fresh clone rebuilds that page with the section silently missing.
+!QUOTE_AUDIT_v3.json
+!ATTRIBUTE_OVERLAP_v3.json
+!GUESS_VS_SEARCH.json

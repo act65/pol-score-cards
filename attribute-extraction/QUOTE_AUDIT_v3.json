@@ -1,0 +1,57 @@
+{
+  "sampled": 2000,
+  "checkable": 78271,
+  "statements": 78271,
+  "sitting_days": 196,
+  "totals": {
+    "n": 2000,
+    "verbatim": 2000,
+    "spliced": 0,
+    "missing": 0,
+    "truncated": 0
+  },
+  "per_attribute": {
+    "divination": {
+      "n": 52,
+      "verbatim": 52,
+      "spliced": 0,
+      "missing": 0,
+      "truncated": 0
+    },
+    "veracity": {
+      "n": 624,
+      "verbatim": 624,
+      "spliced": 0,
+      "missing": 0,
+      "truncated": 0
+    },
+    "rigor": {
+      "n": 327,
+      "verbatim": 327,
+      "spliced": 0,
+      "missing": 0,
+      "truncated": 0
+    },
+    "focus": {
+      "n": 349,
+      "verbatim": 349,
+      "spliced": 0,
+      "missing": 0,
+      "truncated": 0
+    },
+    "civility": {
+      "n": 212,
+      "verbatim": 212,
+      "spliced": 0,
+      "missing": 0,
+      "truncated": 0
+    },
+    "specificity": {
+      "n": 436,
+      "verbatim": 436,
+      "spliced": 0,
+      "missing": 0,
+      "truncated": 0
+    }
+  }
+}
