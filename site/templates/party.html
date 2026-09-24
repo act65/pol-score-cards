@@ -37,8 +37,8 @@
                 <option value="rel">vs the House</option>
             </select>
         </label>
-        <span class="muted">The bars in each block always show the distance from the House average;
-            this switches the numbers underneath to match.</span>
+        <span class="muted">Switches each card between its six scores, drawn as a shape, and how
+            far the caucus sits from the House average on each one.</span>
     </div>
 
     <div class="politician-list-container">
@@ -51,26 +51,49 @@
                 <span class="sc-party">{{ card.n }} MP{{ 's' if card.n != 1 }}</span>
             </div>
 
-            {# The colour block IS the art. Inside it, one bar per attribute
-               showing how far this party sits from the House mean — because
-               every party's overall lands within a few points of every other,
-               so the profile is the information and the headline is not. #}
+            {# The colour block IS the art, and it carries whichever view the
+               toggle is on: the party's six scores as a shape, or each one's
+               distance from the House average. Both are rendered; the control
+               above the grid switches which is shown. #}
             <div class="sc-art sc-block">
-                <div class="sc-dev">
-                    {% for attribute in all_attributes %}
-                    {% set d = card.dev_by_attr.get(attribute.id) %}
-                    <div class="sc-dev-row{{ ' na' if not d }}"
-                         title="{{ attribute.name }} — {{ card.party }} {{ card.scores.get(attribute.id, 'not scored') }} against a House mean of {{ house.get(attribute.id, '—') }}{{ ', %+d' % d.delta if d }}.{{ ' UNVERIFIED: mostly the model\'s own estimates.' if card.unver.get(attribute.id) }}">
-                        <span class="sc-icon">{{ glyph(attribute) }}</span>
-                        <span class="sc-dev-track">
-                            {% if d %}
-                            <span class="sc-dev-bar" style="{% if d.delta < 0 %}right: 50%{% else %}left: 50%{% endif %}; width: {{ d.width }}%"></span>
-                            {% endif %}
-                        </span>
-                        <span class="sc-dev-num">{% if d %}{{ '%+d' % d.delta }}{% if card.unver.get(attribute.id) %}<span class="sc-dev-unver" aria-label="unverified">?</span>{% endif %}{% else %}—{% endif %}</span>
+                {% if card.radar %}
+                <div class="sc-view sc-view-abs">
+                    <svg class="sc-radar" viewBox="0 0 {{ card.radar.size }} {{ card.radar.size }}" role="img"
+                         aria-label="{{ card.party }} scores on each attribute">
+                        {% for ring in card.radar.rings %}
+                        <polygon points="{{ ring.points }}" class="rd-ring{{ ' rim' if ring.frac == 1.0 }}"></polygon>
+                        {% endfor %}
+                        {% for ax in card.radar.axes %}
+                        <line x1="{{ card.radar.cx }}" y1="{{ card.radar.cy }}" x2="{{ ax.x }}" y2="{{ ax.y }}" class="rd-axis"></line>
+                        {% endfor %}
+                        <polygon points="{{ card.radar.polygon }}" class="rd-shape"></polygon>
+                        {# The same glyph as the stats row below and the key on
+                           the front page, so which vertex is which needs no caption. #}
+                        {% for ax in card.radar.axes %}
+                        <circle cx="{{ ax.dx }}" cy="{{ ax.dy }}" r="2" class="rd-dot"><title>{{ ax.label }} {{ ax.score }}</title></circle>
+                        {{ ax.icon|safe }}
+                        {% endfor %}
+                    </svg>
+                </div>
+                {% endif %}
+
+                <div class="sc-view sc-view-rel" hidden>
+                    <div class="sc-dev">
+                        {% for attribute in all_attributes %}
+                        {% set d = card.dev_by_attr.get(attribute.id) %}
+                        <div class="sc-dev-row{{ ' na' if not d }}"
+                             title="{{ attribute.name }} — {{ card.party }} {{ card.scores.get(attribute.id, 'not scored') }} against a House mean of {{ house.get(attribute.id, '—') }}{{ ', %+d' % d.delta if d }}.">
+                            <span class="sc-icon">{{ glyph(attribute) }}</span>
+                            <span class="sc-dev-track">
+                                {% if d %}
+                                <span class="sc-dev-bar" style="{% if d.delta < 0 %}right: 50%{% else %}left: 50%{% endif %}; width: {{ d.width }}%"></span>
+                                {% endif %}
+                            </span>
+                            <span class="sc-dev-num">{% if d %}{{ '%+d' % d.delta }}{% else %}—{% endif %}</span>
+                        </div>
+                        {% endfor %}
+                        <div class="sc-dev-foot">vs the House mean</div>
                     </div>
-                    {% endfor %}
-                    <div class="sc-dev-foot">vs the House mean</div>
                 </div>
             </div>
 
@@ -157,8 +180,12 @@
         const vals = Array.from(document.querySelectorAll('.sc-val[data-abs]'));
         if (!modeSel || !vals.length) return;
         const marks = vals.map(function (el) { return el.querySelector('.sc-unver'); });
+        const views = Array.from(document.querySelectorAll('.sc-view'));
         modeSel.addEventListener('change', function () {
             const rel = modeSel.value === 'rel';
+            views.forEach(function (v) {
+                v.hidden = v.classList.contains(rel ? 'sc-view-abs' : 'sc-view-rel');
+            });
             vals.forEach(function (el, i) {
                 el.textContent = rel ? el.dataset.rel : el.dataset.abs;
                 if (marks[i]) el.appendChild(marks[i]);

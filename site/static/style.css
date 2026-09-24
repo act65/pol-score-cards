@@ -653,3 +653,17 @@ a.dl-btn:hover { border-color: #3b82f6; background: #f0f6ff; color: #1e40af; }
     letter-spacing: 0.06em; color: #6b7280; margin-right: 0.5em;
     vertical-align: 0.1em;
 }
+
+/* --- Radar on a politician's page: ink on white, not white on a colour ----- */
+.mp-radar { margin: 14px 0 6px; padding: 0; max-width: 430px; }
+.mp-radar svg { display: block; width: 100%; max-width: 250px; height: auto; }
+.mp-radar .rd-ring { fill: none; stroke: #e2e8f0; stroke-width: 1; }
+.mp-radar .rd-ring.rim { stroke: #cbd5e1; }
+.mp-radar .rd-axis { stroke: #e2e8f0; stroke-width: 1; }
+.mp-radar .rd-shape {
+    fill: rgba(71, 85, 105, 0.16); stroke: #334155;
+    stroke-width: 1.8; stroke-linejoin: round;
+}
+.mp-radar .rd-dot { fill: #334155; }
+.mp-radar .rd-icon.dark { color: #7a6a4a; }
+.mp-radar figcaption { margin-top: 6px; font-size: 0.82em; color: #94a3b8; line-height: 1.45; }

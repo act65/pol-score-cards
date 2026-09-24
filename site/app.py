@@ -219,6 +219,8 @@ def _party_cards(shown):
                      "width": round(abs(c["scores"][a] - house[a]) / widest * 50, 2)}
                     for a in c["scores"] if a in house]
         c["dev_by_attr"] = {d["attr"]: d for d in c["dev"]}
+        c["radar"] = _radar([(a["name"], c["scores"].get(a["name"]))
+                             for a in attribute_descriptions], size=150, pad=22)
     return cards, too_small, {a: round(v) for a, v in house.items()}
 
 
@@ -244,6 +246,64 @@ def _shuffled(examples, *seed_parts):
     out = list(examples)
     random.Random("|".join(str(p) for p in seed_parts)).shuffle(out)
     return out
+
+
+# --- Radar ------------------------------------------------------------------
+# Six attributes is exactly the count where a radar earns its keep: the shape
+# is readable at a glance, and what it shows — which attributes are lopsided —
+# is the thing a row of six numbers hides. Computed here as plain geometry and
+# rendered as inline SVG, so there is no chart library and nothing to load.
+#
+# The scale is ABSOLUTE, 0 at the centre and 100 at the rim, because the rim is
+# the standard. Every card in this Parliament draws a small polygon, and that
+# is the honest picture.
+def _radar(values, size=160, pad=18, icon_px=12, icon_class="rd-icon"):
+    """values: [(label, score_or_None), ...] in card order -> SVG geometry.
+
+    Each axis also carries `icon`: the attribute's glyph, already positioned as
+    a nested <svg>. Built here rather than in the template because Jinja's
+    `replace` on a Markup value escapes what it inserts, so the attributes were
+    silently dropped and every glyph rendered at full size.
+    """
+    n = len(values)
+    if n < 3:
+        return None
+    c = size / 2.0
+    r = c - pad
+
+    def point(i, frac):
+        ang = -math.pi / 2 + 2 * math.pi * i / n
+        return (round(c + r * frac * math.cos(ang), 2),
+                round(c + r * frac * math.sin(ang), 2))
+
+    axes = []
+    poly = []
+    for i, (label, score) in enumerate(values):
+        ex, ey = point(i, 1.0)
+        # Labels sit a little beyond the rim, nudged off-centre so the top and
+        # bottom ones do not collide with the polygon.
+        lx, ly = point(i, 1.18)
+        frac = (max(0.0, min(100.0, float(score))) / 100.0) if score is not None else 0.0
+        px, py = point(i, frac)
+        raw = (_ICONS.get(str(label).lower()) or {}).get("svg", "")
+        icon = ""
+        if raw.startswith("<svg "):
+            icon = (f"<svg class='{icon_class}' x='{lx - icon_px / 2:.2f}' "
+                    f"y='{ly - icon_px / 2:.2f}' width='{icon_px}' "
+                    f"height='{icon_px}' " + raw[len("<svg "):])
+        axes.append({"x": ex, "y": ey, "lx": lx, "ly": ly,
+                     "label": label, "score": score, "icon": icon,
+                     "dx": round(c + (ex - c) * (((score or 0)) / 100.0), 2),
+                     "dy": round(c + (ey - c) * (((score or 0)) / 100.0), 2)})
+        poly.append(f"{px},{py}")
+    rings = []
+    for frac in (0.25, 0.5, 0.75, 1.0):
+        rings.append({"points": " ".join(f"{x},{y}" for x, y in
+                                         (point(i, frac) for i in range(n))),
+                      "frac": frac})
+    return {"size": size, "cx": c, "cy": c, "r": r,
+            "axes": axes, "rings": rings,
+            "polygon": " ".join(poly)}
 
 
 # --- Rubrics ----------------------------------------------------------------
@@ -324,7 +384,10 @@ def politician_page(politician_id):
     # them is the "one weak attribute drags the card down" effect made visible —
     # a lopsided card has a wide gap, an even one has almost none.
     house = _house_means(shown)
-    return render_template('politician.html', politician=politician,
+    radar = _radar([(a["name"], scores.get(a["name"]))
+                    for a in attribute_descriptions],
+                   size=210, pad=30, icon_px=15, icon_class="rd-icon dark")
+    return render_template('politician.html', politician=politician, radar=radar,
                            sections=sections, scores=scores, house=house,
                            overall=round(geo),
                            rank=rank, ranked_of=len(shown),
