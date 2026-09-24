@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-NZ Politician Scorecards — a data-driven platform that scores New Zealand politicians on nine D&D-style attributes (Forthrightness, Strength, Veracity, Authenticity, Divination, Charisma, Civility, Rigor, Specificity). See `README.md` for the attribute definitions and `design-decisions.md` for the rationale (e.g. all attributes are oriented so "higher = better").
+NZ Politician Scorecards — a data-driven platform that scores New Zealand politicians on D&D-style attributes. **Six are published** (Veracity, Divination, Focus, Civility, Rigor, Specificity); Forthrightness is withheld, Strength and Authenticity deferred to v4, Charisma retired — see `attributes.py`, which is the source of truth. See `README.md` for the attribute definitions and `design-decisions.md` for the rationale (e.g. all attributes are oriented so "higher = better").
 
 ## Architecture
 

@@ -44,16 +44,31 @@
            <b>geometric mean</b> of their {{ attributes|length }} attributes — so a single weak attribute drags the whole
            card down; you can't be "legendary" by being lopsided. The rarest tiers are deliberately
            the smallest.</p>
-        <p>The front page features politicians with enough data to be meaningful (at least six of the
-           {{ attributes|length }} attributes scored). You can re-order the cards by overall rarity or by any single
-           attribute, and filter by party.</p>
+        <p>The front page features politicians with enough data to be meaningful (at least
+           {{ min_attributes }} of the {{ attributes|length }} attributes scored). You can re-order the cards by overall
+           rarity or by any single attribute, sort high-to-low or low-to-high, and filter by party or
+           by role. There is also a <a href="/party">scorecard per party</a>, aggregated over its MPs
+           and shown against the House average.</p>
 
         <h2>Methodology</h2>
-        <p>We scrape public statements — party press releases, RNZ political reporting, Beehive
-           releases, and <b>Hansard</b> (the verbatim parliamentary record) — and use a large language
-           model (Claude) to find each politician's statements and score them against a rubric for
-           every attribute. Each score keeps the quoted statement, its context, and a short
-           explanation, which is what you see on the evidence pages.</p>
+        <p>Every score comes from <b>Hansard</b>, the verbatim parliamentary record, and nothing else.
+           The transcript of this Parliament is cut into windows of debate and each one is read by a
+           large language model (Claude), which pulls out the statements that bear on an attribute and
+           scores each against a fixed rubric. Every score keeps the quoted statement, its date, its
+           context and a short explanation — which is what the evidence pages show.</p>
+        <p>One source, on purpose. Earlier versions mixed in party press releases and
+           post-Cabinet press conferences, and that turned out to change a score more than the
+           speaker did: the same MP scored several points higher in a press release than in the
+           House, and the mix of sources differed sharply by party, so cross-MP comparison was not a
+           fair fight. Hansard is the only source that is adversarial, on the record, and covers
+           every MP equally. The other corpora are still published on the
+           <a href="/data">dataset page</a> — they are just not scored here.</p>
+        <p>A quoted statement is checked against its own transcript before it is allowed on the site:
+           anything that is not verbatim, is spliced together from fragments, or does not begin and
+           end on a sentence boundary is dropped. The displayed number is a <em>shrunk</em> average —
+           thin evidence is deliberately pulled toward the population middle, so a single flattering
+           quote cannot make a card, and each attribute carries its evidence count and a confidence
+           level for that reason.</p>
         <h2>How well does it work? We don't know yet.</h2>
         <p><b>The scoring is not currently validated.</b> There is an evaluation harness, but the
            test sets it runs against turned out to be <em>invented</em> statements attributed to
@@ -64,18 +79,27 @@
            so <b>treat every accuracy figure as unvalidated</b>. A replacement set sampled from the
            real corpus has been drawn but is not yet labelled. There is also only one labeller, so we
            have no inter-rater agreement to report.</p>
-        <p>What we can say comes from the rubrics themselves. <b>Forthrightness, Civility, Rigor,
-           Specificity and Charisma</b> are judgeable from the text alone. <b>Veracity, Strength and
-           Authenticity</b> are relations between what someone said and an external record the
-           pipeline does not yet consult, so those scores reflect <em>plausibility</em>, not
-           fact-checking. <b>Divination</b> is not grounded at all — it scores whether a prediction is
-           checkable and plausible at the time of speaking, not whether it came true.</p>
-        <p>Two known defects, both affecting the live data. <b>Strength and Authenticity</b> currently
-           file a low score under the <em>speaker</em> even when the statement is describing someone
-           else's broken promise, so MPs are penalised for scrutinising opponents — discount both
-           heavily. And scores differ substantially by <b>source</b>: a party press release scores
-           higher on Forthrightness and lower on Civility, Rigor and Specificity than Hansard does,
-           and the mix of sources differs by party, so cross-MP comparison is not yet a fair fight.</p>
+        <p>What we can say comes from the rubrics themselves, and the six attributes do not all stand
+           on the same ground. <b>Civility, Rigor, Specificity and Focus</b> are judgeable from the
+           text alone — everything needed to score them is in the sentence.</p>
+        <p><b>Veracity and Divination are not.</b> Deciding whether a claim is true, or whether a
+           prediction came off, means going and checking a source. Those two now emit a specific
+           claim plus what would falsify it, and a separate step searches for the evidence and
+           assigns the score. <b>That step has not finished running.</b> Until it does, both are shown
+           from the model's own unaided estimate, and every one of them is marked on the card with a
+           superscript <b>?</b>, a dimmed number and an "unverified" note. <b>Read a <b>?</b> score as
+           the model's guess, not as a fact-check</b> — on the claims that have been checked, the guess
+           is off by more than half a band about six times in a hundred.</p>
+        <p>Three attributes shown in earlier versions are not here, and it is worth saying why.
+           <b>Charisma</b> was cut: it correlated at 0.96 with Civility, so one insult was being
+           counted twice. <b>Strength</b> and <b>Authenticity</b> are on hold until the voting,
+           bill and promise records they need are joined properly — as shown before, they filed a low
+           score under the <em>speaker</em> even when the statement described someone else's broken
+           promise, which penalised MPs for scrutinising opponents. <b>Forthrightness</b> ("do they
+           answer the question asked?") is measured but withheld: it is scored over question-and-answer
+           pairs, and in practice only ministers answer questions in the House, so of the MPs with
+           enough evidence to score, every single one sat on the government benches. It cannot be
+           compared across a whole Parliament, so it is not shown.</p>
 
         <h2>Please read this</h2>
         <p>These scores are <b>automated estimates, not verified fact</b>. They are generated by an

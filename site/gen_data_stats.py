@@ -299,10 +299,17 @@ def main():
              "note": "bias-adjusted score per attribute", "url": "/download/scores"},
             {"label": "Raw Hansard corpus (JSONL)",
              "note": "speaker debate transcripts", "url": "/download/hansard"},
+            # Scraped, published, but NOT scored in this release — v3.0 is
+            # Hansard-only so that every MP is measured in the same room (a
+            # press release used to score several points higher than a speech,
+            # and the source mix differed by party). Offered as raw corpora, and
+            # labelled so nobody reads them as part of the scores above.
             {"label": "Raw press-conference corpus (JSON)",
-             "note": "post-Cabinet transcripts", "url": "/download/pressers"},
+             "note": "post-Cabinet transcripts — not scored in v3.0",
+             "url": "/download/pressers"},
             {"label": "Raw party press releases (ZIP)",
-             "note": "all six parties", "url": "/download/releases"},
+             "note": "all six parties — not scored in v3.0",
+             "url": "/download/releases"},
         ],
     }
     out = os.path.join(STATIC, "dataset_stats.json")

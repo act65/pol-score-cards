@@ -40,13 +40,29 @@ the full contract, the ownership ledger, and the eligibility gates.
 | **Rigor** | Does the conclusion follow from the premises? | Validity, not truth. An argument can be perfectly rigorous and built on false premises — high Rigor, low Veracity. |
 | **Specificity** | Is there checkable content in the statement? | Figures, mechanisms, timeframes, named policies. A precise but false claim still scores high here. |
 
-All nine are oriented so **higher is better** (see `design-decisions.md`).
+All are oriented so **higher is better** (see `design-decisions.md`).
+
+**Six of these are published on the cards** (`attributes.PUBLISHED`): Veracity,
+Divination, Focus, Civility, Rigor, Specificity. The other three are measured
+but not shown, for three different reasons:
 
 > **Charisma was cut on 2026-08-07.** It correlated with Civility at r=0.96 —
 > one insult counted twice, then compounded by the geometric mean used for card
 > rank. **Focus** replaced it, covering the gap Civility leaves: attacking a
 > *party* rather than a *person* passes Civility cleanly but is pure tribalism.
 > Measurements in `attribute-extraction/ATTRIBUTE_OVERLAP.md`.
+
+> **Strength and Authenticity are DEFERRED to v4.** Both need the voting, bill
+> and promise records joined properly, and both currently file a low score under
+> the *speaker* even when the statement describes someone else's broken promise —
+> which penalises MPs for scrutinising opponents. See `data/VOTES.md`.
+
+> **Forthrightness is WITHHELD since 2026-09-25.** It is scored over Q/A pairs,
+> and in the House only ministers answer questions: of the 31 MPs with enough
+> evidence to score, all 31 sat on the government benches. It cannot be compared
+> across a Parliament, so it is not published — but it keeps being extracted,
+> because it is a good measure *of the executive*. See the decisions log in
+> `ATTRIBUTES.md`.
 
 For the full rubrics see `attribute-extraction/prompts/`; for why each attribute
 is drawn where it is, `ATTRIBUTES.md`.

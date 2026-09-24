@@ -97,10 +97,16 @@ TURN_HOURS = 1.0
 # designed sample. resolve.py is unchanged and the 389 resolved rows are kept.
 # Re-add by name (`--stages windows,questions,resolve_veracity`) to resume it.
 #
+# `questions` dropped 2026-09-25. It scores Forthrightness over Q/A pairs, and
+# Forthrightness is WITHHELD (attributes.WITHHELD): the pairing is broken, and
+# even repaired it only ever reaches ministers. Every turn spent on it is a
+# turn not spent on the 248 windows still outstanding. Re-add by name
+# (`--stages windows,questions`) once parse_questions.py is fixed.
+#
 # Both entry points read this one list. They used to differ — `run` carried a
 # two-stage PLAN from the era when `windows` owned the whole night — and on
 # 2026-09-06 that silently started a night with no window extraction in it.
-NIGHTLY_PLAN = ("windows", "questions")
+NIGHTLY_PLAN = ("windows",)
 
 
 def _next(hhmm: str, after: dt.datetime | None = None) -> dt.datetime:
