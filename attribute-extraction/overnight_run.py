@@ -433,7 +433,15 @@ def run(hours: float = 10.0, stage: str = "pilot", model: str = MODEL,
         print("\nNext: read ATTRIBUTE_OVERLAP_v3.md and QUOTE_AUDIT_v3.md. If the "
               "targets hold, run --stage windows.", flush=True)
 
-    if stage_complete:
+    # Same condition as the `finished` label above, deliberately. Testing only
+    # `stage_complete` here read "complete" in the log but exited 0: that flag is
+    # set INSIDE the while loop, whose own guard is `done() < target`, so a stage
+    # that was ALREADY at its target never entered the body and never set it. On
+    # 2026-09-24 windows hit 5,548/5,548 at 17:24 and tonight.py — which drops a
+    # stage only on EX_DONE — kept handing it turns: 1,864 no-op rounds in four
+    # hours, each re-running both audits over a 66 MB file. No quota was spent
+    # (the pass never ran), but nothing else made progress either.
+    if stage_complete or (target and done() >= target):
         # Propagate completion to the caller (tonight.py), which drops the
         # stage from its rotation. Without this the exit code is 0 and a
         # finished stage keeps being offered turns for the rest of the night.
