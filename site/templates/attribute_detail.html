@@ -12,10 +12,11 @@
     {% include '_header.html' %}
 
     <main class="attribute-detail-container">
-        {# The nav is the same on every page now, so the way back to this MP has
-           to live in the page itself. #}
-        <p class="crumb"><a href="{{ url_for('politician_page', politician_id=politician.id) }}">←&nbsp;{{ politician.name }}</a>{% if politician.party %} · {{ politician.party }}{% endif %}{% if politician.role %} · {{ politician.role }}{% endif %}</p>
-        <h2>{{ attribute_info.name }} — {{ politician.name }}</h2>
+        {# The nav is generic, so the way back to this MP lives in the page. The
+           MP's name is already in the title, so it is the link — a breadcrumb
+           above it said the same name twice, three words apart. #}
+        <h2>{{ attribute_info.name }} — <a href="{{ url_for('politician_page', politician_id=politician.id) }}">{{ politician.name }}</a></h2>
+        <p class="crumb">{{ politician.party }}{% if politician.role %} · {{ politician.role }}{% endif %}</p>
         <h3>Score: {{ score }}{% if meta and meta.ci is not none %}
             <span class="ci">±{{ meta.ci }}</span>{% endif %}
             {% if meta and meta.conf %}<span class="conf conf-{{ meta.conf }}">{{ meta.conf }} confidence</span>{% endif %}</h3>
