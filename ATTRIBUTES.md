@@ -601,6 +601,7 @@ are has not fixed the instrument.
 | Date | Decision |
 |---|---|
 | 2026-08-07 | **Charisma cut**; **Focus** added in its place (policy vs the players). |
+| 2026-09-24 | **Divination WITHHELD** — still extracted and measured, not shown on cards until the resolver has scored it. 113 of 1,618 claims resolved, so 95% of a card would be the model's guess (MAE 0.22, confidently wrong 6% of the time), and all 29 covered MPs shared one score. ~1.5 nights of resolver time brings it back. Cards show **six**: Forthrightness, Veracity, Focus, Civility, Rigor, Specificity. |
 | 2026-08-07 | **Civility re-anchored** — 1.0 is the expected standard, 0.5 a genuine failure. Forces re-extraction; v2.0 civility scores become incomparable. |
 | 2026-08-07 | **Veracity and Divination grounded by search**, via one shared resolver with pre-registered falsification criteria. |
 | 2026-08-07 | **53rd Parliament deferred** until after the pilot — for the political-bias check and long-horizon outcomes, not for text-only evaluation. |

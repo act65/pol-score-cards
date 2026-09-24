@@ -7,9 +7,11 @@ needs to say: **not every attribute is scored the same way.**
 
     from attributes import ATTRIBUTES, SCORED_IN_WINDOWS, tier_of
 
-**Seven active attributes** as of 2026-08-15. Charisma was RETIRED (r=0.96 with
-Civility); Strength and Authenticity are DEFERRED to v4 — see the note above
-each tuple for why. All three stay defined so older output still reads.
+**Seven active attributes** as of 2026-08-15, of which **six are PUBLISHED** as
+of 2026-09-24. Charisma was RETIRED (r=0.96 with Civility); Strength and
+Authenticity are DEFERRED to v4; Divination is WITHHELD — still extracted and
+measured, but not shown on a card until the resolver has scored it. See the
+note above each tuple for why. All stay defined so older output still reads.
 
 Three tiers, defined in `ATTRIBUTES.md` (which is the contract — if this file
 disagrees with it, this file is the bug):
@@ -152,8 +154,32 @@ _DEFINED = (
 # vocabulary, and the `positions` extraction path.
 DEFERRED = ("strength", "authenticity")
 
-# The active set — what is extracted, scored, evaluated and shown.
+# The active set — what is extracted, scored and evaluated.
 ALL = tuple(a for a in _DEFINED if a.id not in DEFERRED)
+
+# Extracted and kept, but NOT PUBLISHED on cards (decided 2026-09-24).
+#
+# This is a third state, and it is deliberately not DEFERRED or RETIRED.
+# RETIRED means cut for redundancy and gone. DEFERRED means out of the active
+# set until a v4 rebuild. WITHHELD means the pipeline is right and the data is
+# simply not ready to show yet — so extraction MUST continue, or the claims the
+# resolver needs would never be collected.
+#
+# Divination: 1,618 claims but only 113 resolved, so 95% of what a card would
+# show is the model's unaided guess — and on 312 resolved claims that guess has
+# MAE 0.22 against the evidence and is confidently wrong 6% of the time. It was
+# also the weakest column by information content: 29 MPs covered before the
+# guesses were allowed in, all sharing one score, because 113 verdicts over 132
+# MPs is a median evidence n of 1 and the shrinkage collapsed them.
+#
+# Bringing it back is ~1.5 nights of resolver time (276 calls at 6.48 claims
+# each), not a rebuild. Delete it from this tuple when that has run.
+WITHHELD = ("divination",)
+
+# What the cards and the site dataset show. Everything else — the extractor,
+# the audits, the eval harness — reads ALL, so a withheld attribute keeps being
+# extracted and keeps being measured; it just does not reach a card.
+PUBLISHED = tuple(a for a in ALL if a.id not in WITHHELD)
 
 # Every attribute ever defined, keyed by id. Built from _DEFINED, not ALL, so a
 # reader handed a v2.0 or early-v3.0 file can still name what it finds instead
