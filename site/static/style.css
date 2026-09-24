@@ -552,3 +552,78 @@ a.dl-btn:hover { border-color: #3b82f6; background: #f0f6ff; color: #1e40af; }
     background: #fdfaf2; border: 1px solid #e8dfc8; border-left: 3px solid #a8341f;
     border-radius: 6px;
 }
+
+/* --- The geometric mean, drawn ---------------------------------------------
+   Ticks are the attributes; the two markers are their plain average and their
+   geometric mean. The distance between the markers is what "one weak attribute
+   drags the card down" actually looks like. */
+.mp-overall { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.mp-ov-label { color: #64748b; font-size: 0.9em; }
+.mp-ov-outof { color: #94a3b8; font-size: 0.9em; margin-left: -4px; }
+.mp-ov-rank { color: #64748b; font-size: 0.88em; }
+
+.mp-geo { margin: 14px 0 0; }
+.mp-geo-track {
+    position: relative; height: 30px; margin-bottom: 2px;
+    background: linear-gradient(to right, #f1f5f9, #e2e8f0);
+    border-radius: 4px;
+}
+.mp-geo-tick {
+    position: absolute; bottom: 7px; width: 2px; height: 11px; margin-left: -1px;
+    background: #94a3b8; border-radius: 1px;
+}
+.mp-geo-mark { position: absolute; top: 2px; bottom: 2px; width: 2px; margin-left: -1px; }
+.mp-geo-mark.arith { background: #94a3b8; }
+.mp-geo-mark.geo { background: #0f172a; width: 3px; margin-left: -1.5px; }
+.mp-geo-axis {
+    display: flex; justify-content: space-between;
+    font-size: 0.72em; color: #94a3b8; font-weight: 700;
+}
+.mp-geo-note { margin: 8px 0 0; font-size: 0.88em; }
+.k-arith { color: #64748b; }
+.k-geo { color: #0f172a; }
+
+/* --- Against the House ----------------------------------------------------- */
+.mp-profile { padding: 18px 0 4px; border-top: 1px solid #e2e8f0; }
+.mp-profile h3 { margin: 0 0 2px; font-size: 1.1em; color: #0f172a; }
+.mp-dev { margin: 12px 0 6px; max-width: 520px; }
+.mp-dev-row { display: flex; align-items: center; gap: 9px; margin: 5px 0; font-size: 0.9em; }
+.mp-dev-row .sc-icon { width: 1.3em; height: 1.3em; flex: none; color: #3d372e; }
+.mp-dev-name { flex: none; width: 6.4em; color: #475569; }
+.mp-dev-track { position: relative; flex: 1 1 auto; height: 12px; }
+.mp-dev-track::before {
+    content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px;
+    width: 1px; background: #cbd5e1;
+}
+.mp-dev-bar { position: absolute; top: 3px; height: 6px; border-radius: 1px; }
+.mp-dev-bar.pos { background: #475569; }
+.mp-dev-bar.neg { background: #a8a29b; }
+.mp-dev-num {
+    flex: none; width: 2.4em; text-align: right; font-weight: 700;
+    font-variant-numeric: tabular-nums; color: #334155;
+}
+.mp-dev-foot, .mp-sample-note { font-size: 0.86em; }
+.mp-sample-note { padding-top: 14px; border-top: 1px solid #e2e8f0; }
+
+/* --- Where one score sits among the House ---------------------------------- */
+.strip { margin: 16px 0 6px; padding: 0; max-width: 620px; }
+.strip figcaption { font-size: 0.86em; color: #64748b; margin-bottom: 6px; }
+.strip-plot { position: relative; padding: 0 4px; }
+.strip-axis { position: absolute; left: 0; right: 0; bottom: 11px; height: 1px; background: #e2e8f0; }
+.strip-dot {
+    position: absolute; width: 5px; height: 5px; margin-left: -2.5px;
+    background: #aeb9c6; border-radius: 50%;
+}
+.strip-dot.me {
+    width: 9px; height: 9px; margin-left: -4.5px; bottom: 8px !important;
+    background: #a8341f; border: 2px solid #fff; box-shadow: 0 0 0 1px #a8341f;
+    z-index: 2;
+}
+.strip-median {
+    position: absolute; top: 0; bottom: 11px; width: 0;
+    border-left: 1px dashed #94a3b8;
+}
+.strip-lab { position: absolute; bottom: 0; font-size: 0.72em; font-weight: 700; color: #94a3b8; }
+.strip-lab.lo { left: 0; }
+.strip-lab.hi { right: 0; }
+.strip-note { margin: 4px 0 0; font-size: 0.85em; color: #64748b; }

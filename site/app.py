@@ -52,8 +52,8 @@ for _a in attribute_descriptions:
 # --- Grade ------------------------------------------------------------------
 # A card's overall strength is the GEOMETRIC mean of its attribute scores (so a
 # single weak attribute drags the whole card down — you can't be strong by being
-# lopsided). That number sets the card's border colour, on a continuous
-# bronze -> silver -> gold ramp over a fixed window.
+# lopsided). That number sets the card's border colour, on a continuous ramp
+# over a fixed window.
 #
 # This replaced a five-tier rarity ranking (legendary/epic/rare/uncommon/common
 # in exponential buckets). Two things were wrong with it. It put 117 of 132
@@ -63,20 +63,23 @@ for _a in attribute_descriptions:
 #
 # The window is ABSOLUTE and wider than the observed spread on purpose. Every
 # card in this Parliament lands between 43 and 74, and a ramp stretched to fit
-# that would imply the top of it is good. The pass mark is 100. The colour bar
-# in the legend shows the same window, so a reader can see how little of it is
-# occupied.
+# that would imply the top of it is good. The pass mark is 100. The bar in the
+# legend shows the same window, so a reader can see how little of it is used.
 GRADE_WINDOW = (40, 80)
-# The silver stop is deliberately darker than a real silver: the page behind a
-# card is light grey, and a pale mid-ramp border made every middling card look
-# unfinished rather than middling.
-_GRADE_STOPS = [(0.0, (122, 74, 33)),     # bronze
-                (0.5, (141, 148, 156)),   # silver
-                (1.0, (201, 162, 39))]    # gold
+# A single-hue INK ramp, pale to near-black — not bronze/silver/gold.
+#
+# Two reasons. The card is monochrome ink on white with the party chip as its
+# only colour, and a medal ramp added a second colour system competing with it.
+# And a gold border for the best card implies the best card is good: it is 74
+# against a pass mark of 100. Ink carries no such claim, and it is the encoding
+# the card already uses one level down — `.sc-val` runs faint grey for a low
+# stat to bold black for a high one. This is the same idea at card scale.
+_GRADE_STOPS = [(0.0, (169, 162, 150)),   # faint
+                (1.0, (20, 17, 13))]      # bold black
 
 
 def _grade_colour(score):
-    """Interpolate the bronze->silver->gold ramp at `score`."""
+    """Interpolate the ink ramp at `score`."""
     lo, hi = GRADE_WINDOW
     t = min(1.0, max(0.0, (float(score) - lo) / (hi - lo)))
     for (t0, c0), (t1, c1) in zip(_GRADE_STOPS, _GRADE_STOPS[1:]):
@@ -197,8 +200,11 @@ def index():
 MIN_PARTY_MPS = 3
 
 
-def _house_means(shown):
-    """The all-MP mean per attribute — the baseline every party bar is read against."""
+def _house_means(shown=None):
+    """The all-MP mean per attribute — the baseline every deviation bar is read
+    against, on a party card and on a politician's page alike."""
+    if shown is None:
+        shown, _total = _featured()
     means = {}
     for attr in ATTR_NAMES:
         vals = [d["scores"][attr] for d in shown
@@ -317,10 +323,33 @@ def politician_page(politician_id):
     shown, _total = _featured()
     rank = next((d["rank"] for d in shown
                  if d["politician"]["id"] == politician_id), None)
+
+    # The profile figure: each attribute against the House mean, the same idiom
+    # the party cards use, so one visual language covers both pages. The
+    # ARITHMETIC mean is drawn beside the geometric one because the gap between
+    # them is the "one weak attribute drags the card down" effect made visible —
+    # a lopsided card has a wide gap, an even one has almost none.
+    house = _house_means(shown)
+    vals = [sec["score"] for sec in sections]
+    widest = max((abs(sec["score"] - house[sec["attribute"]["name"]])
+                  for sec in sections
+                  if sec["attribute"]["name"] in house), default=1) or 1
+    for sec in sections:
+        name = sec["attribute"]["name"]
+        if name in house:
+            sec["delta"] = round(sec["score"] - house[name])
+            sec["bar"] = round(abs(sec["delta"]) / widest * 50, 2)
+    profile = {
+        "geo": round(geo),
+        "arith": round(sum(vals) / len(vals)) if vals else 0,
+        "low": min(vals) if vals else 0,
+        "high": max(vals) if vals else 0,
+        "house_geo": round(_geo_mean({a: v for a, v in house.items()})),
+    }
     return render_template('politician.html', politician=politician,
-                           sections=sections, scores=scores,
+                           sections=sections, scores=scores, house=house,
                            overall=round(geo), grade=_grade_colour(round(geo)),
-                           rank=rank, ranked_of=len(shown),
+                           rank=rank, ranked_of=len(shown), profile=profile,
                            all_attributes=attribute_descriptions)
 
 
@@ -349,7 +378,46 @@ def attribute_detail(politician_id, attribute):
                            attribute_info=attribute_info, examples=examples,
                            score=score, meta=meta,
                            all_attributes=attribute_descriptions,
-                           scores=scores)
+                           scores=scores,
+                           strip=_attribute_strip(attribute, politician_id))
+
+
+# --- Where one score sits among the rest ------------------------------------
+# A number is not readable on its own: 34 for Civility means nothing until you
+# know the House runs 20 to 84 and sits around 64. So the evidence page opens
+# with a strip of every MP's score on that attribute, this MP marked. Same dot
+# idiom as the party cards, one axis, no axes furniture.
+_STRIP_PAD = 3
+
+
+def _attribute_strip(attribute, politician_id):
+    shown, _total = _featured()
+    pairs = [(d["politician"]["id"], d["scores"][attribute]) for d in shown
+             if isinstance(d["scores"].get(attribute), (int, float))]
+    if len(pairs) < 5:
+        return None
+    vals = [v for _pid, v in pairs]
+    lo, hi = min(vals) - _STRIP_PAD, max(vals) + _STRIP_PAD
+    span = max(hi - lo, 1)
+    stack = collections.Counter()
+    dots = []
+    for pid, v in sorted(pairs, key=lambda t: t[1]):
+        dots.append({"x": round((v - lo) / span * 100, 2),
+                     "row": stack[v],
+                     "me": pid == politician_id,
+                     "score": v})
+        stack[v] += 1
+    mine = next((d for d in dots if d["me"]), None)
+    ranked = sorted(vals, reverse=True)
+    return {
+        "dots": dots,
+        "lo": lo, "hi": hi, "n": len(pairs),
+        "rows": (max(stack.values()) if stack else 1),
+        "median": sorted(vals)[len(vals) // 2],
+        "median_x": round((sorted(vals)[len(vals) // 2] - lo) / span * 100, 2),
+        "mine": mine,
+        "rank": (ranked.index(mine["score"]) + 1) if mine else None,
+    }
 
 
 def _load_dataset_stats():
