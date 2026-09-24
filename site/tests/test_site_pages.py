@@ -8,18 +8,20 @@ wrong way still shows quotes. Neither raises.
 import app
 
 
-def test_the_grade_ramp_runs_bronze_to_gold_and_clamps():
+def test_the_grade_ramp_gets_monotonically_darker_and_clamps():
+    """A higher score is more ink. If the ramp ever stops being monotone the
+    border still renders, so nothing else would notice."""
     lo, hi = app.GRADE_WINDOW
     assert app._grade_colour(lo) == app._grade_colour(lo - 50), "clamps below"
     assert app._grade_colour(hi) == app._grade_colour(hi + 50), "clamps above"
-    # Bronze is red-dominant, gold is red-and-green, silver sits between.
-    def rgb(c):
-        return tuple(int(c[i:i + 2], 16) for i in (1, 3, 5))
-    bronze, mid, gold = (rgb(app._grade_colour(v))
-                         for v in (lo, (lo + hi) / 2, hi))
-    assert bronze[2] < mid[2], "bronze is less blue than silver"
-    assert gold[2] < mid[2], "gold is less blue than silver"
-    assert gold[1] > bronze[1], "gold is greener than bronze"
+
+    def lightness(score):
+        c = app._grade_colour(score)
+        return sum(int(c[i:i + 2], 16) for i in (1, 3, 5))
+
+    steps = [lightness(v) for v in range(lo, hi + 1, 4)]
+    assert steps == sorted(steps, reverse=True), "higher score, darker border"
+    assert steps[0] > steps[-1], "and the ends actually differ"
 
 
 def test_every_featured_card_gets_a_colour_and_a_rank():

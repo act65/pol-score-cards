@@ -60,16 +60,69 @@
             <div class="mp-summary">
                 <h2>{{ politician.name }}</h2>
                 <p class="mp-sub">{{ politician.party }}{% if politician.role %} · {{ politician.role }}{% endif %}</p>
-                <p class="mp-overall"><strong>{{ overall }}</strong> overall{% if rank %} — {{ rank }}{{ 'st' if rank % 10 == 1 and rank != 11 else ('nd' if rank % 10 == 2 and rank != 12 else ('rd' if rank % 10 == 3 and rank != 13 else 'th')) }} of {{ ranked_of }}{% endif %}</p>
-                <p class="muted">The geometric mean of the {{ sections|length }} attribute
-                   {{ 'scores' if sections|length != 1 else 'score' }} on the card, so one weak
-                   attribute pulls the whole number down. The pass mark on every attribute is 100 —
-                   these are floors, not stretch goals.</p>
-                <p class="muted">Below, a few of {{ politician.name }}'s statements per attribute,
-                   <strong>drawn at random</strong> from everything scored rather than picked to
-                   flatter or to damn. Follow any attribute to see all of them.</p>
+                <p class="mp-overall"><span class="mp-ov-label">Overall score</span>
+                   <strong>{{ overall }}</strong><span class="mp-ov-outof">/ 100</span>
+                   {% if rank %}<span class="mp-ov-rank">ranked {{ rank }}{{ 'st' if rank % 10 == 1 and rank != 11 else ('nd' if rank % 10 == 2 and rank != 12 else ('rd' if rank % 10 == 3 and rank != 13 else 'th')) }} of {{ ranked_of }}</span>{% endif %}</p>
+
+                {# The geometric mean made visible. Each bar is one attribute; the
+                   two markers are the arithmetic and the geometric mean of those
+                   same bars. The gap between them IS the effect — an even card
+                   has almost none, a lopsided one has a wide one. #}
+                <div class="mp-geo">
+                    <div class="mp-geo-track">
+                        {% for sec in sections %}
+                        <span class="mp-geo-tick" style="left: {{ sec.score }}%"
+                              title="{{ sec.attribute.name }} {{ sec.score }}"></span>
+                        {% endfor %}
+                        <span class="mp-geo-mark arith" style="left: {{ profile.arith }}%"
+                              title="Plain average of the {{ sections|length }} attributes: {{ profile.arith }}"></span>
+                        <span class="mp-geo-mark geo" style="left: {{ profile.geo }}%"
+                              title="Geometric mean — the card's overall score: {{ profile.geo }}"></span>
+                    </div>
+                    <div class="mp-geo-axis"><span>0</span><span>50</span><span>100 = the standard</span></div>
+                    <p class="muted mp-geo-note">Each tick is one attribute. The
+                        <b class="k-arith">plain average</b> of them is {{ profile.arith }}; the
+                        <b class="k-geo">geometric mean</b>, which is the card's score, is
+                        {{ profile.geo }}.
+                        {% if profile.arith - profile.geo >= 2 %}It sits {{ profile.arith - profile.geo }}
+                        lower because {{ politician.name }} is uneven — the weakest attribute
+                        ({{ profile.low }}) pulls harder than the strongest ({{ profile.high }}) pushes.
+                        {% else %}The two are almost the same because the attributes are close
+                        together; an uneven card would show a visible gap.{% endif %}
+                        The pass mark on every attribute is 100 — these are floors, not stretch
+                        goals.</p>
+                </div>
             </div>
         </div>
+
+        {% if house %}
+        <section class="mp-profile">
+            <h3>Against the House</h3>
+            <p class="muted">How far {{ politician.name }} sits from the average MP on each
+               attribute. Same scale on every bar.</p>
+            <div class="mp-dev">
+                {% for sec in sections %}
+                {% if sec.delta is defined %}
+                <div class="mp-dev-row">
+                    <span class="sc-icon">{{ glyph(sec.attribute) }}</span>
+                    <span class="mp-dev-name">{{ sec.attribute.name }}</span>
+                    <span class="mp-dev-track">
+                        <span class="mp-dev-bar {{ 'neg' if sec.delta < 0 else 'pos' }}"
+                              style="{% if sec.delta < 0 %}right: 50%{% else %}left: 50%{% endif %}; width: {{ sec.bar }}%"></span>
+                    </span>
+                    <span class="mp-dev-num">{{ '%+d' % sec.delta }}</span>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            <p class="muted mp-dev-foot">House average, on each attribute, is the centre line.</p>
+        </section>
+        {% endif %}
+
+        <p class="muted mp-sample-note">Below, a few of {{ politician.name }}'s statements per
+           attribute, <strong>drawn at random</strong> from everything scored rather than picked to
+           flatter or to damn. Follow any attribute to see all of them, and where this score sits
+           among the whole House.</p>
 
         {% for sec in sections %}
         <section class="mp-attr" id="{{ sec.attribute.id }}">

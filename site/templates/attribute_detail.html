@@ -44,6 +44,32 @@
               toward the typical value for this attribute, and ± is the 95% confidence band. The raw per-statement
               scores are shown below.
            {% else %}The score above aggregates the statements below.{% endif %}</p>
+        {% if strip %}
+        {# Where this score sits among the whole House. A number alone is not
+           readable — 34 for Civility means nothing until you can see that MPs
+           run from 31 to 87 and cluster around 65. #}
+        <figure class="strip">
+            <figcaption>Every MP scored on {{ attribute_info.name }} — {{ politician.name }} marked.</figcaption>
+            <div class="strip-plot" style="height: {{ 22 + 7 * strip.rows }}px">
+                <span class="strip-median" style="left: {{ strip.median_x }}%"
+                      title="House median {{ strip.median }}"></span>
+                {% for d in strip.dots %}
+                <span class="strip-dot{{ ' me' if d.me }}" style="left: {{ d.x }}%; bottom: {{ 14 + 7 * d.row }}px"
+                      {% if d.me %}title="{{ politician.name }} — {{ d.score }}"{% endif %}></span>
+                {% endfor %}
+                <span class="strip-axis"></span>
+                <span class="strip-lab lo">{{ strip.lo }}</span>
+                <span class="strip-lab hi">{{ strip.hi }}</span>
+            </div>
+            <p class="strip-note">
+                {{ strip.n }} MPs. House median <strong>{{ strip.median }}</strong>.
+                {% if strip.mine %}{{ politician.name }} is
+                <strong>{{ strip.mine.score }}</strong>{% if strip.rank %}, {{ strip.rank }}{{ 'st' if strip.rank % 10 == 1 and strip.rank != 11 else ('nd' if strip.rank % 10 == 2 and strip.rank != 12 else ('rd' if strip.rank % 10 == 3 and strip.rank != 13 else 'th')) }} of {{ strip.n }}{% endif %}.{% endif %}
+                The dashed line is the median; the pass mark is 100.
+            </p>
+        </figure>
+        {% endif %}
+
         {% if scores and scores.get(attribute_info.id ~ '_tier') == 'unresolved' %}
         <p class="ev-unver-note"><strong>Unverified.</strong> This score is the model's own estimate,
            not a check against a source. The evidence below is real and quoted; the <em>verdict</em> on
