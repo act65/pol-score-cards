@@ -125,3 +125,33 @@ def test_a_card_with_an_unscored_attribute_still_draws():
     r = app._radar([("Veracity", 60), ("Divination", None), ("Focus", 70),
                     ("Civility", 65), ("Rigor", 45), ("Specificity", 63)])
     assert r is not None and len(r["polygon"].split()) == 6
+
+
+def test_every_page_carries_the_same_nav():
+    """The header used to be written out per template with a different set of
+    links on each page, so a reader could not learn where anything was."""
+    c = app.app.test_client()
+    shown, _ = app._featured()
+    pid = shown[0]["politician"]["id"]
+    attr = app.attribute_descriptions[0]["id"]
+    routes = ("/", "/party", "/rules", "/data", "/about",
+              f"/politician/{pid}", f"/attribute/{pid}/{attr}", f"/rubric/{attr}")
+    for route in routes:
+        html = c.get(route).get_data(as_text=True)
+        for label, href in (("MPs", '"/"'), ("Parties", '"/party"'),
+                            ("Game", '"/rules"'), ("Data", '"/data"'),
+                            ("About", '"/about"')):
+            assert f'<a href={href}' in html, f"{route} is missing {label}"
+        assert html.count('class="site-nav"') == 1, route
+        assert html.count("class=on") == 1, f"{route} marks no current page (or several)"
+
+
+def test_an_evidence_page_can_get_back_to_its_mp():
+    """The nav is generic now, so the route back to this particular MP has to
+    be in the page body."""
+    c = app.app.test_client()
+    shown, _ = app._featured()
+    pid = shown[0]["politician"]["id"]
+    attr = app.attribute_descriptions[0]["id"]
+    html = c.get(f"/attribute/{pid}/{attr}").get_data(as_text=True)
+    assert html.count(f'href="/politician/{pid}"') >= 1

@@ -8,10 +8,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <header class="site-header">
-        <a href="/"><h1>NZ Politician Scorecards</h1></a>
-        <div class="top-right-link"><a href="/party">Parties</a> &nbsp;·&nbsp; <a href="/">Back to cards</a></div>
-    </header>
+    {% set nav_active = 'game' %}
+    {% include '_header.html' %}
 
     {# Each attribute's role in battle, keyed by its id. One mechanic each, and
        no attribute doing two jobs. #}

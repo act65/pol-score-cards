@@ -17,10 +17,8 @@
     {% set colour = party_colors.get(politician.party, '#475569') %}
     {% macro glyph(attr) %}{% if attr.svg %}{{ attr.svg|safe }}{% else %}{{ attr.symbol }}{% endif %}{% endmacro %}
 
-    <header class="site-header">
-        <a href="/"><h1>NZ Politician Scorecards</h1></a>
-        <div class="top-right-link"><a href="/">Back to cards</a> &nbsp;·&nbsp; <a href="/party">Parties</a> &nbsp;·&nbsp; <a href="/about">About</a></div>
-    </header>
+    {% set nav_active = 'mps' %}
+    {% include '_header.html' %}
 
     <main class="mp-page">
         <div class="mp-head">
@@ -71,11 +69,14 @@
             </div>
 
             <div class="mp-summary">
-                <h2>{{ politician.name }}</h2>
-                <p class="mp-sub">{{ politician.party }}{% if politician.role %} · {{ politician.role }}{% endif %}</p>
+                {# No name or party here — they are on the card, two inches left. #}
                 <p class="mp-overall"><span class="mp-ov-label">Overall score</span>
                    <strong>{{ overall }}</strong><span class="mp-ov-outof">/ 100</span>
                    {% if rank %}<span class="mp-ov-rank">ranked {{ rank }}{{ 'st' if rank % 10 == 1 and rank != 11 else ('nd' if rank % 10 == 2 and rank != 12 else ('rd' if rank % 10 == 3 and rank != 13 else 'th')) }} of {{ ranked_of }}</span>{% endif %}</p>
+                <p class="muted">The geometric mean of the {{ sections|length }} attribute
+                   {{ 'scores' if sections|length != 1 else 'score' }} on the card, so one weak
+                   attribute pulls the whole number down. The pass mark on every attribute is
+                   100 — these are floors, not stretch goals.</p>
 
                 {% if radar %}
                 <figure class="mp-radar">
@@ -94,15 +95,9 @@
                         {% endfor %}
                     </svg>
                     <figcaption>0 at the centre, 100 at the rim — and 100 is the standard on every
-                        one of them. The shape is what the six numbers hide: which attributes this
-                        card is lopsided on.</figcaption>
+                        one of them.</figcaption>
                 </figure>
                 {% endif %}
-
-                <p class="muted">The geometric mean of the {{ sections|length }} attribute
-                   {{ 'scores' if sections|length != 1 else 'score' }} on the card, so one weak
-                   attribute pulls the whole number down. The pass mark on every attribute is
-                   100 — these are floors, not stretch goals.</p>
             </div>
         </div>
 
@@ -115,7 +110,7 @@
         <section class="mp-attr" id="{{ sec.attribute.id }}">
             <div class="mp-attr-head">
                 <span class="sc-icon">{{ glyph(sec.attribute) }}</span>
-                <h3>{{ sec.attribute.name }}</h3>
+                <h3><a href="{{ url_for('attribute_detail', politician_id=politician.id, attribute=sec.attribute.id) }}">{{ sec.attribute.name }}</a></h3>
                 <span class="mp-attr-score{{ ' unverified' if sec.unverified }}">{{ sec.score }}{% if sec.unverified %}<span class="sc-unver" title="Unverified: the model's own estimate, not checked against a source.">?</span>{% endif %}</span>
                 <span class="mp-attr-n">from {{ '{:,}'.format(sec.n) }} scored statement{{ 's' if sec.n != 1 }}{% if sec.ci %} · ±{{ sec.ci }}{% endif %}</span>
             </div>
