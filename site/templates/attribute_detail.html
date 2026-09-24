@@ -36,7 +36,8 @@
         <h3>{{ attribute_info.name }} Score: {{ score }}{% if meta and meta.ci is not none %}
             <span class="ci">±{{ meta.ci }}</span>{% endif %}
             {% if meta and meta.conf %}<span class="conf conf-{{ meta.conf }}">{{ meta.conf }} confidence</span>{% endif %}</h3>
-        <p>Description: {{ attribute_info.definition }}</p>
+        <p>{{ attribute_info.definition }}
+           <a class="attr-link" href="{{ url_for('rubric', attribute=attribute_info.id) }}">How {{ attribute_info.name }} is scored →</a></p>
         <p class="aggregate-note">
            {% if meta and meta.n %}Based on <strong>{{ meta.n }}</strong> scored statement{{ '' if meta.n == 1 else 's' }}
               from Hansard, the verbatim parliamentary record (every quote links to its sitting day){{ ' — treat single-statement scores with caution' if meta.n == 1 else '' }}.
@@ -44,29 +45,30 @@
               toward the typical value for this attribute, and ± is the 95% confidence band. The raw per-statement
               scores are shown below.
            {% else %}The score above aggregates the statements below.{% endif %}</p>
-        {% if strip %}
-        {# Where this score sits among the whole House. A number alone is not
-           readable — 34 for Civility means nothing until you can see that MPs
-           run from 31 to 87 and cluster around 65. #}
-        <figure class="strip">
-            <figcaption>Every MP scored on {{ attribute_info.name }}</figcaption>
-            <div class="strip-plot" style="height: {{ 22 + 7 * strip.rows }}px">
-                <span class="strip-median" style="left: {{ strip.median_x }}%"
-                      title="House median {{ strip.median }}"></span>
-                {% for d in strip.dots %}
-                <span class="strip-dot{{ ' me' if d.me }}" style="left: {{ d.x }}%; bottom: {{ 14 + 7 * d.row }}px"
-                      {% if d.me %}title="{{ politician.name }} — {{ d.score }}"{% endif %}></span>
+        {% if spread %}
+        {# The distribution the score is made of. One number standing for
+           hundreds of statements hides whether those statements agree, and
+           that is the first thing a reader should be able to see. #}
+        <figure class="spread">
+            <figcaption>The {{ '{:,}'.format(spread.n) }} statements behind this score,
+                by how each one scored</figcaption>
+            <div class="spread-plot">
+                {% for b in spread.bins %}
+                <span class="spread-bar" style="left: {{ b.left }}%; width: {{ b.width }}%; height: {{ b.height }}%"
+                      title="{{ b.count }} statement{{ 's' if b.count != 1 }} scoring {{ b.lo }}–{{ b.hi }}"></span>
                 {% endfor %}
-                <span class="strip-axis"></span>
-                <span class="strip-lab lo">{{ strip.lo }}</span>
-                <span class="strip-lab hi">{{ strip.hi }}</span>
-            </div>
-            <ul class="strip-legend">
-                <li><span class="sl-key sl-other"></span>one MP ({{ strip.n }} scored)</li>
-                {% if strip.mine %}
-                <li><span class="sl-key sl-me"></span>{{ politician.name }} — {{ strip.mine.score }}{% if strip.rank %}, {{ strip.rank }}{{ 'st' if strip.rank % 10 == 1 and strip.rank != 11 else ('nd' if strip.rank % 10 == 2 and strip.rank != 12 else ('rd' if strip.rank % 10 == 3 and strip.rank != 13 else 'th')) }} of {{ strip.n }}{% endif %}</li>
+                {% if spread.headline is not none %}
+                <span class="spread-mark" style="left: {{ spread.headline }}%"
+                      title="This card's {{ attribute_info.name }} score: {{ spread.headline }}"></span>
                 {% endif %}
-                <li><span class="sl-key sl-median"></span>House median — {{ strip.median }}</li>
+            </div>
+            <div class="spread-axis"><span>0</span><span>50</span><span>100</span></div>
+            <ul class="spread-legend">
+                <li><span class="sl-key sl-bar"></span>statements scoring in that range</li>
+                {% if spread.headline is not none %}
+                <li><span class="sl-key sl-mark"></span>the card's score — {{ spread.headline }}</li>
+                {% endif %}
+                <li><span class="sl-key sl-none"></span>spread {{ spread.worst }}–{{ spread.best }}, median {{ spread.median }}</li>
             </ul>
         </figure>
         {% endif %}

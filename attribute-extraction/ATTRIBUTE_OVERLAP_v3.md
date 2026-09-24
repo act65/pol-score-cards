@@ -9,12 +9,12 @@ Sources: hansard_scores_v3.jsonl
 
 | attribute | statements scored | mean | share of all scored |
 |---|---:|---:|---:|
-| focus | 13,587 | 0.70 | 32% |
-| civility | 8,521 | 0.60 | 20% |
-| rigor | 12,374 | 0.47 | 29% |
-| specificity | 16,890 | 0.65 | 40% |
+| focus | 13,808 | 0.70 | 32% |
+| civility | 8,622 | 0.60 | 20% |
+| rigor | 12,552 | 0.47 | 29% |
+| specificity | 17,132 | 0.65 | 40% |
 
-42,207 distinct statements, 51,372 statement-attribute scores. 21% of statements are scored by more than one attribute.
+42,806 distinct statements, 52,114 statement-attribute scores. 21% of statements are scored by more than one attribute.
 
 ## Score correlation (Pearson r on co-scored statements)
 
@@ -23,9 +23,9 @@ Blank = fewer than 30 statements in common.
 | | focu | civi | rigo | spec |
 |---|---|---|---|---|
 | **focus** | — | 0.66 | 0.58 | 0.61 |
-| **civility** | 0.66 | — | 0.49 | -0.14 |
+| **civility** | 0.66 | — | 0.49 | -0.13 |
 | **rigor** | 0.58 | 0.49 | — | 0.59 |
-| **specificity** | 0.61 | -0.14 | 0.59 | — |
+| **specificity** | 0.61 | -0.13 | 0.59 | — |
 
 ## Redundant pairs (r >= 0.85)
 
@@ -41,12 +41,12 @@ high `r` over a large share is genuine redundancy.
 
 | pair | r | co-scored | share of each | selection overlap |
 |---|---:|---:|---:|---:|
-| focus / civility | 0.66 | 2,145 (13,587 / 8,521) | 16% / 25% | 0.11 |
-| focus / specificity | 0.61 | 3,082 (13,587 / 16,890) | 23% / 18% | 0.11 |
-| rigor / specificity | 0.59 | 992 (12,374 / 16,890) | 8% / 6% | 0.04 |
-| focus / rigor | 0.58 | 2,268 (13,587 / 12,374) | 17% / 18% | 0.10 |
-| civility / rigor | 0.49 | 752 (8,521 / 12,374) | 9% / 6% | 0.04 |
-| civility / specificity | -0.14 | 266 (8,521 / 16,890) | 3% / 2% | 0.01 |
+| focus / civility | 0.66 | 2,176 (13,808 / 8,622) | 16% / 25% | 0.11 |
+| focus / specificity | 0.61 | 3,138 (13,808 / 17,132) | 23% / 18% | 0.11 |
+| rigor / specificity | 0.59 | 1,008 (12,552 / 17,132) | 8% / 6% | 0.04 |
+| focus / rigor | 0.58 | 2,302 (13,808 / 12,552) | 17% / 18% | 0.10 |
+| civility / rigor | 0.49 | 759 (8,622 / 12,552) | 9% / 6% | 0.04 |
+| civility / specificity | -0.13 | 267 (8,622 / 17,132) | 3% / 2% | 0.01 |
 
 ## Most-shared selections (Jaccard)
 
@@ -61,5 +61,5 @@ scores are also near-identical (above).
 | focus / rigor | 0.10 | 0.58 |
 | civility / rigor | 0.04 | 0.49 |
 | rigor / specificity | 0.04 | 0.59 |
-| civility / specificity | 0.01 | -0.14 |
+| civility / specificity | 0.01 | -0.13 |
 

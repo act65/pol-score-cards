@@ -24,11 +24,12 @@
     </header>
 
     <details class="legend-wrap" open>
-        <summary>Attribute key — what the symbols mean (click a stat to see the evidence)</summary>
+        <summary>Attribute key — what the symbols mean (click a name for how it is scored)</summary>
         <ul class="sc-legend">
             {% for attribute in all_attributes %}
             <li><span class="sc-icon">{{ glyph(attribute) }}</span>
-                <span><b>{{ attribute.name }}</b> — <span class="blurb">{{ attribute.blurb or attribute.definition }}</span></span></li>
+                <span><a class="attr-link" href="{{ url_for('rubric', attribute=attribute.id) }}"><b>{{ attribute.name }}</b></a>
+                      — <span class="blurb">{{ attribute.blurb or attribute.definition }}</span></span></li>
             {% endfor %}
         </ul>
         <p class="sc-key-note">A card's <b>overall score</b> is the geometric mean of all

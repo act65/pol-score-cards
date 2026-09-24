@@ -1,0 +1,142 @@
+{
+  "_source": "Derived from attribute-extraction/prompts/<id>.txt, which is the instrument. Where this file and a prompt disagree, the prompt is right and this is stale — tests/test_rubrics.py checks the one question line against it. Quotes below are INVENTED illustrations of the boundary, not things any MP said.",
+
+  "Civility": {
+    "question": "Is the attack on the argument, or on the person?",
+    "summary": "Hard, even brutal criticism of a policy is civil. Only turning on the person costs anything. 1.0 is the expected standard here, not an achievement — a score of 50 is a real failure, not a middling performance.",
+    "skipped": "Ceremonial speech — tributes, condolences, valedictories, thanks to submitters. Nobody could have scored badly on them, and counting them would inflate the score of whoever is senior enough to give them.",
+    "scale": [
+      {"score": 100, "label": "The standard", "text": "Engages the substance and attacks no one. Fierce criticism of a policy, a decision or a record belongs here."},
+      {"score": 75, "label": "Pointed", "text": "Robust, edging toward the person without landing on them."},
+      {"score": 50, "label": "A real failure", "text": "Imputing bad faith, sneering, mockery, condescension. Short of a direct insult, but no longer civil."},
+      {"score": 25, "label": "Personal attack", "text": "A clear attack on the member rather than the argument."},
+      {"score": 0, "label": "Contempt", "text": "Sustained abuse, or attacks on a person's character, competence, intelligence, appearance or worth."}
+    ],
+    "examples": [
+      {"score": 95, "quote": "I disagree with the Minister's housing plan: the modelling assumes demand the regions don't have, and I'll explain why.", "why": "Pointed, and entirely on the substance."},
+      {"score": 90, "quote": "This policy is a shambles. It was badly drafted, it was rushed, and it will cost families money.", "why": "Brutal about the policy, civil toward the person. This is a high score, not a middling one."},
+      {"score": 35, "quote": "If the Honourable Member spent less time cosying up to developers and more time listening to renters, we might solve this.", "why": "Imputes corruption and indifference to the person."},
+      {"score": 20, "quote": "The Prime Minister is clearly out of her depth and has no idea what she's doing.", "why": "An attack on personal competence."}
+    ],
+    "not_this": [
+      {"attr": "Rigor", "text": "Misrepresenting someone's position. The target there is the argument, not the person."},
+      {"attr": "Focus", "text": "Attacking a party rather than a person. \"Labour are hopeless\" insults no individual and passes Civility cleanly."},
+      {"attr": "Veracity", "text": "Hyperbole and exaggeration. An overstated claim is an inaccurate one."}
+    ],
+    "note": "A statement that is fallacious and factually wrong but attacks nobody scores high here. That is intended."
+  },
+
+  "Focus": {
+    "question": "Is this about the policy, or about the other team?",
+    "summary": "Civility asks whether an attack lands on a person. Focus catches what that leaves out: content-free attacks on the other party, which insult nobody and say nothing.",
+    "skipped": "Ceremony, procedure, points of order, and general debate with no measure before the House — there is no policy for the speaker to engage with.",
+    "scale": [
+      {"score": 100, "label": "On the substance", "text": "The mechanism, the cost, who it affects, the timeframe, what the evidence says — or legitimate scrutiny of a named commitment."},
+      {"score": 50, "label": "Wrapped in framing", "text": "A real policy point, but the weight of the statement is party framing."},
+      {"score": 0, "label": "Tribalism", "text": "Entirely about the other party: their record in general, their hypocrisy, their internal divisions. No policy content at all."}
+    ],
+    "examples": [
+      {"score": 100, "quote": "This bill's clause 5 shifts the consenting cost onto councils, and the regulatory impact statement puts that at $40 million a year.", "why": "Names the measure, the mechanism and the figure."},
+      {"score": 100, "quote": "The government promised 1,000 homes and built 200.", "why": "Scrutiny of a named commitment against a named outcome. This is the job of an opposition MP and scores at the top."},
+      {"score": 40, "quote": "This is a bad bill, and frankly it's what we've come to expect from a party that spent nine years doing nothing.", "why": "There is a policy claim in there, but the weight is party framing."},
+      {"score": 0, "quote": "Labour are hopeless. They were hopeless in 2017 and they're hopeless now.", "why": "No individual is insulted, so Civility passes it. No policy is named. This is the case Focus exists for."}
+    ],
+    "not_this": [
+      {"attr": "Civility", "text": "Attacks on a person. Focus is about parties and topics, not people."},
+      {"attr": "Rigor", "text": "Whether the argument is valid. A statement can be squarely on the policy and still reason badly — high Focus, low Rigor."},
+      {"attr": "Specificity", "text": "How much detail it carries. \"We need to fix the consenting system\" is high Focus and low Specificity."}
+    ],
+    "note": "Scrutinising the government is the constitutional role of an opposition MP. Scoring that as low Focus would rebuild the exact bias the instrument was rebuilt to remove."
+  },
+
+  "Rigor": {
+    "question": "Does the conclusion follow from the premises?",
+    "summary": "This is about the thought process, not the facts — whether the reasoning is valid given its assumptions. Whether those assumptions are true is Veracity's job.",
+    "skipped": "Anything that isn't advancing an argument. A bare announcement, a reported fact, a feeling or a pleasantry has no inference to assess. And a jibe at the other party is not an argument, however much it is dressed as one.",
+    "scale": [
+      {"score": 100, "label": "Sound", "text": "The conclusion is genuinely supported by what was offered."},
+      {"score": 50, "label": "A gap", "text": "A reasonable point, but leaning on an appeal, or with a real gap between what was shown and what was concluded."},
+      {"score": 0, "label": "Doesn't follow", "text": "Non sequitur, strawman, false dichotomy, slippery slope, circular reasoning, or a bare appeal to emotion, popularity, tradition, authority or anecdote."}
+    ],
+    "examples": [
+      {"score": 85, "quote": "Unemployment is at 40 percent, so the labour market is in crisis.", "why": "The figure is wildly false, but if it were true the conclusion would follow. High Rigor, low Veracity — this is the distinction the whole attribute rests on."},
+      {"score": 85, "quote": "Crime is up 4% per the latest stats, and the three policies the report links to the rise are all ones this government cut.", "why": "Evidence offered, and the conclusion tracks it."},
+      {"score": 15, "quote": "Everyone I talk to agrees with me, so the policy must be right.", "why": "Appeal to popularity, and to anecdote."},
+      {"score": 10, "quote": "If we let them ban this, soon they'll ban everything.", "why": "Slippery slope. Nothing is offered to connect the two."}
+    ],
+    "not_this": [
+      {"attr": "Veracity", "text": "Whether the premises are true. An argument can be perfectly rigorous and built on false premises."},
+      {"attr": "Civility", "text": "Whether the speaker was rude. An insult is a Rigor failure only when the conclusion rests on it."},
+      {"attr": "Focus", "text": "Whether it was about the policy or the other party."}
+    ],
+    "note": "\"The policy fails because the member is a fool\" is low Rigor — the conclusion depends on the insult. \"The member is a fool, and the policy fails because the modelling assumes demand the regions don't have\" is rude but sound: high Rigor, and Civility handles the insult."
+  },
+
+  "Specificity": {
+    "question": "Is there checkable content in the statement?",
+    "summary": "Figures, mechanisms, timeframes, named policies — whether someone could go and check it, or act on it. Not whether it is true, and not whether it is about the right thing.",
+    "skipped": "Thanks, procedural courtesies and pleasantries. They are not trying to convey substance, so they are skipped rather than scored low.",
+    "scale": [
+      {"score": 100, "label": "Concrete", "text": "Figures, mechanisms, timeframes or named policies. Someone could check it or act on it."},
+      {"score": 50, "label": "A direction", "text": "Some detail, but missing the how, the how much, or the by when."},
+      {"score": 0, "label": "A platitude", "text": "A slogan or an ambiguous statement committing to nothing."}
+    ],
+    "examples": [
+      {"score": 95, "quote": "We will lift the minimum wage to $25/hour by April 2026.", "why": "A figure and a date."},
+      {"score": 90, "quote": "Unemployment has risen to 40 percent under this government.", "why": "Precise and checkable. It is also false — which is Veracity's problem, not this one."},
+      {"score": 60, "quote": "We'll invest more in public transport, starting with the regional rail business case next year.", "why": "A named action and rough timing, but no amounts."},
+      {"score": 5, "quote": "We're committed to supporting hard-working families.", "why": "A slogan."}
+    ],
+    "not_this": [
+      {"attr": "Veracity", "text": "Whether the content is true. A precise, checkable, completely false claim scores high here."},
+      {"attr": "Focus", "text": "What the statement is about. A statement squarely on a policy can still be a platitude."},
+      {"attr": "Rigor", "text": "Whether the argument is valid."}
+    ],
+    "note": "This attribute has a known bias: figures and named policies are what a minister announcing a programme produces, and what an opposition MP asking why something hasn't happened does not. A precise question is as specific as a precise answer, and is scored that way."
+  },
+
+  "Veracity": {
+    "question": "Are the factual premises accurate?",
+    "summary": "The model does not score this. It extracts a checkable claim and states what evidence would settle it; a separate step searches for that evidence and assigns the score. Fixing what would count as proof, before looking, is the defence against deciding the answer first.",
+    "skipped": "Opinions, value statements and promises. Predictions, which belong to Divination. And anything with no stateable falsification criterion — if you cannot say what would show it false, it is not a checkable claim.",
+    "scale": [
+      {"score": 100, "label": "Accurate", "text": "The evidence found supports the claim as made."},
+      {"score": 50, "label": "Partly true", "text": "True in part, or true only under a reading the speaker did not give."},
+      {"score": 0, "label": "False", "text": "The evidence contradicts it."}
+    ],
+    "examples": [
+      {"score": null, "quote": "Unemployment has fallen to 3.2 percent.", "why": "Extracted. What would settle it: the Stats NZ Household Labour Force Survey rate for the quarter referenced."},
+      {"score": null, "quote": "That member voted against this bill at its second reading.", "why": "Extracted. What would settle it: the division record for that reading."},
+      {"score": null, "quote": "This is the worst housing crisis in our history.", "why": "Skipped. \"Worst\" is not operationalised, so nothing could settle it."},
+      {"score": null, "quote": "Fifty percent of Māori are in jails at the moment.", "why": "Skipped. In context this is a word-order slip for \"fifty percent of people in jail are Māori\", and a slip in live speech is not a lie."}
+    ],
+    "not_this": [
+      {"attr": "Rigor", "text": "Whether the conclusion follows from the claim."},
+      {"attr": "Specificity", "text": "Whether the claim is precise."},
+      {"attr": "Civility", "text": "Whether it was rudely expressed."}
+    ],
+    "note": "Hyperbole and exaggeration count here: an overstated claim is an inaccurate one. But only when it is checkable — rhetorical flourish nobody could verify is just rhetoric."
+  },
+
+  "Divination": {
+    "question": "Did the prediction come true?",
+    "summary": "As with Veracity, the model does not score this. It extracts a prediction, states what would settle it, and says when it can be settled. A separate step looks up what actually happened.",
+    "skipped": "Promises about the speaker's own action — \"we will pass this law\" is a commitment, not a forecast. And anything too vague to ever be checked: \"things will get better\" is not a prediction.",
+    "scale": [
+      {"score": 100, "label": "Correct", "text": "The forecast event happened as described."},
+      {"score": 50, "label": "Partly", "text": "The direction was right, the magnitude or the timing was not."},
+      {"score": 0, "label": "Wrong", "text": "It did not happen."}
+    ],
+    "examples": [
+      {"score": null, "quote": "Inflation will be back under 3 percent by the end of next year.", "why": "Extracted. What would settle it: the CPI release for that quarter. Resolvable from the date given."},
+      {"score": null, "quote": "This bill will cost 5,000 jobs in the first year.", "why": "Extracted, with a resolve-by date twelve months on."},
+      {"score": null, "quote": "We will pass this law before Christmas.", "why": "Skipped. A promise about the speaker's own action, not a forecast about the world."},
+      {"score": null, "quote": "Things will get better.", "why": "Skipped. Nothing could ever settle it."}
+    ],
+    "not_this": [
+      {"attr": "Veracity", "text": "Claims about the present or the past."},
+      {"attr": "Rigor", "text": "Whether the prediction was reasonable when it was made. An earlier version scored that, which made Divination a measure of reasoning rather than of outcomes."}
+    ],
+    "note": "A prediction that is not yet due produces no score at all. So does one nothing can settle. Absence of evidence is not evidence of a bad forecast."
+  }
+}
