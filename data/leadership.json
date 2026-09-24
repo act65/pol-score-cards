@@ -1,0 +1,63 @@
+{
+  "_what": "Who held a leadership role in the 54th Parliament. Hand-written and sourced, not derived from the corpus.",
+  "_as_at": "2026-04-07",
+  "_sources": [
+    "Ministerial List to take effect 7 April 2026 — https://www.beehive.govt.nz/sites/default/files/2026-04/Ministerial%20List%20-%202%20April%202026%20(1).pdf",
+    "Party leaders / deputies — party sites and RNZ; see _changes_in_term for the ones that moved",
+    "Presiding officers — Speaker Gerry Brownlee (from 2023-12-05), Deputy Speaker Barbara Kuriger (from 2023-12-06)"
+  ],
+  "_note": "A SNAPSHOT, dated above, of the last ministerial list inside the Hansard corpus (which ends 2026-05-28). Roles that changed earlier in the term are listed under _changes_in_term but are NOT in `roles` — so an MP who was a minister in 2023 and a backbencher by 2026 counts as a backbencher here, even though the scorecard averages their whole term. Update `_as_at` and the entries together.",
+  "_changes_in_term": [
+    "2023-11-27: government changed. Labour's 2023 ministers (incl. Grant Robertson, Ayesha Verrall, Ginny Andersen, Jan Tinetti, Megan Woods, David Parker, Kelvin Davis, Willie Jackson, Peeni Henare, Damien O'Connor, Priyanca Radhakrishnan, Barbara Edmonds, Willow-Jean Prime) held warrants until then and are not listed.",
+    "2024-03-10: Chlöe Swarbrick replaced James Shaw as Green co-leader.",
+    "2025-05-31: David Seymour replaced Winston Peters as Deputy Prime Minister (coalition rotation).",
+    "2026-04-07: Judith Collins and Shane Reti left the ministry in this reshuffle; Chris Penk and Penny Simmonds entered Cabinet.",
+    "2026-06-28: Nicole McKee replaced Brooke van Velden as ACT deputy leader — AFTER the corpus ends, so van Velden is the deputy for the whole scored period."
+  ],
+  "_tiers": {
+    "leader": "Party leader, co-leader or deputy leader; the PM and Deputy PM; the Speaker and Deputy Speaker.",
+    "minister": "Holds a ministerial warrant (in or outside Cabinet) or is a Parliamentary Under-Secretary."
+  },
+
+  "roles": {
+    "luxon":                 {"tier": "leader",   "role": "Prime Minister",            "party_role": "Leader, National",       "portfolio": "National Security and Intelligence"},
+    "chris-hipkins":         {"tier": "leader",   "role": "Leader of the Opposition",  "party_role": "Leader, Labour"},
+    "seymour":               {"tier": "leader",   "role": "Deputy Prime Minister",     "party_role": "Leader, ACT",           "portfolio": "Regulation"},
+    "peters":                {"tier": "leader",   "role": "Leader, NZ First",          "party_role": "Leader, NZ First",      "portfolio": "Foreign Affairs"},
+    "nicola-willis":         {"tier": "leader",   "role": "Deputy Leader, National",   "party_role": "Deputy Leader, National", "portfolio": "Finance"},
+    "carmel-sepuloni":       {"tier": "leader",   "role": "Deputy Leader, Labour",     "party_role": "Deputy Leader, Labour"},
+    "brooke-van-velden":     {"tier": "leader",   "role": "Deputy Leader, ACT",        "party_role": "Deputy Leader, ACT",    "portfolio": "Workplace Relations and Safety"},
+    "shane-jones":           {"tier": "leader",   "role": "Deputy Leader, NZ First",   "party_role": "Deputy Leader, NZ First", "portfolio": "Resources"},
+    "davidson":              {"tier": "leader",   "role": "Co-Leader, Green",          "party_role": "Co-Leader, Green"},
+    "swarbrick":             {"tier": "leader",   "role": "Co-Leader, Green",          "party_role": "Co-Leader, Green"},
+    "debbie-ngarewa-packer": {"tier": "leader",   "role": "Co-Leader, Te Pāti Māori",  "party_role": "Co-Leader, Te Pāti Māori"},
+    "rawiri-waititi":        {"tier": "leader",   "role": "Co-Leader, Te Pāti Māori",  "party_role": "Co-Leader, Te Pāti Māori"},
+    "gerry-brownlee":        {"tier": "leader",   "role": "Speaker of the House"},
+    "barbara-kuriger":       {"tier": "leader",   "role": "Deputy Speaker"},
+
+    "chris-bishop":          {"tier": "minister", "role": "Attorney-General",          "portfolio": "Housing, Infrastructure, Transport, RMA Reform"},
+    "simeon-brown":          {"tier": "minister", "role": "Minister of Health",        "portfolio": "Health, Energy, State Owned Enterprises"},
+    "erica-stanford":        {"tier": "minister", "role": "Minister of Education",     "portfolio": "Education, Immigration"},
+    "paul-goldsmith":        {"tier": "minister", "role": "Minister of Justice",       "portfolio": "Justice, Public Service, Media, Arts, Treaty Negotiations, Pacific Peoples"},
+    "louise-upston":         {"tier": "minister", "role": "Leader of the House",       "portfolio": "Social Development and Employment, Disability Issues, Tourism"},
+    "mark-mitchell":        {"tier": "minister", "role": "Minister of Police",        "portfolio": "Police, Corrections, Emergency Management, Ethnic Communities, Sport"},
+    "todd-mcclay":           {"tier": "minister", "role": "Minister of Agriculture",   "portfolio": "Agriculture, Forestry, Trade and Investment"},
+    "tama-potaka":           {"tier": "minister", "role": "Minister of Conservation",  "portfolio": "Conservation, Māori Development, Māori Crown Relations, Whānau Ora"},
+    "matt-doocey":           {"tier": "minister", "role": "Minister for Mental Health", "portfolio": "Mental Health"},
+    "simon-watts":           {"tier": "minister", "role": "Minister of Local Government", "portfolio": "Auckland, Climate Change, Local Government, Revenue"},
+    "chris-penk":            {"tier": "minister", "role": "Minister of Defence",       "portfolio": "Defence, Building and Construction, Veterans, GCSB/NZSIS, Space"},
+    "penny-simmonds":        {"tier": "minister", "role": "Minister for Tertiary Education", "portfolio": "Tertiary Education, Science Innovation and Technology"},
+    "nicola-grigg":          {"tier": "minister", "role": "Minister for the Environment", "portfolio": "Environment, Women, State for Trade and Investment"},
+    "james-meager":          {"tier": "minister", "role": "Minister for the South Island", "portfolio": "South Island, Hunting and Fishing, Youth"},
+    "scott-simpson":         {"tier": "minister", "role": "Minister for ACC",          "portfolio": "ACC, Statistics, Deputy Leader of the House"},
+    "cameron-brewer":        {"tier": "minister", "role": "Minister of Commerce and Consumer Affairs", "portfolio": "Commerce and Consumer Affairs, Small Business and Manufacturing"},
+    "mike-butterick":        {"tier": "minister", "role": "Minister for Land Information", "portfolio": "Land Information"},
+    "nicole-mckee":          {"tier": "minister", "role": "Minister for Courts",       "portfolio": "Courts"},
+    "andrew-hoggard":        {"tier": "minister", "role": "Minister for Biosecurity",  "portfolio": "Biosecurity, Food Safety"},
+    "karen-chhour":          {"tier": "minister", "role": "Minister for Children",     "portfolio": "Children, Prevention of Family and Sexual Violence"},
+    "casey-costello":        {"tier": "minister", "role": "Minister of Customs",       "portfolio": "Customs, Seniors"},
+    "mark-patterson":        {"tier": "minister", "role": "Minister for Rural Communities", "portfolio": "Rural Communities"},
+    "simon-court":           {"tier": "minister", "role": "Parliamentary Under-Secretary", "portfolio": "Infrastructure, RMA Reform"},
+    "jenny-marcroft":        {"tier": "minister", "role": "Parliamentary Under-Secretary", "portfolio": "Media and Communications, Oceans and Fisheries"}
+  }
+}

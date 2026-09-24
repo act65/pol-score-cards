@@ -261,6 +261,23 @@ def _record_scores(paths):
     return out
 
 
+# --- Leadership -------------------------------------------------------------
+# data/leadership.json is a hand-written, sourced snapshot of who held a senior
+# role (see its own _note for the as-at date and what that excludes). It is a
+# display facet only: no score depends on it, and an MP missing from it is a
+# backbencher, not an error. Joined in here rather than read by the site so the
+# published dataset carries its own answer to "who is a minister?".
+_LEADERSHIP = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                           "..", "data", "leadership.json")
+
+
+def _leadership(path: str = _LEADERSHIP) -> dict:
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as f:
+        return json.load(f).get("roles", {})
+
+
 def run(scores="hansard_scores_full.jsonl", out="site_data_v2",
         corpus_label="Hansard 54th Parliament", min_n=1, max_examples=0,
         presser_scores="", presser_label="Post-Cabinet press conference",
@@ -325,10 +342,20 @@ def run(scores="hansard_scores_full.jsonl", out="site_data_v2",
                     | {pid for (pid, _a) in record})
 
     # politicians.jsonl
+    leaders = _leadership()
     with open(os.path.join(out, "politicians.jsonl"), "w", encoding="utf-8") as f:
         for mid in mp_ids:
-            f.write(json.dumps({"id": mid, "name": R.name(mid),
-                                "party": R.party(mid)}) + "\n")
+            row = {"id": mid, "name": R.name(mid), "party": R.party(mid)}
+            role = leaders.get(mid)
+            if role:
+                row["leadership"] = role["tier"]          # "leader" | "minister"
+                row["role"] = role["role"]
+                if role.get("portfolio"):
+                    row["portfolio"] = role["portfolio"]
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    n_roles = sum(1 for mid in mp_ids if mid in leaders)
+    print(f"  leadership: {n_roles} of {len(mp_ids)} MPs carry a role "
+          f"({len(leaders) - n_roles} in the list are unscored, e.g. the Speaker)")
 
     # attributes.jsonl
     with open(os.path.join(out, "attributes.jsonl"), "w", encoding="utf-8") as f:

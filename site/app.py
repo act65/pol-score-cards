@@ -1,4 +1,5 @@
 from flask import Flask, render_template
+import collections
 import math
 import random
 import json
@@ -126,8 +127,10 @@ def _portrait_for(pid):
     return rel if os.path.exists(os.path.join(_PORTRAIT_DIR, f"{pid}.jpg")) else None
 
 
-@app.route('/')
-def index():
+def _featured():
+    """(featured cards, total politicians) — the grid's set, built once and shared
+    by / and /party so a party's aggregate is the mean of the cards you can
+    actually click through to."""
     politician_data = []
     for politician in politicians:
         if not politician.get("image"):
@@ -138,11 +141,113 @@ def index():
     shown = [d for d in politician_data if d["n_attrs"] >= MIN_ATTRIBUTES]
     shown.sort(key=lambda d: d["n_attrs"], reverse=True)   # richest cards first
     _assign_rarity(shown)                                  # rarity ranked among the featured set
+    # The geometric mean is now shown as a number, not just implied by the border
+    # colour, so give it a rank too — "62" means little without "12th of 132".
+    for rank, d in enumerate(sorted(shown, key=lambda d: d["geo"], reverse=True), 1):
+        d["overall"] = round(d["geo"])
+        d["rank"] = rank
+    return shown, len(politician_data)
+
+
+@app.route('/')
+def index():
+    shown, total = _featured()
     parties = sorted({d["politician"].get("party") for d in shown if d["politician"].get("party")})
     return render_template('index.html', politicians_data=shown,
                            all_attributes=attribute_descriptions, rarity_tiers=RARITY_TIERS,
                            parties=parties, shown_count=len(shown),
-                           total_count=len(politician_data), min_attributes=MIN_ATTRIBUTES)
+                           total_count=total, min_attributes=MIN_ATTRIBUTES)
+
+
+# --- Party cards ------------------------------------------------------------
+# An aggregate per party over its featured MPs. Two deliberate choices:
+#
+#   * each attribute is the plain MEAN of the party's MPs on that attribute,
+#     over whoever has it — so Forthrightness, which only reaches MPs who answer
+#     questions, is a mean over fewer people than Civility. `n` is shown per
+#     attribute for that reason.
+#   * the party's OVERALL is the geometric mean of the six numbers printed on
+#     its own card, not the average of its members' overalls. The card is then
+#     internally consistent: you can recompute it from what you can see. The two
+#     differ slightly (the geometric mean is not linear), which is why the ticks
+#     on the block are the members' own overalls — the spread is the honest part.
+_SPREAD_PAD = 2          # axis padding either side of the observed range
+
+# A one-MP "party" is that MP's own card with a party name on it — and because
+# the list is ranked, it would sit above real caucuses on a sample of one.
+# (Darleen Tana, sitting as an Independent, topped the page before this.) Below
+# the threshold a grouping is named under the table instead of being aggregated.
+MIN_PARTY_MPS = 3
+
+
+def _party_cards(shown):
+    groups = collections.defaultdict(list)
+    for d in shown:
+        party = d["politician"].get("party")
+        if party:
+            groups[party].append(d)
+    too_small = sorted(((p, len(m)) for p, m in groups.items()
+                        if len(m) < MIN_PARTY_MPS), key=lambda t: -t[1])
+    groups = {p: m for p, m in groups.items() if len(m) >= MIN_PARTY_MPS}
+
+    cards = []
+    for party, members in groups.items():
+        means, counts, unver = {}, {}, {}
+        for attr in ATTR_NAMES:
+            vals = [d["scores"][attr] for d in members
+                    if isinstance(d["scores"].get(attr), (int, float))]
+            if not vals:
+                continue
+            means[attr] = round(sum(vals) / len(vals))
+            counts[attr] = len(vals)
+            # An aggregate of unverified guesses is still an unverified guess.
+            # Veracity is almost entirely prior_score in this build, and the
+            # party mean must not launder that — it carries the same mark the
+            # MP cards do (see the prior_score note in CLAUDE.md).
+            guesses = sum(1 for d in members
+                          if isinstance(d["scores"].get(attr), (int, float))
+                          and d["scores"].get(f"{attr}_tier") == "unresolved")
+            unver[attr] = guesses > len(vals) / 2
+        overall = round(_geo_mean(means))
+        cards.append({"party": party, "n": len(members), "scores": means,
+                      "counts": counts, "unver": unver, "overall": overall,
+                      "members": sorted(round(d["geo"]) for d in members)})
+    cards.sort(key=lambda c: c["overall"], reverse=True)
+    for rank, c in enumerate(cards, 1):
+        c["rank"] = rank
+
+    # One shared axis for every block, so the ticks are comparable across cards.
+    every = [v for c in cards for v in c["members"]] or [0, 100]
+    lo, hi = min(every) - _SPREAD_PAD, max(every) + _SPREAD_PAD
+    span = max(hi - lo, 1)
+    for c in cards:
+        # A dot plot: MPs on the same integer score stack upward rather than
+        # overprinting, so a 47-MP caucus reads as a shape and not one blob.
+        stack = collections.Counter()
+        dots = []
+        for v in c["members"]:
+            dots.append({"x": round((v - lo) / span * 100, 2),
+                         "bottom": 17 + 7 * stack[v]})
+            stack[v] += 1
+        c["dots"] = dots
+        c["mean_at"] = round((c["overall"] - lo) / span * 100, 2)
+        # The aggregate line is drawn just clear of the tallest stack rather
+        # than the full block height, where it read as a divider splitting the
+        # card in two.
+        c["mean_h"] = 17 + 7 * (max(stack.values()) if stack else 1) + 8
+    return cards, lo, hi, too_small
+
+
+@app.route('/party')
+def party():
+    shown, _total = _featured()
+    cards, lo, hi, too_small = _party_cards(shown)
+    counted = sum(c["n"] for c in cards)
+    return render_template('party.html', party_cards=cards,
+                           all_attributes=attribute_descriptions,
+                           spread_lo=lo, spread_hi=hi, too_small=too_small,
+                           min_party_mps=MIN_PARTY_MPS,
+                           mp_count=counted, min_attributes=MIN_ATTRIBUTES)
 
 @app.route('/attribute/<politician_id>/<attribute>')
 def attribute_detail(politician_id, attribute):

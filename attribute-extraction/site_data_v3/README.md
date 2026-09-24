@@ -62,6 +62,24 @@ artefact to diff between builds. `examples.jsonl` is NOT committed: 48 MB, and
 regenerable in ~2 minutes by the command above from inputs already tracked. The
 site preview needs it, so run the build once after checkout.
 
+## `politicians.jsonl` now carries a role
+
+`build_v2_dataset.py` joins `data/leadership.json` (hand-written, dated, sourced
+— see its `_note`) so each row can carry `leadership` (`leader` / `minister`),
+`role` and `portfolio`. 37 of the 133 MPs have one; the site's "Role" filter and
+nothing else reads them. The two entries that do NOT appear are the Speaker and
+the Deputy Speaker, who chair rather than debate and so never reach the minimum
+scored attributes — the expected gap, not a join failure.
+
+## A defect this build made visible
+
+The `/party` page shows Forthrightness at 62 for government caucuses and 19 for
+opposition ones. That is not a finding — it is a Q/A pairing bug. 43 of the 74
+scored MPs rest on ≤10 pairs and average 24, against 67 for the 31 with real
+volume, and in those thin rows the "answer" is the MP's own next supplementary
+question. See the Phase D0 entry in `V3_TODO.md`. Treat every thin
+Forthrightness score in this build as unusable.
+
 ## One mislabel left to fix
 
 `Forthrightness_tier` says `text`. It is `record` — scored over question/answer

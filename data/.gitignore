@@ -1,6 +1,9 @@
 # Scraped article dumps are large + regenerable — keep them out of git.
 *.json
-# ...but the small committed configs/reports are tracked.
+# ...but the small committed configs/reports are tracked. leadership.json is
+# HAND-WRITTEN and not regenerable from anything — losing it to this rule is
+# how quota_budget.json went missing for four commits.
 !mps_roster.json
+!leadership.json
 corpus/
 corpus_relevant/
