@@ -91,3 +91,37 @@ def test_the_politician_page_samples_every_scored_attribute():
     for a in app.attribute_descriptions:
         if isinstance(scores.get(a["name"]), (int, float)):
             assert f'id="{a["id"]}"' in html, a["name"]
+
+
+def test_the_radar_maps_scores_onto_the_rim():
+    """0 at the centre, 100 at the rim. A silently wrong radius still draws a
+    polygon, so nothing downstream would notice."""
+    r = app._radar([("Veracity", 100), ("Focus", 0), ("Civility", 50),
+                    ("Rigor", 50), ("Specificity", 50), ("Divination", 50)],
+                   size=200, pad=20)
+    assert r["r"] == 80
+    pts = [tuple(float(v) for v in p.split(",")) for p in r["polygon"].split()]
+    c = r["cx"]
+
+    def radius(p):
+        return ((p[0] - c) ** 2 + (p[1] - c) ** 2) ** 0.5
+
+    assert abs(radius(pts[0]) - r["r"]) < 0.5, "100 sits on the rim"
+    assert radius(pts[1]) < 0.5, "0 sits at the centre"
+    assert abs(radius(pts[2]) - r["r"] / 2) < 0.5, "50 is halfway out"
+
+
+def test_every_radar_vertex_carries_its_glyph():
+    """Without the icons the shape is unreadable — nothing says which vertex is
+    which. Jinja's `replace` on a Markup value escapes what it inserts, which
+    silently dropped the positioning and rendered every glyph at full size."""
+    r = app._radar([(a["name"], 50) for a in app.attribute_descriptions])
+    for ax in r["axes"]:
+        assert ax["icon"].startswith("<svg class='rd-icon'"), ax["label"]
+        assert "width='12'" in ax["icon"]
+
+
+def test_a_card_with_an_unscored_attribute_still_draws():
+    r = app._radar([("Veracity", 60), ("Divination", None), ("Focus", 70),
+                    ("Civility", 65), ("Rigor", 45), ("Specificity", 63)])
+    assert r is not None and len(r["polygon"].split()) == 6

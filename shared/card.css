@@ -364,3 +364,22 @@ a.sc-open:hover .sc-name { text-decoration: underline; }
     color: #64748b;
 }
 .sc-key-note b { color: #334155; }
+
+/* ----- Radar: six scores as a shape ---------------------------------------
+   0 at the centre, 100 at the rim, because the rim is the standard. Every card
+   in this Parliament draws a small polygon, which is the honest picture. */
+.sc-view { width: 100%; height: 100%; }
+.sc-radar { display: block; width: 100%; height: 100%; }
+.rd-ring { fill: none; stroke: rgba(255, 255, 255, 0.28); stroke-width: 1; }
+.rd-ring.rim { stroke: rgba(255, 255, 255, 0.55); }
+.rd-axis { stroke: rgba(255, 255, 255, 0.28); stroke-width: 1; }
+.rd-shape {
+    fill: rgba(255, 255, 255, 0.45);
+    stroke: #fff;
+    stroke-width: 1.6;
+    stroke-linejoin: round;
+}
+.rd-dot { fill: #fff; }
+.sc-card-party .sc-block { display: flex; align-items: center; justify-content: center; padding: 6px; }
+/* Attribute glyphs at the radar's vertices — same symbols as the stats row. */
+.rd-icon { color: rgba(255, 255, 255, 0.85); }

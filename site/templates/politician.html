@@ -77,6 +77,28 @@
                    <strong>{{ overall }}</strong><span class="mp-ov-outof">/ 100</span>
                    {% if rank %}<span class="mp-ov-rank">ranked {{ rank }}{{ 'st' if rank % 10 == 1 and rank != 11 else ('nd' if rank % 10 == 2 and rank != 12 else ('rd' if rank % 10 == 3 and rank != 13 else 'th')) }} of {{ ranked_of }}</span>{% endif %}</p>
 
+                {% if radar %}
+                <figure class="mp-radar">
+                    <svg viewBox="0 0 {{ radar.size }} {{ radar.size }}" role="img"
+                         aria-label="{{ politician.name }}'s score on each attribute">
+                        {% for ring in radar.rings %}
+                        <polygon points="{{ ring.points }}" class="rd-ring{{ ' rim' if ring.frac == 1.0 }}"></polygon>
+                        {% endfor %}
+                        {% for ax in radar.axes %}
+                        <line x1="{{ radar.cx }}" y1="{{ radar.cy }}" x2="{{ ax.x }}" y2="{{ ax.y }}" class="rd-axis"></line>
+                        {% endfor %}
+                        <polygon points="{{ radar.polygon }}" class="rd-shape"></polygon>
+                        {% for ax in radar.axes %}
+                        <circle cx="{{ ax.dx }}" cy="{{ ax.dy }}" r="2.6" class="rd-dot"><title>{{ ax.label }} {{ ax.score }}</title></circle>
+                        {{ ax.icon|safe }}
+                        {% endfor %}
+                    </svg>
+                    <figcaption>0 at the centre, 100 at the rim — and 100 is the standard on every
+                        one of them. The shape is what the six numbers hide: which attributes this
+                        card is lopsided on.</figcaption>
+                </figure>
+                {% endif %}
+
                 <p class="muted">The geometric mean of the {{ sections|length }} attribute
                    {{ 'scores' if sections|length != 1 else 'score' }} on the card, so one weak
                    attribute pulls the whole number down. The pass mark on every attribute is
