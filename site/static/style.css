@@ -682,3 +682,5 @@ a.dl-btn:hover { border-color: #3b82f6; background: #f0f6ff; color: #1e40af; }
 .mp-attr-head h3 a:hover { text-decoration: underline; }
 .crumb { margin: 0 0 4px; font-size: 0.9em; color: #94a3b8; }
 .crumb a { font-weight: 600; }
+.attribute-detail-container h2 a { color: inherit; text-decoration: none; border-bottom: 2px solid #dbe3ec; }
+.attribute-detail-container h2 a:hover { border-bottom-color: #64748b; }
