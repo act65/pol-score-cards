@@ -40,8 +40,8 @@
                 <div class="source-head">
                     {% if s.url %}<a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.source }}</a>
                     {% else %}<span class="source-name">{{ s.source }}</span>{% endif %}
-                    <span class="source-share">{{ '{:,}'.format(s.statements) }} statements
-                        <span class="share-pct">{{ s.share }}%</span></span>
+                    <span class="source-share">{{ '{:,}'.format(s.statements) }} statements{% if stats.per_source|length > 1 %}
+                        <span class="share-pct">{{ s.share }}%</span>{% endif %}</span>
                 </div>
                 <p class="source-desc">{{ s.desc }}</p>
                 {% if s.source == 'Party press releases' and stats.party_urls %}
@@ -51,61 +51,98 @@
             </div>
             {% endfor %}
         </div>
-        <p class="muted">Hansard only, on purpose. Earlier releases blended in party press releases and
-           post-Cabinet press conferences, and that changed a score more than the speaker did — the same
-           MP scored several points higher in a press release than in the House, and the source mix
-           differed sharply by party, so comparing two MPs was not a fair fight. Hansard is the one
-           source that is adversarial, on the record, and covers every MP equally. The other corpora are
-           still <a href="#downloads">downloadable below</a>; they are just not scored here. Scoring each
-           source <em>separately</em> — to show a debate-vs-public delta — is the better version of that
-           idea and is planned for later.</p>
+        <p class="muted">One source, so that every MP is measured in the same room. Hansard is
+           adversarial, on the record, and covers the whole House equally — a press release tells you
+           what a party wants you to think, Hansard tells you how they behave when someone is arguing
+           back. Other corpora we hold are <a href="#downloads">downloadable below</a>; they are not
+           scored.</p>
 
-        <h3>By party</h3>
-        <table class="data-table">
-            <thead><tr><th>Party</th><th class="num">MPs</th><th class="num">Statements</th>
-                <th class="num">Share</th><th class="num">Mean score</th></tr></thead>
-            <tbody>
-            {% for p in stats.per_party %}
-                <tr>
-                    <td>{{ p.party }}</td>
-                    <td class="num">{{ p.mps }}</td>
-                    <td class="num">{{ '{:,}'.format(p.statements) }}</td>
-                    <td class="num">{{ p.share }}%</td>
-                    <td class="num">{{ p.mean_score if p.mean_score is not none else '—' }}</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-
-        <h3>Overall scores by party</h3>
+        <h3>Scores by party</h3>
         <p class="muted">Each MP's <strong>overall score</strong> is the geometric mean of their
            attributes (0–100) — the same measure the cards rank by, where one weak attribute drags the
            whole score down. Party means sit close together; what differs is the <em>spread</em> inside
-           each caucus. That now has its own page, built from the live dataset rather than a
-           precomputed image, with a full aggregated scorecard per party:
-           <a href="/party"><strong>party scorecards →</strong></a></p>
+           each caucus, and which attributes a caucus is unusual on. That has its own page, with an
+           aggregated scorecard per party: <a href="/party"><strong>party scorecards →</strong></a></p>
 
-        <h3>By politician</h3>
-        <p class="muted">Evidence statements extracted per MP (across every attribute). Coverage is
-           uneven — an MP who speaks more, or more contentiously, generates more scored statements.
-           Read scores relative to their evidence base.</p>
-        <details class="pol-table-wrap">
-            <summary>Show all {{ stats.per_politician|length }} politicians</summary>
-            <table class="data-table">
-                <thead><tr><th>#</th><th>Politician</th><th>Party</th><th class="num">Statements</th><th class="num">Attrs</th></tr></thead>
-                <tbody>
-                {% for r in stats.per_politician %}
-                    <tr>
-                        <td class="muted">{{ loop.index }}</td>
-                        <td>{{ r.name }}</td>
-                        <td>{{ r.party }}</td>
-                        <td class="num">{{ '{:,}'.format(r.statements) }}</td>
-                        <td class="num">{{ r.n_attrs }}/9</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </details>
+        <h3>How we check the instrument</h3>
+        <p class="muted">Three audits that need no human labeller, each deterministic and re-runnable
+           from the repo. They do not tell you the scores are <em>right</em> — see the last one for how
+           far that question is from settled — but they do rule out the failures that would make the
+           scores meaningless.</p>
+
+        {% set ins = stats.instrument or {} %}
+        {% if ins.quotes %}
+        <h4>Is every quote real?</h4>
+        <p class="muted">A scored statement that is not actually in the transcript is worse than no
+           score at all. Every example is checked against its own sitting day before it reaches the
+           site; this audit re-checks a random sample afterwards, and counts four ways a quote can be
+           wrong — not present at all, stitched together from fragments, or cut so it does not begin
+           and end on a sentence boundary and so may not carry the speaker's meaning.</p>
+        <table class="data-table">
+            <thead><tr><th>Check</th><th class="num">Result</th></tr></thead>
+            <tbody>
+            <tr><td>Sampled</td><td class="num">{{ '{:,}'.format(ins.quotes.sampled) }} of {{ '{:,}'.format(ins.quotes.checkable) }} checkable statements</td></tr>
+            <tr><td>Verbatim in that day's transcript</td><td class="num"><strong>{{ '%g'|format(ins.quotes.pct.verbatim) }}%</strong></td></tr>
+            <tr><td>Ellipsis-spliced</td><td class="num">{{ '%g'|format(ins.quotes.pct.spliced) }}%</td></tr>
+            <tr><td>Not found in the transcript</td><td class="num">{{ '%g'|format(ins.quotes.pct.missing) }}%</td></tr>
+            <tr><td>Cut mid-sentence</td><td class="num">{{ '%g'|format(ins.quotes.pct.truncated) }}%</td></tr>
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if ins.overlap %}
+        <h4>Are these {{ attributes|length }} things, or one thing counted {{ attributes|length }} times?</h4>
+        <p class="muted">Attributes that penalise the same move inflate each other, and the geometric
+           mean the cards rank by then compounds the double-count — one insult could cost an MP a third
+           of their card. So every pair is correlated over the statements they <em>both</em> scored.
+           Anything at 0.85 or above is treated as redundant and one of the pair gets cut; that is how
+           Charisma was removed, at 0.96 with Civility.</p>
+        <table class="data-table">
+            <thead><tr><th>Most-correlated pairs</th><th class="num">r</th><th class="num">statements in common</th></tr></thead>
+            <tbody>
+            {% for pr in ins.overlap.top_pairs %}
+            <tr><td>{{ pr.a|capitalize }} / {{ pr.b|capitalize }}</td>
+                <td class="num">{{ '%.2f'|format(pr.r) }}</td>
+                <td class="num">{{ '{:,}'.format(pr.n_both) }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <p class="muted">{% if ins.overlap.redundant %}<strong>{{ ins.overlap.redundant|length }} pair(s) at or above 0.85.</strong>
+           {% else %}<strong>No pair reaches 0.85.</strong> The published attributes are measuring
+           distinguishable things.{% endif %}</p>
+        {% endif %}
+
+        {% if ins.resolver %}
+        <h4>Does searching beat guessing?</h4>
+        <p class="muted">Veracity and Divination are shown from the model's unaided estimate until the
+           resolver has searched for evidence. This is how far apart those two turn out to be, on the
+           {{ ins.resolver.paired }} claims that have both. The estimate was written at extraction time,
+           before any lookup, and was withheld from the resolver, so the two are independent.</p>
+        <table class="data-table">
+            <thead><tr><th>On {{ '{:,}'.format(ins.resolver.verdicts) }} resolved claims</th><th class="num">Result</th></tr></thead>
+            <tbody>
+            <tr><td>Correlation between the guess and the searched verdict</td><td class="num">{{ '%.2f'|format(ins.resolver.pearson_r) }}</td></tr>
+            <tr><td>Mean gap between them (0–1 scale)</td><td class="num">{{ '%.2f'|format(ins.resolver.mean_abs_gap) }}</td></tr>
+            <tr><td>Guess and verdict agree within 0.25</td><td class="num">{{ (ins.resolver.agree_within_025 * 100)|round|int }}%</td></tr>
+            <tr><td>Guess is wrong by 0.5 or more</td><td class="num">{{ ins.resolver.disagree_05_plus }} of {{ ins.resolver.paired }}</td></tr>
+            <tr><td>Verdicts citing at least one source URL</td><td class="num">{{ (ins.resolver.cited_share * 100)|round|int }}%</td></tr>
+            <tr><td>Claims where searching returned no score<sup>*</sup></td><td class="num">{{ (ins.resolver.unscored_share * 100)|round|int }}%</td></tr>
+            </tbody>
+        </table>
+        <p class="muted"><sup>*</sup> Not yet due, or not checkable from any source. Those produce no
+           score at all — absence of evidence is not evidence of falsity, and scoring them zero would
+           mark every hard-to-check claim as a lie.</p>
+        <p class="muted">So searching is worth doing: the guess tracks the verdict only loosely, and is
+           badly wrong often enough to matter. Until the resolver has run over the whole corpus, every
+           Veracity and Divination score on a card is marked <strong>?</strong> and should be read as an
+           estimate.</p>
+        {% endif %}
+
+        <h4>What is not checked</h4>
+        <p class="muted">Whether the scores agree with a human. An evaluation set has been sampled from
+           this corpus and is <strong>not yet labelled</strong>, so there is no accuracy figure to
+           report and none is claimed anywhere on this site. Everything above rules out particular ways
+           of being wrong; none of it establishes being right.</p>
 
         <h3 id="downloads">Download the data</h3>
         <p class="muted">The scored dataset and the raw source corpora, free to reuse (CC-BY-4.0).

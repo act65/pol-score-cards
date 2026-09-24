@@ -367,6 +367,26 @@ def compare(path: str = DEFAULT_OUT, out: str | None = None) -> None:
         with open(p, "w") as f:
             f.write(text + "\n")
         print(f"\nwrote {p}")
+        # Machine-readable sidecar for the site's /data page — same reason as
+        # the one in check_quotes.py: the markdown table is for people.
+        gaps = [abs(x["prior_score"] - x["resolved_score"]) for x in paired]
+        side = os.path.splitext(p)[0] + ".json"
+        with open(side, "w") as f:
+            json.dump({
+                "verdicts": len(rows),
+                "paired": len(paired),
+                "verdict_counts": dict(verdicts),
+                "unscored_share": round(unscored / len(rows), 4),
+                "pearson_r": round(_pearson([x["prior_score"] for x in paired],
+                                            [x["resolved_score"] for x in paired]), 4)
+                              if len(paired) >= 3 else None,
+                "mean_abs_gap": round(statistics.mean(gaps), 4) if gaps else None,
+                "agree_within_025": round(sum(1 for g in gaps if g <= 0.25) / len(gaps), 4)
+                                    if gaps else None,
+                "disagree_05_plus": sum(1 for g in gaps if g >= 0.5),
+                "cited_share": round(cited / len(rows), 4),
+            }, f, indent=2)
+        print(f"wrote {side}")
 
 
 if __name__ == "__main__":
