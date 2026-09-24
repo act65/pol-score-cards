@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Party scorecards — NZ Politician Scorecards</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='card.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    {% set party_colors = {
+        'Labour': '#D82A20', 'National': '#00529F', 'Green': '#098137',
+        'Greens': '#098137', 'ACT': '#F5C400', 'NZ First': '#1a1a1a',
+        'Te Pāti Māori': '#B5121B', 'Māori Party': '#B5121B',
+        'Opportunity': '#0a9c96', 'TOP': '#0a9c96'
+    } %}
+    {% macro glyph(attr) %}{% if attr.svg %}{{ attr.svg|safe }}{% else %}{{ attr.symbol }}{% endif %}{% endmacro %}
+
+    <header class="site-header">
+        <a href="/"><h1>NZ Politician Scorecards</h1></a>
+        <div class="top-right-link"><a href="/">Back to cards</a> &nbsp;·&nbsp; <a href="/data">The dataset</a> &nbsp;·&nbsp; <a href="/about">About</a></div>
+    </header>
+
+    <h2 class="page-title">Party scorecards</h2>
+    <p class="grid-caption">One card per party, aggregated over its {{ mp_count }} featured MPs
+       (those with at least {{ min_attributes }} of {{ all_attributes|length }} attributes scored).
+       Ordered by overall score. Each attribute is the plain mean of the party's MPs on that
+       attribute; the <strong>overall</strong> is the geometric mean of the six numbers printed on
+       the card, so you can recompute it from what you can see.</p>
+
+    <div class="politician-list-container">
+        {% for card in party_cards %}
+        {% set colour = party_colors.get(card.party, '#475569') %}
+        <div class="sc-card sc-card-party"
+             style="--party: {{ colour }}; --rarity: {{ colour }};">
+            <div class="sc-banner">
+                <h3 class="sc-name">{{ card.party }}</h3>
+                <span class="sc-party">{{ card.n }} MP{{ 's' if card.n != 1 }}</span>
+                <div class="sc-overall" title="Overall {{ card.overall }} — the geometric mean of this card's {{ all_attributes|length }} attribute means. Ranked {{ card.rank }} of {{ party_cards|length }} parties.">
+                    <span class="sc-ovl-val">{{ card.overall }}</span>
+                    <span class="sc-ovl-lab">overall</span>
+                </div>
+            </div>
+
+            {# The colour block IS the art. Inside it, one faint tick per MP at
+               their own overall score, and a solid tick at the party's — so the
+               block carries the party's spread, not just its average. Every card
+               shares one axis ({{ spread_lo }}–{{ spread_hi }}) so they compare. #}
+            <div class="sc-art sc-block">
+                <div class="sc-spread"
+                     title="Each dot is one {{ card.party }} MP's own overall score ({{ card.members|min }}–{{ card.members|max }}); the line is the party's, {{ card.overall }}.">
+                    <div class="sc-spread-track">
+                        <span class="sc-mean-line" style="left: {{ card.mean_at }}%; height: {{ card.mean_h }}px"></span>
+                        {% for dot in card.dots %}
+                        <span class="sc-dot" style="left: {{ dot.x }}%; bottom: {{ dot.bottom }}px"></span>
+                        {% endfor %}
+                        <span class="sc-spread-axis"></span>
+                        <span class="sc-spread-lab lo">{{ spread_lo }}</span>
+                        <span class="sc-spread-lab hi">{{ spread_hi }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sc-stats">
+                {% for attribute in all_attributes %}
+                    {% if attribute.id in card.scores %}
+                        {% set score = card.scores[attribute.id] %}
+                        {% set tier = 'low' if score < 40 else ('mid' if score < 70 else 'high') %}
+                        {% set n = card.counts[attribute.id] %}
+                        {% set unver = card.unver.get(attribute.id) %}
+                        {% set thin = n * 2 < card.n %}
+                        <span class="sc-stat{{ ' unverified' if unver }}{{ ' thin' if thin }}"
+                              title="{{ attribute.name }} — mean of {{ n }} of {{ card.n }} {{ card.party }} MPs{{ ' (thin: most of the caucus is not scored on it)' if thin }}. {{ attribute.blurb or attribute.definition }}{{ ' — UNVERIFIED: mostly the model\'s own estimates, not checked against sources.' if unver }}">
+                            <span class="sc-icon">{{ glyph(attribute) }}</span>
+                            <span class="sc-val {{ tier }}">{{ score }}{% if unver %}<span class="sc-unver" aria-label="unverified">?</span>{% endif %}</span>
+                        </span>
+                    {% else %}
+                        <span class="sc-stat" title="{{ attribute.name }} — no {{ card.party }} MP is scored on it">
+                            <span class="sc-icon">{{ glyph(attribute) }}</span>
+                            <span class="sc-val na">—</span>
+                        </span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <table class="data-table party-table">
+        <thead><tr><th>#</th><th>Party</th><th class="num">MPs</th><th class="num">Overall</th>
+            {% for attribute in all_attributes %}<th class="num">{{ attribute.name }}</th>{% endfor %}
+            <th class="num">MP range</th></tr></thead>
+        <tbody>
+        {% for card in party_cards %}
+        <tr>
+            <td>{{ card.rank }}</td>
+            <td><span class="party-swatch" style="--party: {{ party_colors.get(card.party, '#475569') }};"></span>{{ card.party }}</td>
+            <td class="num">{{ card.n }}</td>
+            <td class="num"><strong>{{ card.overall }}</strong></td>
+            {% for attribute in all_attributes %}
+            <td class="num">{{ card.scores.get(attribute.id, '—') }}</td>
+            {% endfor %}
+            <td class="num">{{ card.members|min }}–{{ card.members|max }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    {% if too_small %}
+    <p class="grid-caption">Not aggregated — fewer than {{ min_party_mps }} featured MPs, which would
+       make the card one person's scores under a party name:
+       {% for name, n in too_small %}<strong>{{ name }}</strong> ({{ n }} MP{{ 's' if n != 1 }}){% if not loop.last %}, {% endif %}{% endfor %}.
+       Their MPs are still on the <a href="/">card grid</a>.</p>
+    {% endif %}
+
+    <footer class="site-footer">
+        <p><strong>Read these as descriptions of a caucus, not of a party's policy.</strong>
+           A party's number is the average of how its MPs argue in the House — bigger
+           caucuses regress toward the middle, and a small one is one or two people.
+           Party means sit close together; the <em>spread</em> inside each block is the
+           more interesting part. <a href="/about">About &amp; method →</a></p>
+    </footer>
+</body>
+</html>

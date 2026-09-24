@@ -9,7 +9,7 @@
 <body>
     <header class="site-header">
         <a href="/"><h1>NZ Politician Scorecards</h1></a>
-        <div class="top-right-link"><a href="/">Back to cards</a></div>
+        <div class="top-right-link"><a href="/party">Parties</a> &nbsp;·&nbsp; <a href="/">Back to cards</a></div>
     </header>
 
     <main class="data-page">
@@ -76,15 +76,13 @@
             </tbody>
         </table>
 
-        {% if stats.party_distribution_svg %}
         <h3>Overall scores by party</h3>
-        <p class="muted">Each MP's <strong>overall score</strong> is the geometric mean of their nine
+        <p class="muted">Each MP's <strong>overall score</strong> is the geometric mean of their
            attributes (0–100) — the same measure the cards rank by, where one weak attribute drags the
-           whole score down. Below, the <em>distribution</em> of those scores within each party, worst
-           (left) to best (right); the dashed line marks each party's mean. Party means sit close
-           together — what differs is the <em>spread</em>. Only MPs with ≥6 attributes scored are shown.</p>
-        <div class="ridgeline">{{ stats.party_distribution_svg | safe }}</div>
-        {% endif %}
+           whole score down. Party means sit close together; what differs is the <em>spread</em> inside
+           each caucus. That now has its own page, built from the live dataset rather than a
+           precomputed image, with a full aggregated scorecard per party:
+           <a href="/party"><strong>party scorecards →</strong></a></p>
 
         <h3>By politician</h3>
         <p class="muted">Evidence statements extracted per MP (across every attribute). Coverage is

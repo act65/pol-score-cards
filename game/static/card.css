@@ -187,7 +187,10 @@ a.sc-stat:hover .sc-val { text-decoration: underline; }
 /* ----- Legend / key -------------------------------------------------------- */
 .sc-legend {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    /* Three across, so a six-attribute set reads as 3x2 and not 4-then-2.
+       auto-fit used to pick the column count from the container width, which
+       left a ragged last row whenever the attribute count wasn't a multiple. */
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px 18px;
     margin: 0;
     padding: 14px 18px;
@@ -197,6 +200,8 @@ a.sc-stat:hover .sc-val { text-decoration: underline; }
     border-radius: 10px;
 }
 .sc-legend li { display: flex; align-items: center; gap: 8px; font-size: 0.9em; }
+@media (max-width: 900px) { .sc-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .sc-legend { grid-template-columns: 1fr; } }
 .sc-legend .sc-icon { width: 1.5em; height: 1.5em; font-size: 1.1em; color: #3d372e; flex: none; }
 .sc-legend b { color: #0f172a; }
 .sc-legend span.blurb { color: #64748b; }
@@ -238,3 +243,114 @@ a.sc-stat:hover .sc-val { text-decoration: underline; }
     color: #a8341f;
     font-weight: 600;
 }
+
+/* ----- Overall score: the geometric mean, shown as a corner badge ----------
+   The geometric mean was already the card's ranking measure, but it was only
+   ever *implied* — encoded in the border colour and nowhere readable. The badge
+   makes it a number you can compare, sits in the banner's top-right corner
+   (absolutely positioned, so the game's column banner is untouched), and takes
+   its ring from the same --rarity the frame uses, so badge and border agree.
+
+     <div class="sc-banner">
+       <h3 class="sc-name">…</h3><span class="sc-party">…</span>
+       <div class="sc-overall"><span class="sc-ovl-val">62</span>
+                               <span class="sc-ovl-lab">overall</span></div>
+     </div>                                                                  */
+.sc-overall {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    min-width: 34px;
+    padding: 2px 4px 1px;
+    background: #fff;
+    border: 2px solid var(--rarity);
+    border-radius: 7px;
+    line-height: 1;
+}
+.sc-ovl-val {
+    font-size: 1.04em;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: #14110d;
+}
+.sc-ovl-lab {
+    font-size: 0.44em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9a9384;
+}
+/* Keep a long name clear of the badge. */
+.sc-banner:has(.sc-overall) .sc-name { padding-right: 40px; }
+
+/* ----- Party card: the same frame, a solid colour block for the art -------
+   One card per party, aggregated over its MPs. The art is the party colour
+   itself rather than a portrait, and inside it a dot plot: one dot per member
+   MP at that MP's own overall score, stacked where they collide, with a solid
+   line at the party's own aggregate. That is the thing the per-party ridgeline
+   on /data was for — the caucus's SPREAD, which is what actually differs
+   between parties, not the average, which barely does.                      */
+.sc-card-party .sc-block {
+    background: var(--party);
+}
+.sc-card-party .sc-name { font-size: 1.14em; }
+
+.sc-spread {
+    width: 100%;
+    height: 100%;
+    padding: 10px 12px 8px;
+    box-sizing: border-box;
+}
+/* Inner track so a dot's `left: 62%` is a percentage of the drawable width,
+   not of the padded box — the 12px gutters keep the end dots on the card. */
+.sc-spread-track {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+.sc-spread-axis {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 13px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.45);
+}
+/* One dot per MP, at their own overall score; `bottom` is set inline to stack
+   MPs who land on the same value. */
+.sc-dot {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    margin-left: -2.5px;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 50%;
+}
+/* The party's own aggregate, drawn through the whole stack. */
+.sc-mean-line {
+    position: absolute;
+    bottom: 13px;
+    width: 2px;
+    margin-left: -1px;
+    background: #fff;
+}
+.sc-spread-lab {
+    position: absolute;
+    bottom: 0;
+    font-size: 0.5em;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.85);
+}
+.sc-spread-lab.lo { left: 0; }
+.sc-spread-lab.hi { right: 0; }
+
+/* Thin evidence: an attribute whose party mean rests on well under half the
+   caucus (Forthrightness only reaches MPs who answer questions). Same idea as
+   .unverified, a different cause, so a different treatment — the whole stat
+   fades rather than the number gaining a mark. */
+.sc-stat.thin { opacity: 0.5; }

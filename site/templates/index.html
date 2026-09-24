@@ -20,7 +20,7 @@
 
     <header class="site-header">
         <a href="/"><h1>NZ Politician Scorecards</h1></a>
-        <div class="top-right-link"><a href="/data">The dataset</a> &nbsp;·&nbsp; <a href="/rules">The card game</a> &nbsp;·&nbsp; <a href="/about">About</a></div>
+        <div class="top-right-link"><a href="/party">Parties</a> &nbsp;·&nbsp; <a href="/data">The dataset</a> &nbsp;·&nbsp; <a href="/rules">The card game</a> &nbsp;·&nbsp; <a href="/about">About</a></div>
     </header>
 
     <details class="legend-wrap" open>
@@ -32,7 +32,7 @@
             {% endfor %}
         </ul>
         <div class="sc-rarity-key">
-            <span class="rk-label">Rarity (the card's border colour) — overall rank by the geometric mean of all {{ all_attributes|length }} attributes:</span>
+            <span class="rk-label">Rarity (the card's border colour, and the ring around the <b>overall</b> badge) — rank by that overall score, the geometric mean of all {{ all_attributes|length }} attributes, so one weak attribute drags the card down:</span>
             {% for name, colour in rarity_tiers %}
             <span class="rk-item"><span class="rk-swatch" style="--rarity: {{ colour }};"></span>{{ name|capitalize }}</span>
             {% endfor %}
@@ -45,10 +45,16 @@
     <div class="sc-controls">
         <label>Order by:
             <select id="sortSel">
-                <option value="rarity">Rarity (overall)</option>
+                <option value="rarity">Overall score</option>
                 {% for attribute in all_attributes %}
                 <option value="{{ attribute.id }}">{{ attribute.name }}</option>
                 {% endfor %}
+            </select>
+        </label>
+        <label>Direction:
+            <select id="dirSel">
+                <option value="desc">Highest first</option>
+                <option value="asc">Lowest first</option>
             </select>
         </label>
         <label>Party:
@@ -59,19 +65,33 @@
                 {% endfor %}
             </select>
         </label>
+        <label>Role:
+            <select id="roleSel">
+                <option value="all">Everyone</option>
+                <option value="any">Leaders &amp; ministers</option>
+                <option value="leader">Party leaders only</option>
+            </select>
+        </label>
         <span id="cardCount"></span>
     </div>
 
     <div class="politician-list-container">
         {% for item in politicians_data %}
         {% set colour = party_colors.get(item.politician.party, '#475569') %}
-        <div class="sc-card" title="{{ item.rarity_name|capitalize }}"
+        <div class="sc-card" title="{{ item.rarity_name|capitalize }}{% if item.politician.role %} · {{ item.politician.role }}{% endif %}"
              data-party="{{ item.politician.party }}" data-geo="{{ item.geo }}"
+             data-role="{{ item.politician.leadership or '' }}"
              data-scores='{{ item.scores|tojson }}'
              style="--party: {{ colour }}; --rarity: {{ item.rarity }};">
             <div class="sc-banner">
                 <h3 class="sc-name">{{ item.politician.name }}</h3>
                 <span class="sc-party">{{ item.politician.party }}</span>
+                {# The overall score: the geometric mean the card is ranked by.
+                   Its ring is the rarity colour, so badge and border agree. #}
+                <div class="sc-overall" title="Overall {{ item.overall }} — the geometric mean of this card's {{ all_attributes|length }} attributes. Ranked {{ item.rank }} of {{ shown_count }} ({{ item.rarity_name }}).">
+                    <span class="sc-ovl-val">{{ item.overall }}</span>
+                    <span class="sc-ovl-lab">overall</span>
+                </div>
             </div>
             <div class="sc-art">
                 {% if item.politician.image %}
@@ -112,28 +132,45 @@
     (function () {
         const grid = document.querySelector('.politician-list-container');
         const sortSel = document.getElementById('sortSel');
+        const dirSel = document.getElementById('dirSel');
         const partySel = document.getElementById('partySel');
+        const roleSel = document.getElementById('roleSel');
         const countEl = document.getElementById('cardCount');
         const cards = Array.from(grid.querySelectorAll('.sc-card')).map(function (el) {
             let scores = {};
             try { scores = JSON.parse(el.dataset.scores || '{}'); } catch (e) {}
-            return { el: el, party: el.dataset.party || '', geo: parseFloat(el.dataset.geo) || 0, scores: scores };
+            return { el: el, party: el.dataset.party || '', role: el.dataset.role || '',
+                     geo: parseFloat(el.dataset.geo) || 0, scores: scores };
         });
         function sortKey(c, s) {
             if (s === 'rarity') return c.geo;
             const v = c.scores[s];
-            return (v === undefined || v === null) ? -1 : v;   // missing attribute sorts last
+            return (v === undefined || v === null) ? null : v;   // null = not scored
         }
         function apply() {
-            const s = sortSel.value, p = partySel.value;
-            const visible = cards.filter(function (c) { return p === 'all' || c.party === p; });
-            visible.sort(function (a, b) { return sortKey(b, s) - sortKey(a, s); });
+            const s = sortSel.value, p = partySel.value, r = roleSel.value;
+            const asc = dirSel.value === 'asc';
+            const visible = cards.filter(function (c) {
+                if (p !== 'all' && c.party !== p) return false;
+                if (r === 'any') return c.role !== '';
+                if (r === 'leader') return c.role === 'leader';
+                return true;
+            });
+            // An unscored attribute goes last whichever way we're sorting — on
+            // "lowest first" a missing score is not a low score.
+            visible.sort(function (a, b) {
+                const av = sortKey(a, s), bv = sortKey(b, s);
+                if ((av === null) !== (bv === null)) return av === null ? 1 : -1;
+                if (av === null) return 0;
+                return asc ? av - bv : bv - av;
+            });
             cards.forEach(function (c) { c.el.style.display = 'none'; });
             visible.forEach(function (c) { c.el.style.display = ''; grid.appendChild(c.el); });
             countEl.textContent = visible.length + (visible.length === 1 ? ' card' : ' cards');
         }
-        sortSel.addEventListener('change', apply);
-        partySel.addEventListener('change', apply);
+        [sortSel, dirSel, partySel, roleSel].forEach(function (el) {
+            el.addEventListener('change', apply);
+        });
         apply();
     })();
     </script>

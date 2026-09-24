@@ -190,6 +190,21 @@ the moment v3.0 scores are published, so these must ship together:
 - [ ] 🤖 Fix the missing-attribute free pass before changing the attribute count
       — cards rank on the geometric mean of whatever subset was scored, so
       8-attribute cards median 45th against 71st for 9-attribute ones.
+- [ ] 🤖 **Forthrightness is scoring opposition MPs on their own questions.**
+      Found 2026-09-24 when the new `/party` page showed a 62-vs-19 government /
+      opposition split that no definition of the attribute predicts. 43 of the
+      74 scored MPs rest on ≤10 Q/A pairs and average **24**; the 31 with real
+      volume average **67**, and the thin ones are almost entirely opposition
+      MPs. Reading the rows, the "answer" attributed to them is their own next
+      supplementary question — `asked_by` and `politician_id` are the same
+      person — and the extractor says so in its own explanations ("the
+      attributed 'answer' is not an answer at all — it is a further question").
+      So the pairing in `parse_questions.py` / `extract_questions.py` drops the
+      minister's reply and pairs question with question. **Nothing downstream
+      can fix this**: the fix is in the pairing, then a re-score of the affected
+      pairs. Until then a Forthrightness party mean is an artefact, and 36 of
+      the 74 MP-level scores are measuring the wrong person's words. `min_n` in
+      `build_v2_dataset.py` is the stopgap, not the repair.
 
 ## Phase D — re-extract and rebuild
 

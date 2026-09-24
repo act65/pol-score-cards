@@ -467,3 +467,27 @@ a.dl-btn:hover { border-color: #3b82f6; background: #f0f6ff; color: #1e40af; }
 .ridgeline path { transition: fill-opacity 0.15s; }
 .ridgeline g:hover path { fill-opacity: 0.72; }
 .dl-btn .soon { font-size: 0.72em; text-transform: uppercase; letter-spacing: 0.04em; color: #fff; background: #94a3b8; padding: 2px 7px; border-radius: 999px; }
+/* --- Party scorecards (/party) --------------------------------------------- */
+.page-title {
+    max-width: 1100px;
+    margin: 18px auto 0;
+    padding: 0 20px;
+    font-size: 1.45em;
+    color: #1e293b;
+}
+.party-table {
+    max-width: 1100px;
+    margin: 6px auto 30px;
+    padding: 0 20px;
+    box-sizing: border-box;
+}
+.party-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 8px;
+    background: var(--party, #475569);
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    border-radius: 2px;
+    vertical-align: baseline;
+}
