@@ -119,7 +119,9 @@
             <ul class="mp-quotes">
                 {% for e in sec.examples %}
                 <li>
-                    <span class="mp-q-score {{ 'low' if e.score < 40 else ('mid' if e.score < 70 else 'high') }}">{{ e.score }}</span>
+                    {# `is number` guard: a pending row has score=None, and an
+                       unguarded comparison here 500s the whole page. #}
+                    <span class="mp-q-score {{ ('low' if e.score < 40 else ('mid' if e.score < 70 else 'high')) if e.score is number else 'pending' }}">{{ e.score if e.score is number else '—' }}</span>
                     <div>
                         <blockquote>“{{ e.text }}”</blockquote>
                         {# A compact marker only: the verdict word and how many

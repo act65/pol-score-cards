@@ -72,7 +72,12 @@
 
         {% if examples %}
             <div class="ev-head">
-                <h4>Evidence — the {{ '{:,}'.format(examples|length) }} statements behind this score</h4>
+                {# Pending rows are listed but are NOT behind the score, so
+                   counting them here would misdescribe the number above. #}
+                {% set n_pending = examples|selectattr('pending')|list|length %}
+                <h4>Evidence — the {{ '{:,}'.format(examples|length - n_pending) }} statements behind this
+                    score{% if n_pending %}, and {{ '{:,}'.format(n_pending) }} not yet
+                    scoreable{% endif %}</h4>
                 <label class="ev-sort">Order:
                     <select id="evSort">
                         <option value="shuffle">Random</option>
@@ -89,6 +94,14 @@
                 <li class="evidence" data-score="{{ example.score if example.score is not none else -1 }}">
                     {% if example.score is not none %}
                         <span class="ev-score {{ tier }}">{{ example.score }}</span>
+                    {% else %}
+                        {# A prediction whose resolve-by date has not passed is
+                           PENDING, not wrong, and a claim no source settles is
+                           not false either. Neither gets a number — not even 50,
+                           which would read as "half right" and would drag every
+                           long-horizon prediction toward the middle while one
+                           about next week scored 100. #}
+                        <span class="ev-score pending" title="Not yet scoreable — shown as evidence, counted in nothing.">—</span>
                     {% endif %}
                     <div class="ev-body">
                         {# Forthrightness scores an ANSWER against the question

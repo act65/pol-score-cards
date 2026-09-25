@@ -100,11 +100,16 @@ def test_whitespace_does_not_count_as_a_mismatch():
     assert len([e for e in got if e.get("evidence_urls")]) == 1
 
 
-def test_an_unscored_verdict_keeps_its_sources_but_not_the_score():
+def test_an_unscored_verdict_keeps_its_sources_and_gets_no_score():
     """`uncheckable` / `not_yet_due` searched real sources and found no answer.
 
-    The sources are worth showing; the score must stay the guess, and the row
-    must stay resolved=False so the site keeps marking it unverified.
+    The sources are worth showing. The score is not: this row is PENDING, and it
+    must not inherit `prior_score`. The divination prompt tells the model to
+    write 0.5 when the resolve-by date has not passed, so the guess on these is
+    a placeholder the prompt asked for -- publishing it turned an instruction
+    into a measurement.
+
+    Changed 2026-09-25. This test previously asserted score == 50.
     """
     rows = _one_window(["A prediction about 2030."])
     v = _verdict("2026-01-01#1", 0, "A prediction about 2030.",
@@ -115,4 +120,26 @@ def test_an_unscored_verdict_keeps_its_sources_but_not_the_score():
     assert e["verdict"] == "not_yet_due"
     assert e["evidence_urls"] == ["https://example.govt.nz/a"]
     assert e["resolved"] is False
-    assert e["score"] == 50          # the prior, not a verdict
+    assert e["pending"] is True
+    assert e["score"] is None, "a pending prediction must carry no score"
+
+
+def test_a_pending_row_is_kept_out_of_the_score_pool():
+    """Not just absent from the row -- absent from the average the card shows."""
+    import collections as _c
+    rows = _one_window(["Settled claim.", "A prediction about 2030."])
+    resolved = [
+        _verdict("2026-01-01#1", 0, "Settled claim.", score=1.0, verdict="true"),
+        _verdict("2026-01-01#1", 1, "A prediction about 2030.",
+                 score=None, verdict="not_yet_due"),
+    ]
+    index = {}
+    for r in resolved:
+        w, attr, i = r["item_id"].split("|")
+        index[(w.split("@")[0], attr, i)] = r
+    per_pair = _c.defaultdict(list)
+    b._ingest(rows, "Hansard", "Hansard", lambda rec, date: "", b.Roster(),
+              per_pair, _c.defaultdict(list), _c.Counter(), set(), _c.Counter(),
+              use_prior=True, resolved=index, stale=_c.Counter())
+    pooled = list(per_pair.values())[0]
+    assert pooled == [1.0], f"the pending row leaked into the pool: {pooled}"
