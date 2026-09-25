@@ -4,11 +4,63 @@ import math
 import random
 import json
 import os
+import urllib.parse
 
 import data_access_jsonl
 # from game.routes import game_bp # Added import
 
 app = Flask(__name__)
+
+
+# --- Showing what a claim was checked against -------------------------------
+# Veracity and Divination are the two search-tier attributes: the extractor
+# emits a claim and a falsification criterion, and `resolve.py` then searches
+# for evidence and records a verdict WITH THE SOURCE URLS it decided on.
+# Those URLs are the entire difference between a checked score and the model's
+# unaided guess, and they were being collected, stored and published in
+# examples.jsonl without ever being rendered.
+#
+# The verdict vocabulary is split by attribute on purpose (resolve.py
+# SCORED_VERDICTS): Veracity asks "was this statement true", Divination asks
+# "did this prediction come true", so `wrong` and `false` are different claims
+# and are worded differently here.
+_VERDICT_LABEL = {
+    # Veracity — a statement of fact, checked.
+    "true": "checked — true",
+    "partly_true": "checked — partly true",
+    "false": "checked — false",
+    # Divination — a prediction, checked once its horizon passed.
+    "correct": "checked — it came true",
+    "partly_correct": "checked — partly came true",
+    "wrong": "checked — it did not come true",
+    # Searched, but no score. These carry sources too: the reader deserves to
+    # see where we looked. The score beside them is still the guess.
+    "uncheckable": "searched — no source settles it",
+    "not_yet_due": "searched — too early to tell",
+}
+
+
+@app.template_filter("verdict_label")
+def _verdict_label(verdict):
+    """A verdict word as a reader-facing phrase."""
+    if not verdict:
+        return ""
+    return _VERDICT_LABEL.get(verdict, verdict.replace("_", " "))
+
+
+@app.template_filter("hostname")
+def _hostname(url):
+    """The bare host of a source URL — "stats.govt.nz", not 180 characters of it.
+
+    A resolver source is often a long query URL, and a dozen of those stacked up
+    is unreadable. The host is what tells a reader whether to trust it; the full
+    URL is still one click away in the href.
+    """
+    try:
+        host = urllib.parse.urlparse(url).netloc
+    except ValueError:
+        return url
+    return host[4:] if host.startswith("www.") else (host or url)
 
 politicians = data_access_jsonl.get_all_politicians()
 attribute_descriptions = data_access_jsonl.get_all_attributes()
@@ -415,9 +467,17 @@ def attribute_detail(politician_id, attribute):
         return "Politician not found", 404
     examples = _shuffled(data_access_jsonl.get_examples(politician_id, attribute),
                          politician_id, attribute)
+    # How much of this page is actually checked. The headline score for a
+    # search-tier attribute is still the model's guess until the resolver has
+    # worked the whole queue, but individual statements below get settled one at
+    # a time -- so "unverified" is a claim about the number at the top, and the
+    # banner has to say how far the checking has got rather than implying none
+    # of it has happened.
+    checked = sum(1 for e in examples
+                  if e.get("resolved") and e.get("evidence_urls"))
     return render_template('attribute_detail.html', politician=politician,
                            attribute_info=attribute_info, examples=examples,
-                           score=score, meta=meta,
+                           score=score, meta=meta, checked=checked,
                            all_attributes=attribute_descriptions,
                            scores=scores,
                            spread=_score_spread(politician_id, attribute,

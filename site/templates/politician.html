@@ -122,7 +122,11 @@
                     <span class="mp-q-score {{ 'low' if e.score < 40 else ('mid' if e.score < 70 else 'high') }}">{{ e.score }}</span>
                     <div>
                         <blockquote>“{{ e.text }}”</blockquote>
-                        <p class="mp-q-meta">{{ e.context }}{% if e.source_url %} · <a href="{{ e.source_url }}" target="_blank" rel="noopener">source →</a>{% endif %}</p>
+                        {# A compact marker only: the verdict word and how many
+                           sources back it. The links themselves live on the
+                           evidence page, one click away, because six attributes
+                           of stacked URLs would bury the quotes. #}
+                        <p class="mp-q-meta">{{ e.context }}{% if e.source_url %} · <a href="{{ e.source_url }}" target="_blank" rel="noopener">source →</a>{% endif %}{% if e.verdict %} · <span class="mp-q-verdict{{ '' if e.resolved else ' open' }}" title="{{ e.verdict|verdict_label }}{% if e.evidence_urls %} — against {{ e.evidence_urls|map('hostname')|join(', ') }}{% endif %}">{{ e.verdict|verdict_label }}{% if e.evidence_urls %} ({{ e.evidence_urls|length }}){% endif %}</span>{% endif %}</p>
                     </div>
                 </li>
                 {% endfor %}
