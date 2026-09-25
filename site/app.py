@@ -444,8 +444,15 @@ def politician_page(politician_id):
         name = attr["name"]
         if not isinstance(scores.get(name), (int, float)):
             continue
-        picked = _shuffled(data_access_jsonl.get_examples(politician_id, name),
-                           politician_id, name)[:3]
+        # Scored rows only. A PENDING prediction (resolve-by date not passed,
+        # or no source settles it) carries score=None by design, and this
+        # section exists to illustrate a number -- a scoreless row illustrates
+        # nothing, and rendering one raised TypeError on 15 MP pages before it
+        # was filtered here. The full record, pending rows included, is the
+        # evidence page.
+        picked = [e for e in _shuffled(data_access_jsonl.get_examples(
+            politician_id, name), politician_id, name)
+            if isinstance(e.get("score"), (int, float))][:3]
         sections.append({
             "attribute": attr,
             "score": scores[name],

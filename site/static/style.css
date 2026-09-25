@@ -760,3 +760,13 @@ a.dl-btn:hover { border-color: #3b82f6; background: #f0f6ff; color: #1e40af; }
 .ev-more > summary:hover { text-decoration-style: solid; }
 .ev-more > summary::marker, .ev-more > summary::-webkit-details-marker { content: ""; }
 .ev-more[open] > summary { display: none; }
+
+/* No score, on purpose: a prediction that cannot be settled yet, or a claim no
+   source settles. Deliberately not the low/mid/high ramp — this is an absence
+   of a number, not a bad one. */
+.ev-score.pending, .mp-q-score.pending {
+    background: #f1f5f9;
+    color: #94a3b8;
+    border: 1px dashed #cbd5e1;
+    font-weight: 600;
+}

@@ -83,15 +83,28 @@ def _read(path):
     return rows
 
 
+def _sort_key(e):
+    """Score for ordering, with the scoreless sorted last rather than crashing.
+
+    A PENDING row (a prediction whose resolve-by date has not passed, or a claim
+    no source settles) carries score=None on purpose. `sorted` on a mixed
+    None/int key raises, and it raised here — the build died halfway and left a
+    truncated examples.jsonl, which is a worse failure than a bad order because
+    it looks like a finished file.
+    """
+    sc = e.get("score")
+    return sc if isinstance(sc, (int, float)) else -1
+
+
 def _pick_examples(exs, cap=0):
     """Examples per (MP, attribute), ordered highest-score first. With cap<=0 (the
     default) ALL extracted statements are kept — the score already uses them all,
     so this just controls how much evidence the card displays. With cap>0, keep a
     score-diverse spread (highest, lowest, middle) so the range is still visible."""
-    s = sorted(exs, key=lambda e: e.get("score", 0.5), reverse=True)
+    s = sorted(exs, key=_sort_key, reverse=True)
     if cap <= 0 or len(s) <= cap:
         return s
-    spread = sorted(s, key=lambda e: e.get("score", 0.5))
+    spread = sorted(s, key=_sort_key)
     idx = sorted(set(round(i * (len(spread) - 1) / (cap - 1)) for i in range(cap)))
     return [spread[i] for i in idx]
 
@@ -112,6 +125,7 @@ def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, date
             for i, e in enumerate(exs):
                 sc = e.get("score")
                 is_resolved = True
+                pending = False
                 verdict = sources = None
                 if sc is None and resolved:
                     # A searched verdict beats the guess, and beats it silently
@@ -152,7 +166,38 @@ def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, date
                         verdict, sources = hit.get("verdict"), hit.get("sources")
                         if hit.get("resolved_score") is not None:
                             sc = hit["resolved_score"]
-                if not isinstance(sc, (int, float)):
+                        else:
+                            # Searched, and the answer is that there is no
+                            # answer yet: `not_yet_due` (the resolve-by date has
+                            # not passed) or `uncheckable` (no source settles
+                            # it). This row is PENDING and carries no score.
+                            #
+                            # It must not fall through to `prior_score`. The
+                            # divination prompt tells the model to write 0.5
+                            # when the date has not passed, and 42 of the first
+                            # 68 not_yet_due items are exactly 0.5 -- so the
+                            # "score" was a placeholder the prompt asked for,
+                            # published as though it were a finding. The other
+                            # 26 are the model forming a view it was explicitly
+                            # told not to form.
+                            #
+                            # Nor 0.5 by our own hand, which is the same number
+                            # dressed as a decision, and which would punish long
+                            # horizons: "this policy will fail by 2030" would be
+                            # dragged to the middle while a prediction about
+                            # next week scores 100. That inverts the attribute.
+                            #
+                            # Scoring plausibility-when-made instead is the dead
+                            # end the prompt records: it correlated 0.72 with
+                            # Rigor and put every MP in the House between 43 and
+                            # 54, an eleven-point spread, which measured nothing.
+                            pending = True
+                if pending:
+                    # Shown as evidence, with its verdict and the sources it was
+                    # searched against, and counted in nothing.
+                    is_resolved = False
+                    sc = None
+                elif not isinstance(sc, (int, float)):
                     # v3.0: search-tier rows (veracity, divination) carry no
                     # score until the resolver runs, only the model's unaided
                     # `prior_score`. With --use_prior we display that guess so
@@ -170,13 +215,17 @@ def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, date
                     if is_probably_mp_name(e.get("politician", "")):
                         unresolved[e.get("politician", "")] += 1
                     continue
-                per_pair[(mid, attr)].append(sc)
+                # A pending row contributes no score, so it changes neither
+                # the headline number nor `n`. It is still an example.
+                if sc is not None:
+                    per_pair[(mid, attr)].append(sc)
                 src_counts[source] += 1
                 ex_row = {
                     "resolved": is_resolved,
+                    "pending": pending,
                     "politician_id": mid, "attribute": ID2NAME[attr],
                     "text": e.get("statement", ""),
-                    "score": round(sc * 100),
+                    "score": None if sc is None else round(sc * 100),
                     "explanation": e.get("explanation", ""),
                     "context": f"{label} — {date}",
                     "source_url": url,
