@@ -97,7 +97,7 @@ def _pick_examples(exs, cap=0):
 
 
 def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, dates,
-            src_counts, use_prior=False, resolved=None):
+            src_counts, use_prior=False, resolved=None, stale=None):
     """Fold one score source into the shared pools. Scores are BLENDED into the
     same (mid, attr) pool as every other source — a politician gets one combined
     score per attribute. Each example is tagged with its `source` so the stats
@@ -117,9 +117,41 @@ def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, date
                     # A searched verdict beats the guess, and beats it silently
                     # -- same field, but now with sources behind it.
                     hit = resolved.get((rec.get("window_id", ""), attr, str(i)))
-                    if hit and hit.get("resolved_score") is not None:
-                        sc = hit["resolved_score"]
+                    # The resolver's item_id embeds the example's POSITION in the
+                    # window, which is only stable while the window is never
+                    # re-extracted. Re-score a window and index 2 can be a
+                    # different statement, so the key alone would attach a
+                    # searched verdict to a quote it was never about -- the worst
+                    # available failure, because the reader gets sources that
+                    # look authoritative and are about something else.
+                    #
+                    # So confirm the statement text agrees before trusting the
+                    # join. It found one stale row on 2026-09-25 (window
+                    # 2024-11-06#1 veracity|4, a fifth example that no longer
+                    # exists) and that one dropped harmlessly -- but the same
+                    # staleness shifts indices as easily as it removes them, and
+                    # the June-to-election re-scrape will re-extract windows.
+                    if hit and (hit.get("statement", "").strip()
+                                != e.get("statement", "").strip()):
+                        if stale is not None:
+                            stale[attr] += 1
+                        hit = None
+                    if hit:
+                        # Keep the verdict and its sources WHATEVER it was.
+                        # `uncheckable` and `not_yet_due` yield no score (see
+                        # _resolved_index) but the search still happened, and
+                        # every one of those rows carries source URLs. "Here is
+                        # where we looked and why it could not be settled" is
+                        # worth more to a reader than silence, and it is the
+                        # honest reason the number beside it is still a guess.
+                        #
+                        # The row stays resolved=False in that case, because
+                        # `resolved` is what the site reads to decide whether a
+                        # score is checked. A verdict on the row must never be
+                        # what makes a guess look verified.
                         verdict, sources = hit.get("verdict"), hit.get("sources")
+                        if hit.get("resolved_score") is not None:
+                            sc = hit["resolved_score"]
                 if not isinstance(sc, (int, float)):
                     # v3.0: search-tier rows (veracity, divination) carry no
                     # score until the resolver runs, only the model's unaided
@@ -325,10 +357,15 @@ def run(scores="hansard_scores_full.jsonl", out="site_data_v2",
     if resolved_index:
         print(f"  resolver: {len(resolved_index):,} searched verdicts available")
 
+    stale = collections.Counter()
     _ingest(hansard_rows, corpus_label, "Hansard",
             lambda rec, date: f"https://hansard.parliament.nz/hansard-transcript/{date}",
             R, per_pair, examples, unresolved, dates, src_counts, use_prior,
-            resolved_index)
+            resolved_index, stale)
+    if stale:
+        print(f"  resolver: {sum(stale.values())} verdict(s) DROPPED as stale — "
+              f"the window was re-extracted and the statement no longer matches "
+              f"({dict(stale)}). Re-run resolve.py to settle them again.")
     _ingest(presser_rows, presser_label, "Pressers",
             lambda rec, date: rec.get("url", ""),
             R, per_pair, examples, unresolved, dates, src_counts, use_prior)

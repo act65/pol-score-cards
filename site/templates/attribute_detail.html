@@ -60,9 +60,14 @@
         {% endif %}
 
         {% if scores and scores.get(attribute_info.id ~ '_tier') == 'unresolved' %}
-        <p class="ev-unver-note"><strong>Unverified.</strong> This score is the model's own estimate,
-           not a check against a source. The evidence below is real and quoted; the <em>verdict</em> on
-           each claim is not yet in. <a href="/data">How far the estimate tends to be off →</a></p>
+        <p class="ev-unver-note"><strong>Unverified.</strong> The score above is the model's own
+           estimate, not a check against a source. The evidence below is real and quoted.
+           {% if checked %}<strong>{{ '{:,}'.format(checked) }} of the
+           {{ '{:,}'.format(examples|length) }} statements below {{ 'has' if checked == 1 else 'have' }}
+           now been checked against sources</strong> and carry a verdict and the links it was
+           decided on — not yet enough to replace the number above, but each one you can follow
+           yourself.{% else %}The <em>verdict</em> on each claim is not yet in.{% endif %}
+           <a href="/data">How far the estimate tends to be off →</a></p>
         {% endif %}
 
         {% if examples %}
@@ -103,6 +108,40 @@
                         {% endif %}
                         {% if example.explanation %}
                             <div class="ev-analysis"><strong>Analysis:</strong> {{ example.explanation }}</div>
+                        {% endif %}
+                        {# What the claim was CHECKED against. Veracity and
+                           Divination are scored by searching for evidence
+                           (resolve.py), and the verdict carries the source URLs
+                           it was decided on. A reader can follow them and
+                           disagree with us, which is the only reason any of
+                           these numbers deserve to be believed.
+
+                           `example.resolved` — not the presence of a verdict —
+                           is what says whether the score is checked. An
+                           `uncheckable` or `not_yet_due` row has real sources
+                           and no answer, so it is shown as a search that came
+                           back empty, next to a score that is still a guess. #}
+                        {% if example.verdict %}
+                            <div class="ev-verdict{{ '' if example.resolved else ' ev-verdict-open' }}">
+                                <span class="ev-vlabel">{{ example.verdict|verdict_label }}</span>
+                                {% if example.evidence_urls %}
+                                    <span class="ev-vagainst">against</span>
+                                    {# Hosts repeat on 58% of checked quotes — the
+                                       resolver often cites five RNZ articles. Five
+                                       chips reading "rnz.co.nz" look like a
+                                       rendering fault, so a repeated host is
+                                       numbered. The full URL stays in the href and
+                                       the tooltip. #}
+                                    {% set hosts = example.evidence_urls|map('hostname')|list %}
+                                    <ul class="ev-sources">
+                                        {% for u in example.evidence_urls %}
+                                        {% set h = u|hostname %}
+                                        <li><a href="{{ u }}" target="_blank" rel="noopener noreferrer"
+                                               title="{{ u }}">{{ h }}{% if hosts.count(h) > 1 %} <span class="ev-sn">{{ hosts[:loop.index]|select('equalto', h)|list|length }}</span>{% endif %}</a></li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
                         {% endif %}
                         {% if example.source_url and example.source_url|trim != '' %}
                             <a class="ev-source" href="{{ example.source_url }}" target="_blank" rel="noopener noreferrer">Read the source →</a>
