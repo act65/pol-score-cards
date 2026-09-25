@@ -106,8 +106,35 @@
                         {% if example.context %}
                             <div class="ev-context">{{ example.context }}</div>
                         {% endif %}
-                        {% if example.explanation %}
-                            <div class="ev-analysis"><strong>Analysis:</strong> {{ example.explanation }}</div>
+                        {# Three different things have been called "Analysis"
+                           on this page, and only one of them was ever analysis.
+
+                           A CHECKED claim has the resolver's own finding: it
+                           went and looked, so its reasoning carries figures,
+                           dates, named sources and the disconfirming cases it
+                           ruled out. That beats the extractor's text outright
+                           and is what gets shown.
+
+                           An UNCHECKED search-tier claim (resolved false) has
+                           only the extractor's description of what is being
+                           asserted and what would settle it. Calling that
+                           "Analysis" dressed a guess up as a verdict, so it is
+                           labelled as what it is.
+
+                           A text-tier attribute (Civility, Rigor, Specificity,
+                           Focus) needs no source: the statement is the
+                           evidence, and the extractor's reading of it IS the
+                           analysis. #}
+                        {% if example.verdict_reasoning %}
+                            {% set lead, rest = example.verdict_reasoning|split_finding %}
+                            <div class="ev-analysis ev-finding">
+                                <strong>Finding:</strong> {{ lead }}{% if rest %}<details class="ev-more">
+                                    <summary>the rest of the check</summary>{{ rest }}</details>{% endif %}
+                            </div>
+                        {% elif example.explanation %}
+                            <div class="ev-analysis">
+                                <strong>{{ 'The claim:' if not example.resolved else 'Analysis:' }}</strong>
+                                {{ example.explanation }}</div>
                         {% endif %}
                         {# What the claim was CHECKED against. Veracity and
                            Divination are scored by searching for evidence

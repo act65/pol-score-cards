@@ -185,6 +185,22 @@ def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, date
                 if verdict:
                     ex_row["verdict"] = verdict
                     ex_row["evidence_urls"] = sources or []
+                    # The resolver's OWN analysis, which is a different thing
+                    # from the extractor's `explanation` above and strictly
+                    # better where it exists. The extractor never checked
+                    # anything: for a search-tier claim its explanation restates
+                    # what is being asserted and what would settle it (median
+                    # 167 chars). The resolver went and looked, and its reasoning
+                    # carries figures, dates, named sources and the
+                    # disconfirming cases it ruled out (median 1,027). Showing
+                    # the first where the second exists was labelling a
+                    # description of the claim as "Analysis".
+                    #
+                    # Kept in its own field rather than overwriting
+                    # `explanation`: they answer different questions, and the
+                    # extractor's is still what the text-tier attributes show.
+                    if hit.get("reasoning"):
+                        ex_row["verdict_reasoning"] = hit["reasoning"]
                 examples[(mid, attr)].append(ex_row)
 
 
