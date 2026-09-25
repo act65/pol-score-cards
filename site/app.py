@@ -48,6 +48,35 @@ def _verdict_label(verdict):
     return _VERDICT_LABEL.get(verdict, verdict.replace("_", " "))
 
 
+# The resolver's reasoning runs to a median of 1,027 characters against the
+# extractor's 167, and a page can carry sixteen of them. All of it is worth
+# reading and none of it should be the first thing on the page, so the lead is
+# shown and the working is one click away in a <details> — no JS, and it still
+# prints and still finds on Ctrl-F when collapsed in current browsers.
+_FINDING_LEAD = 240
+
+
+@app.template_filter("split_finding")
+def _split_finding(text, n=_FINDING_LEAD):
+    """(lead, rest) at a word boundary, and lead + rest is always the original.
+
+    Returned as one pair rather than two filters so the two halves cannot drift
+    apart and silently drop or duplicate a clause between them.
+    """
+    text = (text or "").strip()
+    if len(text) <= n:
+        return text, ""
+    cut = text.rfind(" ", 0, n)
+    if cut <= 0:
+        # No word boundary before the limit. Splitting anyway would break a word
+        # across two elements and render it with a space through the middle, so
+        # take the next boundary instead, or give up and show the whole thing.
+        cut = text.find(" ", n)
+        if cut == -1:
+            return text, ""
+    return text[:cut], text[cut + 1:]
+
+
 @app.template_filter("hostname")
 def _hostname(url):
     """The bare host of a source URL — "stats.govt.nz", not 180 characters of it.

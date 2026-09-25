@@ -741,3 +741,22 @@ a.dl-btn:hover { border-color: #3b82f6; background: #f0f6ff; color: #1e40af; }
 /* Index on a repeated host, so five RNZ articles read as five, not as one
    rendered five times. */
 .ev-sn { font-variant-numeric: tabular-nums; opacity: 0.7; }
+
+/* The resolver's finding: its own analysis, from having actually looked. Median
+   1,027 characters against the extractor's 167, so the lead shows and the
+   working sits behind a <details> — no JS, still prints, still Ctrl-F-able. */
+.ev-finding { border-left: 3px solid #3f7d5c; padding-left: 10px; }
+.ev-finding strong { color: #2c5c43; }
+.ev-more { display: inline; }
+.ev-more > summary {
+    display: inline;
+    cursor: pointer;
+    margin-left: 4px;
+    color: #2c5c43;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    font-size: 0.92em;
+}
+.ev-more > summary:hover { text-decoration-style: solid; }
+.ev-more > summary::marker, .ev-more > summary::-webkit-details-marker { content: ""; }
+.ev-more[open] > summary { display: none; }

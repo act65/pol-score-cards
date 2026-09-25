@@ -9,6 +9,7 @@ about that not happening again silently.
 
 import collections
 import re
+from html import unescape
 
 import app
 import data_access_jsonl
@@ -137,3 +138,106 @@ def test_hostname_shortens_without_losing_the_link():
     assert app._hostname("https://en.wikipedia.org/wiki/X") == "en.wikipedia.org"
     # Never empty: an unparseable source still has to render as something.
     assert app._hostname("nonsense") == "nonsense"
+
+
+# --- Whose analysis is on the page ------------------------------------------
+# Three different texts have been labelled "Analysis" here and only one of them
+# ever was. A checked claim has the resolver's finding, from having actually
+# looked; an unchecked search-tier claim has only the extractor's description of
+# what is being asserted; a text-tier attribute has the extractor's reading of
+# the statement, which needs no source and IS the analysis.
+
+def _pairs_with_findings():
+    return [(pid, attr)
+            for (pid, attr), exs in data_access_jsonl._EXAMPLES_BY_PAIR.items()
+            if any(e.get("verdict_reasoning") for e in exs)]
+
+
+def test_the_dataset_carries_the_resolvers_own_reasoning():
+    assert _pairs_with_findings(), "no published example carries verdict_reasoning"
+
+
+def test_a_checked_quote_shows_the_finding_not_the_guess():
+    """The resolver's reasoning replaces the extractor's, and the extractor's
+    description must not also be printed beside it."""
+    c = app.app.test_client()
+    pid, attr = sorted(_pairs_with_findings())[0]
+    html = c.get(f"/attribute/{pid}/{attr}").get_data(as_text=True)
+    # Resolver reasoning is full of apostrophes and quotation marks, which the
+    # template escapes; compare prose against the unescaped page.
+    text = unescape(html)
+    checked = [e for e in data_access_jsonl.get_examples(pid, attr)
+               if e.get("verdict_reasoning")]
+    assert html.count('class="ev-analysis ev-finding"') == len(checked)
+    for e in checked:
+        lead, _rest = app._split_finding(e["verdict_reasoning"])
+        assert lead[:80] in text, "the finding's opening is not on the page"
+        # The guessed description of the same quote must be gone.
+        if e.get("explanation"):
+            assert e["explanation"] not in text
+
+
+def test_an_unchecked_search_claim_is_not_labelled_analysis():
+    """It is a description of what was asserted, not a verdict on it. Calling it
+    "Analysis" is what made a guess read like a check."""
+    c = app.app.test_client()
+    pid, attr = sorted(_pairs_with_findings())[0]
+    html = c.get(f"/attribute/{pid}/{attr}").get_data(as_text=True)
+    unchecked = [e for e in data_access_jsonl.get_examples(pid, attr)
+                 if not e.get("resolved") and e.get("explanation")]
+    assert unchecked, "no unchecked search-tier quote on this page to check"
+    assert html.count("The claim:") == len(unchecked)
+    assert "Analysis:" not in html
+
+
+def test_a_text_tier_attribute_still_says_analysis():
+    """Civility/Rigor/Specificity/Focus need no source: the statement is the
+    evidence. Relabelling those would be a regression, not a fix."""
+    c = app.app.test_client()
+    pid, attr = next(((p, a) for (p, a), exs
+                      in data_access_jsonl._EXAMPLES_BY_PAIR.items()
+                      if a == "Civility" and len(exs) > 5), (None, None))
+    assert pid, "no Civility page with evidence"
+    html = c.get(f"/attribute/{pid}/{attr}").get_data(as_text=True)
+    assert "Analysis:" in html
+    assert "The claim:" not in html
+    assert "ev-finding" not in html
+
+
+def test_the_long_working_is_behind_a_disclosure_not_dumped_inline():
+    """Median finding is ~1,000 characters and a page can hold sixteen."""
+    c = app.app.test_client()
+    pid, attr = max(_pairs_with_findings(),
+                    key=lambda k: sum(1 for e in data_access_jsonl.get_examples(*k)
+                                      if e.get("verdict_reasoning")))
+    html = c.get(f"/attribute/{pid}/{attr}").get_data(as_text=True)
+    long_ones = [e for e in data_access_jsonl.get_examples(pid, attr)
+                 if e.get("verdict_reasoning")
+                 and app._split_finding(e["verdict_reasoning"])[1]]
+    assert html.count('class="ev-more"') == len(long_ones)
+
+
+def test_splitting_a_finding_never_loses_or_duplicates_a_word():
+    """lead + " " + rest must reconstruct the original exactly, for every
+    finding in the dataset — a split that drops a clause would quietly change
+    what we are claiming a source says."""
+    seen = 0
+    for exs in data_access_jsonl._EXAMPLES_BY_PAIR.values():
+        for e in exs:
+            r = e.get("verdict_reasoning")
+            if not r:
+                continue
+            seen += 1
+            lead, rest = app._split_finding(r)
+            assert (lead if not rest else f"{lead} {rest}") == r.strip()
+    assert seen, "no findings to check"
+
+
+def test_splitting_never_breaks_a_word_in_half():
+    """No space inside the limit used to cut mid-word, rendering the word with a
+    space through the middle across the two elements."""
+    lead, rest = app._split_finding("x" * 300)
+    assert rest == "" and lead == "x" * 300
+    lead, rest = app._split_finding("word word word " + "y" * 400)
+    assert lead == "word word word" and rest == "y" * 400
+    assert app._split_finding("") == ("", "")
