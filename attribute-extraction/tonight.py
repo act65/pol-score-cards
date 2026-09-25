@@ -99,14 +99,26 @@ TURN_HOURS = 1.0
 #
 # `questions` dropped 2026-09-25. It scores Forthrightness over Q/A pairs, and
 # Forthrightness is WITHHELD (attributes.WITHHELD): the pairing is broken, and
-# even repaired it only ever reaches ministers. Every turn spent on it is a
-# turn not spent on the 248 windows still outstanding. Re-add by name
+# even repaired it only ever reaches ministers. Re-add by name
 # (`--stages windows,questions`) once parse_questions.py is fixed.
+#
+# `windows` dropped 2026-09-25: the 54th term is COMPLETE at 5,548/5,548 and
+# the stage now exits EX_DONE in seconds. Leaving it in cost nothing once the
+# exit code was fixed, but it is not work any more. Re-add it when the
+# June-to-election Hansard is scraped and there are new sitting days to score.
+#
+# `resolve_divination` is the night's work now: 1,771 of 1,881 divination
+# claims are still published from `prior_score` — the model's unaided guess at
+# whether a prediction came true. That is the one attribute least able to stand
+# on a hunch, and the resolver returns source URLs a reader can click. Veracity
+# is the same job at 25,747 pending, roughly fourteen times the size, so it
+# waits until divination is finished rather than sharing the rotation and
+# leaving both half-done.
 #
 # Both entry points read this one list. They used to differ — `run` carried a
 # two-stage PLAN from the era when `windows` owned the whole night — and on
 # 2026-09-06 that silently started a night with no window extraction in it.
-NIGHTLY_PLAN = ("windows",)
+NIGHTLY_PLAN = ("resolve_divination",)
 
 
 def _next(hhmm: str, after: dt.datetime | None = None) -> dt.datetime:

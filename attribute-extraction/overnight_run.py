@@ -244,9 +244,10 @@ def _pass(stage: str, timeout_s: float, model: str, backend: str) -> int:
                "--out", QA_SCORES, "--workers", WORKERS,
                "--model", model, "--backend", backend]
     elif stage in ("resolve_divination", "resolve_veracity"):
-        # Search-backed resolution. Divination first: 110 pending against
-        # veracity's 1,109, and it is the attribute least able to stand on a
-        # guess — "did it come true" has an answer in the world.
+        # Search-backed resolution. Divination first: 1,771 pending against
+        # veracity's 25,747 (2026-09-25, full term), and it is the attribute
+        # least able to stand on a guess — "did it come true" has an answer in
+        # the world. Each verdict carries the source URLs it was decided on.
         attr = stage.split("_", 1)[1]
         cmd = [PY, "resolve.py", "run", "--scores", SCORES,
                "--attrs", attr, "--workers", WORKERS, "--model", model]

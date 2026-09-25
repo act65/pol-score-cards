@@ -1,7 +1,13 @@
 [Unit]
-# Nightly v3.0 extraction for pol-score-cards. The scheduler sleeps until
-# 23:00, works the rotation until 06:00, then sleeps again. It spends NO
-# subscription quota outside that window.
+# Nightly v3.0 work for pol-score-cards. The scheduler sleeps until 23:00,
+# works the rotation until 06:00, then sleeps again. It spends NO subscription
+# quota outside that window.
+#
+# The rotation is NIGHTLY_PLAN in tonight.py, not a flag here. As of 2026-09-25
+# that is `resolve_divination` — window extraction is finished (5,548/5,548) and
+# the remaining work is searching for evidence on the 1,771 divination claims
+# still published from the model's unaided guess. ~591 calls at 3 items each.
+# It exits 0 of its own accord when the queue is empty.
 #
 # This unit exists because the machine crashed twice (2026-09-04, 2026-09-08)
 # and the run only came back when someone noticed. Two nights were lost the
@@ -10,7 +16,7 @@
 # Remove with:
 #   systemctl --user disable --now nz-scorecards-nightly
 #   rm ~/.config/systemd/user/nz-scorecards-nightly.service
-Description=NZ scorecards nightly extraction (23:00-06:00)
+Description=NZ scorecards nightly run (23:00-06:00) — resolving divination claims
 After=network-online.target
 
 [Service]
