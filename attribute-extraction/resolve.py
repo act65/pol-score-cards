@@ -198,8 +198,9 @@ def run(scores: str = "hansard_scores_v3.jsonl", out: str = DEFAULT_OUT,
     """Resolve pending veracity/divination items against searched sources.
 
     `--attrs divination` runs one attribute at a time. Divination is the one to
-    resolve first: it is the smaller set by an order of magnitude (110 pending
-    against 1,109), and it is the attribute least able to survive on a guess —
+    resolve first: it is the smaller set by an order of magnitude (1,771 pending
+    against veracity's 25,747 over the full term, as at 2026-09-25), and it is
+    the attribute least able to survive on a guess —
     "did it come true" has an answer in the world, and a model's unaided hunch
     about it carries no information the reader could check.
     """
