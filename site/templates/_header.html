@@ -9,6 +9,7 @@
         <a href="{{ url_for('party') }}"{{ ' class=on'|safe if nav_active == 'parties' }}>Parties</a>
         <a href="{{ url_for('rules') }}"{{ ' class=on'|safe if nav_active == 'game' }}>Game</a>
         <a href="{{ url_for('data') }}"{{ ' class=on'|safe if nav_active == 'data' }}>Data</a>
+        <a href="{{ url_for('notes') }}"{{ ' class=on'|safe if nav_active == 'notes' }}>Notes</a>
         <a href="{{ url_for('about') }}"{{ ' class=on'|safe if nav_active == 'about' }}>About</a>
     </nav>
 </header>

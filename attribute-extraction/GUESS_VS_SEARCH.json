@@ -1,20 +1,20 @@
 {
-  "verdicts": 389,
-  "paired": 312,
+  "verdicts": 878,
+  "paired": 680,
   "verdict_counts": {
     "true": 170,
-    "wrong": 12,
+    "wrong": 89,
     "partly_true": 82,
-    "uncheckable": 9,
-    "partly_correct": 8,
-    "not_yet_due": 68,
-    "correct": 24,
+    "uncheckable": 21,
+    "partly_correct": 73,
+    "not_yet_due": 177,
+    "correct": 250,
     "false": 16
   },
-  "unscored_share": 0.1979,
-  "pearson_r": 0.6376,
-  "mean_abs_gap": 0.2202,
-  "agree_within_025": 0.6891,
-  "disagree_05_plus": 19,
-  "cited_share": 1.0
+  "unscored_share": 0.2255,
+  "pearson_r": 0.7156,
+  "mean_abs_gap": 0.2199,
+  "agree_within_025": 0.6926,
+  "disagree_05_plus": 55,
+  "cited_share": 0.9989
 }
