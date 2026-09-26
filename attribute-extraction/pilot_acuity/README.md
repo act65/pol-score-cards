@@ -91,11 +91,20 @@ rubric is in the system prompt.
 
 ## Known defects
 
-1. **Prompt compliance.** 101 rows carry `responding_to: "nothing: ..."`, which
-   the prompt says is 0.0 by definition, and they average **15**. The model is
-   distinguishing "engages nothing" from "barely glances". Defensible, but it
-   disagrees with the contract; tighten the prompt or relax the rule before a
-   full run.
+1. ~~**Prompt compliance.**~~ FIXED 2026-09-26, in the prompt rather than the
+   model. 101 rows carry `responding_to: "nothing: ..."` and averaged 15 against
+   a prompt that said 0.0 by definition — but every one of the 101 fell between
+   0.0 and 0.3, with none above. The model had been applying a consistent BAND
+   all along and the prompt described it as a point, so the prompt was the thing
+   that was wrong. It now defines 0.0-0.3 for "engages no part of the argument
+   but is at least on the subject", reserves 0.0 for a speech that could have
+   been delivered in a different debate on a different day, and states that an
+   unpointable statement is never a 0.5 — a glance that engages nothing is not a
+   partial engagement, it is prepared material that happens to be on topic.
+
+   The pilot data therefore remains valid: the change codifies the behaviour
+   that produced it rather than altering it. `analyse.py` now checks the band
+   and reports PASS/FAIL.
 2. **The standard overlap audit under-reports.** Acuity selects statements the
    other four mostly do not, so co-scored counts sit at 19–36 and
    `attribute_overlap.py` will print blanks. MP-level correlation has to stand in.
