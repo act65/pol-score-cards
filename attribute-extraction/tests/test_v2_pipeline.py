@@ -163,3 +163,70 @@ def test_two_agreeing_statements_are_not_high_confidence():
     adj = adjust_scores({**population, ("lucky", "rigor"): [0.6, 0.6]})
 
     assert adj[("lucky", "rigor")].confidence != "high"
+
+
+# --- Confidence must know how much of the score is actually this MP ---------
+# post_var = between_var * (1 - shrink), so as an MP's evidence gets noisier the
+# posterior collapses onto the PRIOR and the interval narrows toward the spread
+# of the House. The interval is right; calling it "high confidence" was not.
+#
+# Divination, 2026-09-26: mean shrink 0.09 — every card 91% prior, a 9-point
+# spread across 129 MPs — and 70 of them were labelled high confidence.
+
+def _prior_dominated_population(n_mps=130, rotations=True):
+    """The pathological limit, built deterministically rather than sampled.
+
+    Every observation is 0, 0.5 or 1 — a coin flip per statement, which is what a
+    resolved prediction is — and every MP gets the SAME multiset, so the spread of
+    per-MP means is zero and between_var falls to its floor. That is the regime
+    Divination is actually in: enormous within-MP noise, nothing between MPs, nine
+    observations each.
+
+    Sampling this instead made the test a coin flip itself: whether between_var
+    floored depended on the seed, so the defect appeared for 0 or for all 130
+    cards depending on which one was picked.
+    """
+    base = [0.0, 0.0, 0.0, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0]
+    return {(f"mp{i}", "divination"):
+            (base[i % len(base):] + base[:i % len(base)]) if rotations else list(base)
+            for i in range(n_mps)}
+
+
+def test_a_prior_dominated_score_is_never_high_confidence():
+    adj = adjust_scores(_prior_dominated_population())
+    prior_dominated = [a for a in adj.values() if a.shrink < 0.5]
+    assert prior_dominated, "this population should shrink hard; test is not set up"
+    assert all(a.confidence != "high" for a in prior_dominated)
+
+
+def test_a_narrow_interval_alone_does_not_buy_high_confidence():
+    """The exact defect: tight ci95, plenty of n, and the number is still the
+    prior. Under the old rule every one of these was "high confidence"."""
+    adj = adjust_scores(_prior_dominated_population())
+    cards = list(adj.values())
+    assert all(a.n >= 8 for a in cards)
+    assert max(a.ci95 for a in cards) <= 0.05, "interval is not tight; test is not set up"
+    assert max(a.shrink for a in cards) < 0.25, "not prior-dominated; test is not set up"
+    assert all(a.confidence == "low" for a in cards)
+
+
+def test_an_overwhelmingly_prior_score_is_low_whatever_the_interval():
+    from bias_adjust import _confidence
+    # Would have been "high" on interval and count alone.
+    assert _confidence(ci95=0.01, n=50, shrink=0.10) == "low"
+    assert _confidence(ci95=0.01, n=50, shrink=0.24) == "low"
+
+
+def test_evidence_backed_scores_keep_their_confidence():
+    """The fix must be surgical. Civility/Rigor/Specificity/Focus shrink at
+    0.80-0.89, and demoting those would throw away real measurement."""
+    from bias_adjust import _confidence
+    assert _confidence(ci95=0.03, n=40, shrink=0.85) == "high"
+    assert _confidence(ci95=0.03, n=40, shrink=0.50) == "high"
+    assert _confidence(ci95=0.10, n=10, shrink=0.85) == "medium"
+
+
+def test_the_shrink_argument_defaults_to_trusting_the_data():
+    """Callers that predate the argument must not be silently demoted."""
+    from bias_adjust import _confidence
+    assert _confidence(0.03, 40) == "high"

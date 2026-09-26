@@ -183,11 +183,31 @@ def test_an_unchecked_search_claim_is_not_labelled_analysis():
     c = app.app.test_client()
     pid, attr = sorted(_pairs_with_findings())[0]
     html = c.get(f"/attribute/{pid}/{attr}").get_data(as_text=True)
-    unchecked = [e for e in data_access_jsonl.get_examples(pid, attr)
-                 if not e.get("resolved") and e.get("explanation")]
-    assert unchecked, "no unchecked search-tier quote on this page to check"
-    assert html.count("The claim:") == len(unchecked)
+    # "The claim:" is for a row the resolver has NOT reached. A pending row is
+    # also resolved=False, but the resolver did reach it and its reasoning
+    # explains why the claim cannot be settled yet — so that renders as
+    # "Finding:", next to the amber "searched — too early to tell" chip.
+    untouched = [e for e in data_access_jsonl.get_examples(pid, attr)
+                 if not e.get("resolved") and e.get("explanation")
+                 and not e.get("verdict_reasoning")]
+    assert untouched, "no unresolved search-tier quote on this page to check"
+    assert html.count("The claim:") == len(untouched)
     assert "Analysis:" not in html
+
+
+def test_a_pending_row_shows_the_resolvers_reasoning_not_the_guess():
+    """It has no score, but the resolver still explained why. That is worth more
+    than the extractor's description of the claim."""
+    for (pid, attr), exs in data_access_jsonl._EXAMPLES_BY_PAIR.items():
+        pend = [e for e in exs if e.get("pending") and e.get("verdict_reasoning")]
+        if not pend:
+            continue
+        html = app.app.test_client().get(
+            f"/attribute/{pid}/{attr}").get_data(as_text=True)
+        assert "ev-verdict-open" in html      # amber: searched, unsettled
+        assert "ev-finding" in html          # and its reasoning is shown
+        return
+    raise AssertionError("no pending row carries resolver reasoning")
 
 
 def test_a_text_tier_attribute_still_says_analysis():

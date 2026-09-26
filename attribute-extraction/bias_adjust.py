@@ -129,7 +129,8 @@ def adjust_scores(per_mp_attr):
             post_var = 1.0 / (1.0 / between_var + 1.0 / se2)
             ci95 = 1.96 * math.sqrt(post_var)
             out[(mid, attr)] = AdjustedScore(n, raw, adj, ci95,
-                                             _confidence(ci95, n), shrink)
+                                             _confidence(ci95, n, shrink),
+                                             shrink)
     return out
 
 
@@ -141,9 +142,37 @@ def adjust_scores(per_mp_attr):
 _CONF_HIGH, _CONF_MED = 0.05, 0.12      # half-width on the 0..1 scale
 _CONF_MIN_N = 8
 
+# ...and it reads off SHRINK too, because a narrow interval has two completely
+# different causes and only one of them is good news.
+#
+# post_var = 1/(1/between_var + 1/se2), which rearranges to between_var *
+# (1 - shrink). So as an MP's evidence gets noisier, shrink falls, the posterior
+# collapses onto the PRIOR, and ci95 tends to 1.96*sqrt(between_var) -- the
+# spread of the House, which for a tightly-bunched attribute is narrow. The
+# interval is correct as a posterior. As a label it was a lie: it said "we
+# measured this MP well" when it meant "we learned nothing from this MP, so this
+# is the House average, and the House average is itself narrow".
+#
+# Found 2026-09-26 on Divination: mean shrink 0.09, so every card was 91% prior
+# and 9% that MP, a 9-point spread across 129 MPs -- and 70 of them were labelled
+# HIGH confidence. Every other attribute shrinks at 0.80-0.89, which is why this
+# went unnoticed: the two readings only diverge when shrinkage is severe.
+#
+# Thresholds are on the share of the estimate that is the MP's OWN evidence:
+# below half, the number is more prior than MP and cannot be "high"; below a
+# quarter it is overwhelmingly the population mean and is "low" whatever the
+# interval says.
+_CONF_MIN_SHRINK = 0.50
+_CONF_FLOOR_SHRINK = 0.25
 
-def _confidence(ci95: float, n: int) -> str:
-    if ci95 <= _CONF_HIGH and n >= _CONF_MIN_N:
+
+def _confidence(ci95: float, n: int, shrink: float = 1.0) -> str:
+    """How much to trust one displayed score: interval, sample size AND how much
+    of the estimate came from this MP rather than from the prior."""
+    if shrink < _CONF_FLOOR_SHRINK:
+        # Mostly the House average wearing this MP's name.
+        return "low"
+    if ci95 <= _CONF_HIGH and n >= _CONF_MIN_N and shrink >= _CONF_MIN_SHRINK:
         return "high"
     if ci95 <= _CONF_MED and n >= 3:
         return "medium"
