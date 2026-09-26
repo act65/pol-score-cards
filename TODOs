@@ -269,10 +269,39 @@ Attribute-specific methodologies (food for thought):
 ================================================================================
 ## C) The site
 ================================================================================
-- [ ] Single-politician page: one MP, all nine attributes, all their evidence,
-      coverage/confidence, trend over time.
+- [x] Single-politician page: one MP, the six attributes, a radar profile, a
+      sample of evidence per attribute with "more" links, and an absolute /
+      relative-to-House toggle.  DONE 2026-09.
+- [ ] Trend over time on the MP page — the one part of that item still open.
+      We have the sitting date on every statement; nothing plots it yet.
 - [ ] Potential legal issues if we are publicly calling XXX a liar? (mitigated by
-      the claims-ledger "evidenced verdict" approach above.)
+      the claims-ledger "evidenced verdict" approach above, and by DATA_LICENCE.md,
+      which states what a score is and is not.)
+
+--- Before the election (added 2026-09-26) ---
+- [ ] **Analytics.** Nothing tells us the site is being used, or that it is down.
+      Plausible or Umami (both cookie-free, so no consent banner) plus a free
+      uptime pinger. ~20 min. If a story runs and the site breaks, we currently
+      find out from a friend.
+- [ ] **Say when the data ends.** Coverage stops at 2026-05-28 and no page says
+      so, so a visitor in October cannot tell they are reading a four-month-old
+      snapshot. One line in the footer, read from the data rather than hardcoded
+      so it cannot go stale. (Deferred deliberately — the extraction that moves
+      this date is still running.)
+- [ ] **Accessibility pass.** The cards lean on colour and inline SVG. Needs:
+      alt text on portraits, contrast check on the score badges and the
+      confidence chips, keyboard operation of the sort/filter controls, and a
+      sensible reading order for the radar figures. A public-interest civic site
+      getting this wrong is an easy and fair criticism.
+- [ ] **Host the raw Hansard corpus.** /download/hansard was a 404 on the live
+      site — the 44 MB corpus is gitignored so it is absent from every deploy.
+      The button is gone for now; the file belongs on HuggingFace
+      (`data/publish_corpus.py`), linked back from /data.
+- [ ] **Decide the title.** "Point of Order" is the front-runner, with a
+      subtitle still open. If it changes, it touches: templates/_header.html,
+      _head.html (page_title + og:site_name), make_og.py (TITLE/SUBTITLE, then
+      re-run), the about page opening, and DATA_LICENCE.md's suggested
+      attribution.
 - [ ] "Classes" for politicians by primary focus/style (The Lawmaker, The Orator,
       The Negotiator, …).
 
