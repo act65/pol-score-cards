@@ -306,6 +306,42 @@ Attribute-specific methodologies (food for thought):
       The Negotiator, …).
 
 ================================================================================
+## C2) Development notes (site/notes/*.md, published at /notes)
+================================================================================
+Each is a post, not a section of one article. Written up when there is something
+to say; the numbers for all of these already exist in the repo, so none of them
+needs a new extraction run.
+
+- [ ] **Ministers then vs ministers now.** The Q/A corpus starts 2023-07-20, so
+      it straddles the election and 16 MPs carry Forthrightness scores from when
+      THEY were the ministers being asked. Labour's ministers 66, National's 67.
+      Same people in and out of office: does conduct change with a portfolio?
+      Nothing else in the dataset supports this comparison.
+- [ ] **Veracity is the quiet problem.** 17-point spread, true between-MP sd 3.7
+      — MPs barely differ. It survives only because n=165. The general lesson and
+      the point of the post: the failure mode is never a small signal, it is a
+      small signal relative to the evidence. Divination and Veracity have
+      similar-sized signals and only one of them fails.
+- [ ] **Does searching beat guessing?** At 878 verdicts: r=0.72, mean absolute
+      gap 0.22, and 55 cases where the model's unaided guess and the searched
+      verdict differ by 50+ points. Those 55 are the whole argument for the
+      resolver existing. Regenerate GUESS_VS_SEARCH.md first (it is free).
+- [ ] **2.8 personal attacks per sitting day.** 497 statements at or below 20 on
+      Civility over 175 sitting days. Pair it with what Civility's 51-point
+      spread actually looks like across the House — it is the widest of the six
+      after Focus, i.e. the attribute that most distinguishes MPs.
+- [ ] **Why the card is a geometric mean.** What it does to a lopsided MP versus
+      an even one, and why the arithmetic mean is drawn beside it on the radar.
+- [ ] **The quote gate.** 100% verbatim on 800 sampled of 82,602, and why a
+      hard in-process gate (drop anything not verbatim, spliced, or not on a
+      sentence boundary) beats auditing afterwards.
+- [ ] **What one term of data cannot separate.** Government vs opposition is the
+      same partition as left vs right in this Parliament (the opposition IS
+      Labour+Green+TPM), so the 15.7-point Focus gap has two readings and one
+      term cannot choose between them. Needed before any "it isn't left vs
+      right" claim goes out.
+
+================================================================================
 ## D) The game
 ================================================================================
 - [ ] Online demo of the game (currently a local Flask prototype).
