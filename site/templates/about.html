@@ -86,14 +86,14 @@
         <p>Together they answer one question: <em>when this politician talks, should I listen?</em></p>
 
         <h2>How the cards work</h2>
-        <p>Each stat is scored 0–100. A card's <b>rarity</b> (shown by its <b>border colour</b>:
-           legendary, epic, rare, uncommon, common) is the politician's overall rank by the
-           <b>geometric mean</b> of their {{ attributes|length }} attributes — so a single weak attribute drags the whole
-           card down; you can't be "legendary" by being lopsided. The rarest tiers are deliberately
-           the smallest.</p>
+        <p>Each stat is scored 0–100. A card's <b>overall</b> score is the
+           <b>geometric mean</b> of its {{ attributes|length }} attributes, which is why a single weak
+           attribute drags the whole card down — you cannot rank well by being lopsided. It is
+           printed in the banner; nothing is hidden in the card's colours, which carry the party
+           and nothing else.</p>
         <p>The front page features politicians with enough data to be meaningful (at least
-           {{ min_attributes }} of the {{ attributes|length }} attributes scored). You can re-order the cards by overall
-           rarity or by any single attribute, sort high-to-low or low-to-high, and filter by party or
+           {{ min_attributes }} of the {{ attributes|length }} attributes scored). You can re-order the cards by the overall
+           score or by any single attribute, sort high-to-low or low-to-high, and filter by party or
            by role. There is also a <a href="{{ url_for('party') }}">scorecard per party</a>, aggregated over its MPs
            and shown against the House average.</p>
 

@@ -58,7 +58,7 @@ PARTY_URLS = {"National": "https://www.national.org.nz/news",
 
 def _geo_mean(row, attr_names):
     """Overall score for one MP: geometric mean of their attribute scores (a single
-    weak attribute drags it down — same measure the card grid ranks rarity by)."""
+    weak attribute drags it down — same measure the card grid ranks by)."""
     vals = [max(float(v), 1.0) for k, v in row.items()
             if k in attr_names and isinstance(v, (int, float))]
     if not vals:
