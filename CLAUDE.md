@@ -36,18 +36,24 @@ data/  ──scrape──▶  raw articles (JSON)  ──▶  attribute-extracti
 ### `site/` — public Flask website
 - `app.py` serves politician cards, per-attribute detail/example pages, a `/party` page (one aggregated scorecard per party) and a `/data` dataset-overview page (size, per-party, per-politician, per-source stats + download placeholders).
 - **`/party`** aggregates over the same featured MPs the grid shows. Each attribute is the plain mean of the party's MPs on it; the party's **overall** is the geometric mean of the six numbers printed on its own card (not the average of members' overalls), so the card can be checked against itself. The colour block is a dot plot — one dot per MP at that MP's own overall — which is what the per-party ridgeline on `/data` used to show. A party needs `MIN_PARTY_MPS` (3) featured MPs or it is named under the table instead of ranked: a one-MP "party" is one MP's card with a party name on it. Unverified and thin-coverage marks propagate to the aggregate — averaging a `prior_score` over a caucus does not resolve it.
-- The **overall score** (the geometric mean the cards are ranked by) is shown as a badge in each card's banner, ringed in the rarity colour. It used to be encoded only in the border colour and was nowhere readable.
-- Two interchangeable data-access backends: `data_access_jsonl.py` (active, reads `static/*.jsonl`) and `data_access_sqlite.py` (stubbed/incomplete). `app.py` imports the jsonl one.
+- The **overall score** (the geometric mean the cards are ranked by) is printed as a badge in each card's banner. The card's outer border is a **fixed neutral** and carries no meaning: it encoded a five-tier rarity, then an overall-score colour ramp, and both duplicated a number the card already prints at the cost of the only other colour on a deliberately monochrome design. Nothing in `site/` should reintroduce a `rarity` concept.
+- One data-access backend: `data_access_jsonl.py`, which loads all four JSONL files at import and indexes them by id and by (politician, attribute). A `data_access_sqlite.py` stub existed and was never finished; it was removed once the site went static, which moots it.
+- **The site is published as static HTML**, not run as a server. `site/freeze.py` walks every route with Flask's test client and writes `site/_site/` (933 pages, ~240 MB, ~4s); `.github/workflows/pages.yml` builds that in CI and deploys it to GitHub Pages as an artifact, so **nothing generated is committed**. A route that 500s fails the build. Run it locally with `cd site && python freeze.py`, or `SITE_BASE=/pol-score-cards python freeze.py` to reproduce CI exactly. See `DEPLOY.md`.
+  - Why: the Flask process holds the 54 MB example set in RAM — **187 MB RSS per worker**, two workers, against Render's 512 MB free tier, and it grows with every extraction pass.
+  - Consequence for templates: a project page is served from `/<repo>/`, so **link with `url_for`, never a literal `href="/…"`** — the prefix arrives via `SCRIPT_NAME` and a literal link 404s.
+  - `templates/_head.html` is the one `<head>` (title, description, canonical, Open Graph, favicon); a page sets `page_title` and `page_desc` before including it. `templates/_header.html` is the one nav.
+  - The `.jsonl` files under `static/` are **build inputs** that no page fetches, so `freeze.py` keeps them out of the published tree; the copies offered on `/data` are published under `/download/`. `site/make_og.py` regenerates the share image and favicon.
 - Display data lives in `static/`: `politicians.jsonl`, `attributes.jsonl`, `scores.jsonl`, `examples.jsonl`. The `/data` page reads a precomputed `static/dataset_stats.json` (regenerate with `python gen_data_stats.py`).
 - MP portraits: `data/scrape_portraits.py` fetches Commons-licensed Wikipedia infobox photos into `static/img/portraits/orig/<id>.jpg`, then `data/stylize_portraits.py` face-frames (whole face centred, no chin clipped), cuts the background with rembg (U²-Net) to clean white, and renders a **pure-greyscale** stylization to `static/img/portraits/<id>.jpg` (the served image; originals kept so you can re-stylize without re-scraping; masks cached in `masks/`). `app.py` resolves portraits by convention (no `image` field needed in the dataset); cards fall back to an initials monogram.
   - Current default style **`lineart`** — an ML pencil-style line drawing (Informative Drawings, via `controlnet_aux` LineartDetector) that preserves likeness far better than tonal filters. Other styles: `lineart_coarse` (fewer/bolder ML lines), and the classical `posterize|vector|posterline|sketch|woodcut|wireframe|pencil|notan|ink`. Switch with `--style <name>`. `lineart` runs the model per-image (~2 min for 133 on CPU); the classical styles are ~15s.
   - The stylize pipeline runs in an **isolated venv** `data/.venv-portraits` (gitignored) — rembg/torch/controlnet_aux need numpy≥2 etc. which conflict with the repo's other tools, so they're kept out of the global env. Recreate with `python -m venv data/.venv-portraits && data/.venv-portraits/bin/pip install -r data/requirements-portraits.txt`, then run `data/.venv-portraits/bin/python stylize_portraits.py --style <style>`. Model weights (rembg u2net, lineart) download to `~/.u2net` / the HF cache on first run.
-- Card design is the shared 5:7 minimal trading card in `shared/card.css` (rarity = outer border colour, pure-greyscale sketch portrait, no party tint); edit there and run `python shared/sync.py` to copy into `site/` and `game/`.
+- Card design is the shared 5:7 minimal trading card in `shared/card.css` (fixed neutral outer border, pure-greyscale sketch portrait, no party tint); edit there and run `python shared/sync.py` to copy into `site/` and `game/`. The `--grade` custom property is still exposed for the game, which sets a per-card colour; the site leaves it alone.
 
 ### `game/` — Flask card game
 - A 1-player (human vs AI) browser card game. `game_logic.py` is the pure, dependency-light engine; `app.py` is the Flask layer exposing `/api/start_game` and `/api/submit_round_actions`, with the UI in `templates/index.html` + `static/script.js`.
 - `game_logic.py` is the core to read: dataclasses `GameConfig`, `Attributes`, `PoliticianCard`, `PlayerState`, `GameState`, and the `GameEngine`. Each attribute maps to a combat mechanic (e.g. Strength → HP & base damage, Rigor → attack multiplier, Veracity → defense multiplier, Divination → turn order). The full mapping is in `game/rules.md`.
 - `politicians.jsonl` is the card deck; `generate_fake_data.py` produces fake cards for it. The game does not yet consume real scores from `site/`.
+- **The engine implements the RETIRED v2.0 attribute set** (`strength`, `charisma`, `authenticity`) — charisma was cut at r=0.96 with Civility, the other two are deferred to v4. So the repo holds two different games: `site/templates/rules.html` (`/rules`) describes the published six and is canonical; `game/` is a frozen prototype. Do not rename the engine's fields in isolation — the port is engine + `rules.md` + a deck that is still fake data. See `game/README.md`.
 
 ## Common commands
 
@@ -55,12 +61,18 @@ Each app uses **relative paths** and must be run from its own directory.
 
 ```bash
 # Public site (reads site/static/*.jsonl)
-cd site && python app.py            # http://127.0.0.1:5000/
+cd site && python app.py            # dev server, http://127.0.0.1:5000/
+
+# ...but the site is PUBLISHED as static files, built by CI. Reproduce that:
+cd site && python freeze.py                              # -> site/_site/ (933 pages, ~4s)
+cd site && SITE_BASE=/pol-score-cards python freeze.py   # exactly as CI builds it
+cd site/_site && python -m http.server 8000              # check the built output
+cd site && python make_og.py        # regenerate the share image + favicon
 
 # Card game
 cd game && python app.py            # http://127.0.0.1:5000/
 
-# Game tests (the only test suite in the repo)
+# Game tests (`pytest` from the root runs every suite — see pytest.ini)
 cd game && pytest test_logic.py
 cd game && pytest test_logic.py::test_name        # single test
 cd game && python generate_fake_data.py           # regenerate the card deck
@@ -186,5 +198,7 @@ CLI tools (`extract.py`, `extract_all.py`, `evaluate.py`, `dataset_stats.py`, `s
 - **`extract.py` enforces a hard quote gate**: any example whose statement is not verbatim in the source window, is ellipsis-spliced, or does not begin and end on a sentence boundary is dropped before it reaches disk. Run-level rejection stats print at the end of every run.
 - v3.0 output goes to **new files** (`hansard_scores_v3.jsonl`, `forthrightness_scores_v3.jsonl`) — never append to the v2.0 scores, which used a different Civility scale and a retired attribute. `overnight_run.py` deliberately **does not publish**; the site is refreshed only after the evaluation pass.
 - `voted.nz` is **not** a usable vote source: personal (conscience) votes only, no party votes, no API. Party votes come from Hansard (already scraped) — see `data/VOTES.md`.
+- **`attribute-extraction/archive/`** holds superseded one-off scripts (the v1 bundler, the pre-systemd scheduler, the v2.0 publisher, two applied one-off repairs). Nothing imports them and no test covers them; they are kept because they document how the published output was produced. See its README before resurrecting one — two of them rebuild **retired v2.0 scores**, which are not comparable with what the site serves.
+- **`data/pol_data_utils/utils.py` is the legacy scraping-helper pair** (`get_soup`, `format_raw`), imported by three scrapers (`rnz`, `national`, `parliament`). `data/scrapers/utils.py` is the current one (`make_request`, `format_text`, plus date helpers) and is where new code goes. They are NOT interchangeable — the text normalisers differ, so swapping one for the other changes scraped bytes. Consolidating them means re-scraping, so it is a deliberate job, not a tidy-up.
 - `TODOs` (root) is the live backlog across all four subprojects.
 - The two Flask apps both default to port 5000 — run only one at a time, or change the port.
