@@ -1,3 +1,15 @@
+"""LEGACY scraping helpers — `get_soup` and `format_raw`.
+
+Imported by three scrapers only: `rnz.py`, `national.py`, `parliament.py`.
+New code uses `data/scrapers/utils.py` (`make_request`, `format_text`, plus the
+date helpers), which is the current implementation.
+
+These two are NOT drop-in equivalents of those two. `format_raw` and
+`format_text` normalise whitespace differently, so swapping one for the other
+changes the bytes that land in the corpus — which means a re-scrape and a
+re-extraction, not a refactor. Consolidating is a deliberate job; until then,
+do not add a fourth copy.
+"""
 import time
 import requests
 from bs4 import BeautifulSoup

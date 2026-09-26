@@ -243,10 +243,12 @@ changes behaviour; it is about being able to find things.
 - [ ] 🤖 **Consolidate the five extraction runners.** `extract_hansard.py`,
       `extract_pressers.py`, `extract_releases.py`, `extract_all.py` and
       `overnight_run.py` are variations on one loop. One runner, `--source`.
-- [ ] 🤖 **Archive superseded build scripts** — `build_site_data.py` (Jun 20,
-      superseded by `build_v2_dataset.py`), `clean_site_ids.py`,
-      `resume_extraction.py`, `benchmark_diarization.py`. Move to `archive/`
-      rather than delete; they document how the current output was produced.
+- [x] 🤖 **Archive superseded build scripts** — DONE 2026-09-26. Moved to
+      `attribute-extraction/archive/` with a README saying what superseded each:
+      `build_site_data.py`, `clean_site_ids.py`, `resume_extraction.py`,
+      `benchmark_diarization.py`, plus three more found by the same scan —
+      `publish_v2_dataset.py`, `start_at.py` (pre-systemd scheduler) and
+      `usage_report.py` (read the old usage-log format).
 - [ ] 🤖 **Generated reports into `reports/`** — `STATS_3-month.md`,
       `STATS_full-term.md`, `eval_report.json`, `eval_compare.json`,
       `bench_diar.json`, `ATTRIBUTE_OVERLAP.md`, `QUOTE_AUDIT.md`.
@@ -257,11 +259,25 @@ changes behaviour; it is about being able to find things.
       relative imports, or the `conftest.py` path shim already used in `tests/`.
       The clean answer is a `pyproject.toml` and a real package — a bigger
       change than the rest of this list, so it should be its own decision.
-- [ ] 🤖 **`site_data_full/` (40M) and `site_data_v2/`** are tracked build
-      outputs, regenerable by `build_v2_dataset.py`. Untrack them. Note this
-      will not shrink `.git`.
-- [ ] 🤖 **Fold `HANSARD_EXTRACTION_PLAN.md`** into `V3_PLAN.md` — it describes a
-      completed migration.
+- [x] 🤖 **`site_data_full/` (40M) and `site_data_v2/`** — DONE 2026-09-26.
+      `git rm --cached` + gitignored. As noted, `.git` is unchanged (still 453M,
+      most of it 28 revisions of a 62M `hansard_scores_v3.jsonl` — see the new
+      item below).
+- [x] 🤖 **`HANSARD_EXTRACTION_PLAN.md`** — DONE 2026-09-26. Moved to
+      `attribute-extraction/archive/` rather than folded into `V3_PLAN.md`:
+      merging a finished migration's detail into the live plan makes the live
+      plan harder to read, and the file is worth keeping intact as a record.
+- [ ] 🤖 **Stop committing `hansard_scores_v3.jsonl` (62M).** 28 revisions of it
+      are most of the 453M `.git`, and it is a build input, not source. Either
+      gitignore it and publish releases to a dataset host (`publish_corpus.py`
+      already has the shape), or git-lfs it. Not committing the 29th is free;
+      rewriting history to purge the existing blobs is a separate, disruptive
+      decision.
+- [ ] 🤖 **Retired v2.0 score files are still tracked** — `hansard_scores_full.jsonl`
+      (27M), `release_scores.jsonl` (9.3M), `presser_scores.jsonl` (2.2M),
+      `hansard_scores_3mo.jsonl` (2.9M). Not simply deletable: they are the
+      **defaults** of `build_v2_dataset.py --scores` and `attribute_overlap.py`
+      DEFAULT_SCORES, so the defaults have to move to v3 first.
 - [ ] 🧑 **`data/.venv-portraits` is 1.4G.** Gitignored and recreatable, but a
       ~2GB re-download. Your call; I have not touched it.
 

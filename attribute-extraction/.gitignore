@@ -14,3 +14,10 @@
 !QUOTE_AUDIT_v3.json
 !ATTRIBUTE_OVERLAP_v3.json
 !GUESS_VS_SEARCH.json
+
+# Tracked build outputs, regenerable by build_v2_dataset.py. Both are v2.0 —
+# a different Civility scale and a retired attribute — so nothing here is
+# comparable with what the site serves. Untracked 2026-09-26; still in history,
+# which this does NOT shrink.
+site_data_full/
+site_data_v2/
