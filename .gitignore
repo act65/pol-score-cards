@@ -185,3 +185,8 @@ attribute-extraction/usage_v3.jsonl
 attribute-extraction/site_data_v3/examples.jsonl
 !attribute-extraction/site_data_v3/README.md
 _site/
+
+# Acuity pilot output — an experiment's raw scores, regenerable, and not the
+# published instrument. The analysis and the prompt are tracked; the jsonl is not.
+attribute-extraction/pilot_acuity/*.jsonl
+attribute-extraction/pilot_acuity/*.log

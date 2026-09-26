@@ -1,0 +1,110 @@
+THE ONE QUESTION: Does this speech engage with what was actually just said?
+
+Acuity is new. It exists because the virtue Forthrightness measured — does the
+reply address what was put to you — is the most valuable thing in the set, and
+Forthrightness could only ever measure it for ministers. Only ministers answer
+oral questions. Of 133 MPs, 31 had a usable sample and all 31 were government.
+
+Debate is the same virtue in an act every MP performs. A chamber where members
+read pre-written statements in turn is not a debate; it is serial monologue with
+a seating plan. Acuity is the difference.
+
+YOU HAVE THE DEBATE IN FRONT OF YOU. The text you are given is a stretch of
+Hansard containing several speakers' turns, in the order they were delivered,
+each tagged with its speaker. For a statement by member X, the preceding turns by
+OTHER members are what X had available to respond to. Use them.
+
+ELIGIBLE only when ALL of these hold:
+1. At least one SUBSTANTIVE turn by a DIFFERENT member precedes this one in the
+   text you were given.
+2. That preceding turn made an argument, a claim, or a question — something with
+   content to engage.
+3. The speaker is contributing to the same debate, not moving to a new item.
+
+If the statement OPENS a debate, follows only ceremony or procedure, or the
+preceding turns are all by the same speaker, EMIT NOTHING. A first speaker cannot
+be measured on responsiveness and must not be penalised for going first. This
+exclusion is not a technicality; it is most of what keeps the instrument honest.
+
+SCORING
+- 1.0 — Takes up the specific argument just made and does something with it:
+  rebuts its reasoning, accepts part and disputes the rest, supplies the figure
+  it asked for, corrects a misstatement of fact in it, or draws out its
+  consequence. The speech would be DIFFERENT if the previous speaker had said
+  something else.
+- ~0.5 — Glances at what was said, then returns to prepared material. Names the
+  member or the topic and moves on without engaging the argument itself.
+- 0.0 — Entirely unresponsive. The speech would be word-for-word identical
+  whoever had spoken before, and whatever they had said.
+
+THE DECIDING TEST: if you deleted the preceding turn and substituted a different
+argument on the same topic, would this speech have to change? If yes, score high.
+If the speech is indifferent to what it follows, score low.
+
+CRITICAL — DISAGREEMENT IS HIGH ACUITY, NOT LOW. Engaging an argument in order to
+demolish it is the strongest possible evidence of having listened. Score a sharp,
+well-aimed rebuttal 1.0. Score polite agreement that engages nothing 0.2. This
+instrument rewards ATTENTION, not consensus, and an MP must never lose points for
+being combative about the substance.
+
+CRITICAL — DO NOT REWARD A MERE REFERENCE. "The member opposite is talking
+nonsense, and let me tell you what this government has delivered" mentions the
+previous speaker and engages nothing. That is 0.1, not 0.5. Repeating the
+opponent's words back, quoting them in order to pivot away, or naming them as a
+target are all unresponsive. What counts is engaging the CONTENT of their claim.
+
+CRITICAL — DO NOT PENALISE EITHER BENCH FOR ITS ROLE. A minister answering a
+critique and an opposition member attacking a bill are both responding. Ministers
+introduce bills and so are often the FIRST speaker — that makes those statements
+INELIGIBLE, never low-scoring. Government backbenchers who follow a minister with
+prepared praise ARE low-scoring, and so are opposition members who follow with
+prepared condemnation. The test is the same for everyone.
+
+THIS IS *NOT* ACUITY — do not let these move the score:
+- WHAT the statement is about → Focus. A speech can engage the previous
+  speaker's argument closely while being entirely about the other party's
+  record. **High Acuity, low Focus.** Keep them apart.
+- Whether the response REASONS well → Rigor. A rebuttal can be squarely aimed at
+  the argument just made and still be a strawman or a post hoc. That is HIGH
+  Acuity and LOW Rigor, and it is the most likely confusion. Score the
+  engagement, not the quality of the inference.
+- Whether the response is TRUE → Veracity.
+- Whether it is PRECISE → Specificity. "The member's figure is wrong" is
+  responsive and vague: high Acuity, low Specificity.
+- Whether it is POLITE → Civility. A personal insult aimed squarely at the
+  argument just made is high Acuity and low Civility.
+- Whether the member answered a QUESTION PUT TO THEM in question time →
+  Forthrightness. Acuity is about debate turns, not the oral question cycle.
+
+ALSO EMIT
+- `responding_to` — REQUIRED. A short verbatim fragment of the preceding turn
+  that this statement engages, and the name of the member who said it. If the
+  statement engages nothing, write "nothing: <member> spoke about X and this
+  statement does not take it up". This field is what makes a score auditable: a
+  reader must be able to see the thing being responded to, and if you cannot
+  point at it, the score is 0.0 by definition.
+
+WORKED BOUNDARY EXAMPLES:
+- Previous turn (Hon A): "The regulatory impact statement puts the cost at $40
+  million a year." → This turn (B): "The member quotes the $40 million, but that
+  is the gross figure; the RIS nets it against the consenting savings and arrives
+  at $12 million." → 1.0. Takes the specific number and does something with it.
+- Previous turn (A): "This bill will not reduce emissions." → B: "I'm glad the
+  member raised emissions, because the Climate Commission's advice is the
+  opposite, and I'll quote it." → 1.0.
+- Previous turn (A): a detailed critique of clause 5. → B: "This is a good bill
+  that delivers for New Zealanders, and I commend it to the House." → 0.0.
+  Identical whatever A had said. `responding_to`: "nothing: A argued clause 5
+  shifts costs to councils and this statement does not take it up."
+- Previous turn (A): "The waiting list has grown by 12,000." → B: "The member
+  opposite is the last person who should talk about waiting lists." → 0.2.
+  Engages the TOPIC and not the CLAIM; pivots to the speaker's record. (Civility
+  also scores this low; Acuity scores it low for a different reason, and both
+  are correct.)
+- Previous turn (A): "The member's own officials advised against this." → B:
+  "That advice was superseded in March, as the member knows perfectly well, and
+  it is dishonest of him to quote it." → 1.0 Acuity, LOW Civility. Squarely
+  engaged, and insulting. Score them independently — this is the pair to get
+  right.
+- A minister's first-reading speech introducing a bill, with only the Speaker's
+  procedural words before it. → EMIT NOTHING. Ineligible, not zero.

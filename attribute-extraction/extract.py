@@ -74,6 +74,10 @@ class Example(BaseModel):
     # Strength extracts a commitment so it can be joined to the legislative
     # record. The ledger, not the model, decides whether it was delivered.
     commitment: Optional[str] = Field(default=None)
+    # Acuity extracts the fragment of the PRECEDING turn that this statement
+    # engages, plus who said it. It is what makes the score auditable: a reader
+    # has to be able to see the thing being responded to.
+    responding_to: Optional[str] = Field(default=None)
     # Set by the quote gate: verbatim | spliced | missing. Rows that fail the
     # gate are dropped, so anything written out is `verbatim` — the field is
     # kept so the audit can be re-run on the output without the corpus.
@@ -201,6 +205,15 @@ class _AttrScore(BaseModel):
                      "one clause. Not a prediction about the world (that is "
                      "divination) and not an opinion. If no commitment is "
                      "made, emit nothing for strength."))
+    responding_to: Optional[str] = Field(
+        default=None,
+        description=("REQUIRED for acuity. A short verbatim fragment of the "
+                     "PRECEDING turn that this statement engages, and the name "
+                     "of the member who said it. If the statement engages "
+                     "nothing, write 'nothing: <member> spoke about X and this "
+                     "statement does not take it up' — and then the score is "
+                     "0.0. If you cannot point at what is being responded to, "
+                     "there is no responsiveness to score."))
 
 
 class _MultiExample(BaseModel):
@@ -515,6 +528,7 @@ def _accept(attr: str, politician: str, statement: str, sc, source_norm: str,
         stance=(str(get("stance")).lower().strip()
                 if get("stance") is not None else None),
         commitment=get("commitment"),
+        responding_to=get("responding_to"),
         quote_check=verdict,
     )
 
