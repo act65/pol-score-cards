@@ -130,6 +130,23 @@ _DEFINED = (
         "The meaningfulness of the politician's statements (vague platitudes "
         "score low).",
     ),
+    # Added 2026-09-26, PILOT ONLY -- not in PUBLISHED until it passes the gates
+    # in ATTRIBUTES.md (coverage on both benches, shrink > 0.5, spread > 20pts,
+    # max pairwise r < 0.65).
+    #
+    # It exists because Forthrightness measured the most valuable thing in the
+    # set -- does the reply address what was put to you -- and could only ever
+    # measure it for ministers, since only ministers answer oral questions (31
+    # of 133 MPs, all government). Debate is the same virtue in an act every MP
+    # performs, and the evidence is already on disk: a window carries a median of
+    # 7 speakers in order, so the turn being responded to is in context.
+    Attribute(
+        "acuity", "Acuity", "text",
+        "Does this speech engage with what was actually just said?",
+        "Whether the politician takes up the argument in front of them, or "
+        "delivers a speech that would be identical whoever spoke before.",
+        requires=("responding_to",),
+    ),
 )
 
 # Deferred to v4 on 2026-08-15. Their definitions stay here so existing output
@@ -195,7 +212,16 @@ ALL = tuple(a for a in _DEFINED if a.id not in DEFERRED)
 # is -1, and its mean |r| against the other six is 0.17 — the most independent
 # attribute of the seven. It is published, carrying the same unverified mark as
 # Veracity until the resolver runs (~1.5 nights, 276 calls).
-WITHHELD = ("forthrightness",)
+#
+# `acuity` is withheld for a different reason: it is new (2026-09-26) and
+# UNPROVEN, not structurally broken. It sits here so a pilot can extract and
+# measure it without it appearing on a single card, and it comes out of this
+# tuple only when it clears the gates in ATTRIBUTES.md -- coverage on both
+# benches, shrink > 0.5, spread > 20 points, max pairwise r < 0.65. Withholding
+# by default is the cheap direction to be wrong in: the failure we keep
+# repeating is publishing an attribute and discovering afterwards what it
+# measured.
+WITHHELD = ("forthrightness", "acuity")
 
 # What the cards and the site dataset show. Everything else — the extractor,
 # the audits, the eval harness — reads ALL, so a withheld attribute keeps being
