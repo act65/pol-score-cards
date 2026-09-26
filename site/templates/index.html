@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NZ Politician Scorecards</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='card.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% set page_title = "NZ Politician Scorecards" %}
+    {% set page_desc = "Every MP in the 54th New Zealand Parliament, scored on how they argue — civility, rigour, specificity, focus, veracity and foresight. Every score links to the quote behind it." %}
+    {% include '_head.html' %}
 </head>
 <body>
     {# Party colours for the card banner. Falls back to a neutral slate. #}
@@ -33,7 +31,7 @@
         <p class="sc-key-note">A card's <b>overall score</b> is the geometric mean of all
             {{ all_attributes|length }} attributes, so one weak attribute pulls the whole card down.
             Open a card to see it. A score marked <b class="sc-unver-key">?</b> is the model's own
-            estimate rather than a check against a source — see <a href="/about">about</a>.</p>
+            estimate rather than a check against a source — see <a href="{{ url_for('about') }}">about</a>.</p>
     </details>
 
     <p class="grid-caption">Featuring {{ shown_count }} of {{ total_count }} politicians
@@ -209,7 +207,7 @@
     <footer class="site-footer">
         <p><strong>Prototype.</strong> Scores are automated estimates from a sample of public
            statements — not verified fact. Click any score to see the evidence behind it.
-           <a href="/about">About &amp; method →</a></p>
+           <a href="{{ url_for('about') }}">About &amp; method →</a></p>
     </footer>
 </body>
 </html>

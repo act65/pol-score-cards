@@ -46,7 +46,7 @@
       "mps": 18,
       "statements": 10745,
       "share": 13.0,
-      "mean_score": 64
+      "mean_score": 65
     },
     {
       "party": "ACT",
@@ -1000,7 +1000,7 @@
       "name": "Kelvin Davis",
       "party": "Labour",
       "statements": 14,
-      "n_attrs": 6
+      "n_attrs": 5
     },
     {
       "id": "barbara-kuriger",
@@ -1257,18 +1257,13 @@
   "downloads": [
     {
       "label": "Attribute scores + evidence (JSONL)",
-      "note": "82,569 scored, sourced statements",
-      "url": "/download/examples"
+      "key": "examples",
+      "note": "82,569 scored, sourced statements"
     },
     {
       "label": "Per-MP scores (JSONL)",
-      "note": "bias-adjusted score per attribute",
-      "url": "/download/scores"
-    },
-    {
-      "label": "Raw Hansard corpus (JSONL)",
-      "note": "speaker debate transcripts",
-      "url": "/download/hansard"
+      "key": "scores",
+      "note": "bias-adjusted score per attribute"
     }
   ]
 }
