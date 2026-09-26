@@ -40,7 +40,7 @@
     <div class="sc-controls">
         <label>Order by:
             <select id="sortSel">
-                <option value="rarity">Overall score</option>
+                <option value="overall">Overall score</option>
                 {% for attribute in all_attributes %}
                 <option value="{{ attribute.id }}">{{ attribute.name }}</option>
                 {% endfor %}
@@ -152,7 +152,7 @@
                      geo: parseFloat(el.dataset.geo) || 0, scores: scores };
         });
         function sortKey(c, s) {
-            if (s === 'rarity') return c.geo;
+            if (s === 'overall') return c.geo;
             const v = c.scores[s];
             return (v === undefined || v === null) ? null : v;   // null = not scored
         }

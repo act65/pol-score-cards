@@ -41,7 +41,7 @@
         {% for card in party_cards %}
         {% set colour = party_colors.get(card.party, '#475569') %}
         <div class="sc-card sc-card-party"
-             style="--party: {{ colour }}; --rarity: {{ colour }};">
+             style="--party: {{ colour }};">
             <div class="sc-banner">
                 <h3 class="sc-name">{{ card.party }}</h3>
                 <span class="sc-party">{{ card.n }} MP{{ 's' if card.n != 1 }}</span>
