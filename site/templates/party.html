@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Party scorecards — NZ Politician Scorecards</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='card.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% set page_title = "Party scorecards — NZ Politician Scorecards" %}
+    {% set page_desc = "How each party in the New Zealand Parliament argues, averaged over its MPs and scored from Hansard." %}
+    {% include '_head.html' %}
 </head>
 <body>
     {% set party_colors = {
@@ -158,7 +156,7 @@
     <p class="grid-caption">Not aggregated — fewer than {{ min_party_mps }} featured MPs, which would
        make the card one person's scores under a party name:
        {% for name, n in too_small %}<strong>{{ name }}</strong> ({{ n }} MP{{ 's' if n != 1 }}){% if not loop.last %}, {% endif %}{% endfor %}.
-       Their MPs are still on the <a href="/">card grid</a>.</p>
+       Their MPs are still on the <a href="{{ url_for('index') }}">card grid</a>.</p>
     {% endif %}
 
     <footer class="site-footer">
@@ -169,7 +167,7 @@
            ranking, are what is worth reading. Two of the six — Veracity and Divination,
            marked <strong>?</strong> — are still the model's own estimates rather than
            checked sources, and averaging them over a caucus does not check them.
-           <a href="/about">About &amp; method →</a></p>
+           <a href="{{ url_for('about') }}">About &amp; method →</a></p>
     </footer>
     <script>
     (function () {

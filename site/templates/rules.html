@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Card Game — NZ Politician Scorecards</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='card.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% set page_title = "The Card Game — NZ Politician Scorecards" %}
+    {% set page_desc = "A trading-card battle played with real NZ politicians, where a misleading, evasive MP makes a genuinely weak card." %}
+    {% include '_head.html' %}
 </head>
 <body>
     {% set nav_active = 'game' %}
@@ -103,15 +101,15 @@
            constantly; one who only ever swings at the other party never builds Concentration and
            spends the whole game hitting for chip damage. Holding a bad card and thinking
            <em>"how is this person an MP?"</em> is the game working as intended — and every number
-           traces back to <a href="/">the evidence on their scorecard</a>.</p>
+           traces back to <a href="{{ url_for('index') }}">the evidence on their scorecard</a>.</p>
 
-        <div class="back-link"><a href="/">← Back to the cards</a></div>
+        <div class="back-link"><a href="{{ url_for('index') }}">← Back to the cards</a></div>
     </main>
 
     <footer class="site-footer">
         <p><strong>Prototype.</strong> Scores are automated estimates from a sample of public
            statements — not verified fact. Click any score to see the evidence behind it.
-           <a href="/about">About &amp; method →</a></p>
+           <a href="{{ url_for('about') }}">About &amp; method →</a></p>
     </footer>
 </body>
 </html>

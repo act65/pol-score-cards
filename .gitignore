@@ -184,3 +184,4 @@ attribute-extraction/usage_v3.jsonl
 !attribute-extraction/site_data_v3/*.jsonl
 attribute-extraction/site_data_v3/examples.jsonl
 !attribute-extraction/site_data_v3/README.md
+_site/

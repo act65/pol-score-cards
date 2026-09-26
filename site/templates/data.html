@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The dataset — NZ Politician Scorecards</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% set page_title = "The dataset — NZ Politician Scorecards" %}
+    {% set page_desc = "What the scores are built from, how far they can be trusted, and the full dataset to download." %}
+    {% include '_head.html' %}
 </head>
 <body>
     {% set nav_active = 'data' %}
@@ -60,7 +59,7 @@
            attributes (0–100) — the same measure the cards rank by, where one weak attribute drags the
            whole score down. Party means sit close together; what differs is the <em>spread</em> inside
            each caucus, and which attributes a caucus is unusual on. That has its own page, with an
-           aggregated scorecard per party: <a href="/party"><strong>party scorecards →</strong></a></p>
+           aggregated scorecard per party: <a href="{{ url_for('party') }}"><strong>party scorecards →</strong></a></p>
 
         <h3>How we check the instrument</h3>
         <p class="muted">Three audits that need no human labeller, each deterministic and re-runnable
@@ -147,8 +146,8 @@
            A versioned HuggingFace release is planned; these are the live files behind the site:</p>
         <div class="downloads">
             {% for d in stats.downloads %}
-            {% if d.url %}
-            <a class="dl-btn" href="{{ d.url }}" download>{{ d.label }} <em>· {{ d.note }}</em></a>
+            {% if d.key %}
+            <a class="dl-btn" href="{{ url_for('download', key=d.key) }}" download>{{ d.label }} <em>· {{ d.note }}</em></a>
             {% else %}
             <span class="dl-btn disabled">{{ d.label }} <em>· {{ d.note }}</em> <span class="soon">coming soon</span></span>
             {% endif %}
@@ -156,12 +155,12 @@
         </div>
         {% endif %}
 
-        <div class="back-link" style="margin-top:34px"><a href="/">← Back to the cards</a></div>
+        <div class="back-link" style="margin-top:34px"><a href="{{ url_for('index') }}">← Back to the cards</a></div>
     </main>
 
     <footer class="site-footer">
         <p><strong>Prototype.</strong> Scores are automated estimates from a sample of public
-           statements — not verified fact. <a href="/about">About &amp; method →</a></p>
+           statements — not verified fact. <a href="{{ url_for('about') }}">About &amp; method →</a></p>
     </footer>
 </body>
 </html>

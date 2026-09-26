@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About — NZ Politician Scorecards</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='card.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% set page_title = "About — NZ Politician Scorecards" %}
+    {% set page_desc = "How New Zealand MPs are scored on conduct rather than politics, what the method is, and where it falls short." %}
+    {% include '_head.html' %}
 </head>
 <body>
     {% set nav_active = 'about' %}
@@ -96,7 +94,7 @@
         <p>The front page features politicians with enough data to be meaningful (at least
            {{ min_attributes }} of the {{ attributes|length }} attributes scored). You can re-order the cards by overall
            rarity or by any single attribute, sort high-to-low or low-to-high, and filter by party or
-           by role. There is also a <a href="/party">scorecard per party</a>, aggregated over its MPs
+           by role. There is also a <a href="{{ url_for('party') }}">scorecard per party</a>, aggregated over its MPs
            and shown against the House average.</p>
 
         <h2>Methodology</h2>
@@ -110,13 +108,13 @@
            prompt per attribute, plain text, in the repo:
            <a href="https://github.com/act65/pol-score-cards/tree/main/attribute-extraction/prompts" target="_blank" rel="noopener">attribute-extraction/prompts</a>.
            The rest of the pipeline — the extractor, the resolver, the bias adjustment and the audits
-           behind the numbers on the <a href="/data">dataset page</a> — is in the same repository:
+           behind the numbers on the <a href="{{ url_for('data') }}">dataset page</a> — is in the same repository:
            <a href="https://github.com/act65/pol-score-cards" target="_blank" rel="noopener">github.com/act65/pol-score-cards</a>.</p>
         <p>One source, on purpose. Hansard is the only source that is adversarial, on the record,
            and covers every MP equally — a party press release tells you what a party wants you to
            think, Hansard tells you how they behave when someone is arguing back. Measuring every MP
            in the same room is what makes two cards comparable. Other corpora we hold are published on
-           the <a href="/data">dataset page</a>; they are not scored.</p>
+           the <a href="{{ url_for('data') }}">dataset page</a>; they are not scored.</p>
         <p>A quoted statement is checked against its own transcript before it is allowed on the site:
            anything that is not verbatim, is spliced together from fragments, or does not begin and
            end on a sentence boundary is dropped. The displayed number is a <em>shrunk</em> average —
@@ -142,9 +140,9 @@
            wrongdoing — always click through to the underlying statements and judge for yourself.
            This is a research and accountability tool, not the last word. How the instrument is
            checked, and what those checks do and don't establish, is on the
-           <a href="/data">dataset page</a>.</p>
+           <a href="{{ url_for('data') }}">dataset page</a>.</p>
 
-        <div class="back-link"><a href="/">← Back to the cards</a></div>
+        <div class="back-link"><a href="{{ url_for('index') }}">← Back to the cards</a></div>
     </main>
 
     <footer class="site-footer">

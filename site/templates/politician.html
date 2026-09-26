@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ politician.name }} — NZ Politician Scorecards</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='card.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% set page_title = politician.name ~ " — NZ Politician Scorecards" %}
+    {% set page_desc = politician.name ~ " (" ~ politician.party ~ ") scored on how they argue in Parliament, with the statements behind every number." %}
+    {% include '_head.html' %}
 </head>
 <body>
     {% set party_colors = {
@@ -169,7 +167,7 @@
 
     <footer class="site-footer">
         <p><strong>Prototype.</strong> Scores are automated estimates from a sample of public
-           statements — not verified fact. <a href="/about">About &amp; method →</a></p>
+           statements — not verified fact. <a href="{{ url_for('about') }}">About &amp; method →</a></p>
     </footer>
 </body>
 </html>

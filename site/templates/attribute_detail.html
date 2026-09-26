@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ politician.name }} — {{ attribute_info.name }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='card.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% set page_title = politician.name ~ " — " ~ attribute_info.name %}
+    {% set page_desc = politician.name ~ "'s " ~ attribute_info.name ~ " score, and every scored statement from Hansard behind it." %}
+    {% include '_head.html' %}
 </head>
 <body>
     {% set nav_active = 'mps' %}
@@ -67,7 +65,7 @@
            now been checked against sources</strong> and carry a verdict and the links it was
            decided on — not yet enough to replace the number above, but each one you can follow
            yourself.{% else %}The <em>verdict</em> on each claim is not yet in.{% endif %}
-           <a href="/data">How far the estimate tends to be off →</a></p>
+           <a href="{{ url_for('data') }}">How far the estimate tends to be off →</a></p>
         {% endif %}
 
         {% if examples %}
@@ -199,7 +197,7 @@
 
     <footer class="site-footer">
         <p><strong>Prototype.</strong> Scores are automated estimates from a sample of public
-           statements — not verified fact. <a href="/about">About &amp; method →</a></p>
+           statements — not verified fact. <a href="{{ url_for('about') }}">About &amp; method →</a></p>
     </footer>
 
     <script>

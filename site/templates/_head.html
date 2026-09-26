@@ -1,0 +1,29 @@
+{# One <head> for every page.
+
+   The caller sets `page_title` and `page_desc` before including this. Both are
+   reused for the Open Graph tags, so a link shared on Bluesky, Mastodon, Slack
+   or in an editor's inbox arrives as a card with a picture and a sentence
+   instead of a bare URL.
+
+   Absolute URLs: og:image and og:url must be fully qualified or they are
+   ignored. SITE_ORIGIN is set by freeze.py for the static build; the dev server
+   leaves it empty, which is harmless locally. script_root carries the path
+   prefix when the site is served under one (a GitHub project page). #}
+{% set _base = (config.get('SITE_ORIGIN', '') or '') ~ request.script_root %}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ page_title }}</title>
+<meta name="description" content="{{ page_desc }}">
+<link rel="canonical" href="{{ _base }}{{ request.path }}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NZ Politician Scorecards">
+<meta property="og:title" content="{{ page_title }}">
+<meta property="og:description" content="{{ page_desc }}">
+<meta property="og:url" content="{{ _base }}{{ request.path }}">
+<meta property="og:image" content="{{ (config.get('SITE_ORIGIN', '') or '') }}{{ url_for('static', filename='img/og.png') }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+<link rel="stylesheet" href="{{ url_for('static', filename='card.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">

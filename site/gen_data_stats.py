@@ -334,13 +334,18 @@ def main():
         "corpus": _corpus_stats(),
         "presser_corpus": _presser_corpus_stats(),
         "release_corpus": _release_corpus_stats(),
+        # `key` indexes app._DOWNLOADS; the template builds the href with
+        # url_for so it survives being served under a path prefix (a GitHub
+        # project page lives at /<repo>/, where a literal "/download/..." 404s).
         "downloads": [
-            {"label": "Attribute scores + evidence (JSONL)",
-             "note": f"{total_statements:,} scored, sourced statements", "url": "/download/examples"},
-            {"label": "Per-MP scores (JSONL)",
-             "note": "bias-adjusted score per attribute", "url": "/download/scores"},
-            {"label": "Raw Hansard corpus (JSONL)",
-             "note": "speaker debate transcripts", "url": "/download/hansard"},
+            {"label": "Attribute scores + evidence (JSONL)", "key": "examples",
+             "note": f"{total_statements:,} scored, sourced statements"},
+            {"label": "Per-MP scores (JSONL)", "key": "scores",
+             "note": "bias-adjusted score per attribute"},
+            # The raw Hansard corpus is deliberately NOT here. It is 44 MB and
+            # gitignored, so it is absent from every deploy and the button was a
+            # 404 on the live site. It belongs on a dataset host (publish_corpus.py)
+            # and gets linked back once it is there.
         ],
     }
     out = os.path.join(STATIC, "dataset_stats.json")

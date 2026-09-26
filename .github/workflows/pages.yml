@@ -1,0 +1,71 @@
+# Build the site to static HTML and publish it to GitHub Pages.
+#
+# Nothing generated is committed. `freeze.py` renders into _site/, which is
+# uploaded as a Pages artifact and deployed straight from there — no gh-pages
+# branch, no 230 MB of HTML in the repo's history.
+name: Publish site
+
+on:
+  push:
+    branches: [main]
+    # Only the inputs the built site is a function of. A change to the
+    # extraction pipeline does not republish until its output lands in
+    # site/static/.
+    paths:
+      - 'site/**'
+      - 'shared/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time, and let a newer push win — but never cancel a deploy
+# that is already handing pages to the CDN.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        # Default fetch-depth is 1. That matters here: the full history carries
+        # ~28 revisions of a 62 MB scores file, and we need none of them.
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install
+        run: pip install -r site/requirements.txt
+
+      - name: Freeze
+        working-directory: site
+        env:
+          # A project page is served from /<repo>/, so every absolute URL needs
+          # that prefix. Set both to '' (and add a CNAME) if you move to a
+          # custom domain.
+          SITE_BASE: /${{ github.event.repository.name }}
+          SITE_ORIGIN: https://${{ github.repository_owner }}.github.io
+        run: python freeze.py
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/_site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
