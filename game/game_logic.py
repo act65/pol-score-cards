@@ -1,3 +1,14 @@
+"""The card-battle engine — pure, dependency-light, and deliberately behind.
+
+This implements the RETIRED v2.0 attribute set (strength, charisma,
+authenticity). Charisma was cut in v3.0 at r=0.96 with Civility and replaced by
+Focus; Strength and Authenticity are deferred to v4. `attributes.py` at the repo
+root is the source of truth for what is published, and the canonical rules are
+the site's `/rules` page, not this file.
+
+Do not "fix" the attribute names here in isolation: the port is engine + rules.md
++ the deck (`politicians.jsonl` is still fake data). See README.md.
+"""
 import random
 import math
 import json
