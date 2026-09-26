@@ -92,8 +92,10 @@ def main():
     if nothing:
         ns = [s for *_x, s, e in pilot
               if (e.get("responding_to") or "").lower().startswith("nothing")]
-        print(f"  their mean score: {st.mean(ns) * 100:.0f} (should be ~0 — the "
-              f"prompt says unpointable means 0.0)")
+        over = [x for x in ns if x > 0.3]
+        print(f"  their mean score: {st.mean(ns) * 100:.0f}, max {max(ns) * 100:.0f}")
+        print(f"  outside the 0.0-0.3 band the prompt allows: {len(over)} "
+              f"({'PASS' if not over else 'FAIL'})")
 
     # --- coverage, both benches -------------------------------------------
     per = collections.defaultdict(list)

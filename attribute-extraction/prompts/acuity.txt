@@ -32,10 +32,15 @@ SCORING
   it asked for, corrects a misstatement of fact in it, or draws out its
   consequence. The speech would be DIFFERENT if the previous speaker had said
   something else.
-- ~0.5 — Glances at what was said, then returns to prepared material. Names the
-  member or the topic and moves on without engaging the argument itself.
+- ~0.5 — Engages the argument in part: takes up one strand of it, or answers
+  the topic rather than the specific claim, then returns to prepared material.
+  You can still point at what was engaged.
+- 0.1 to 0.3 — Engages NO part of the argument, but the speech is at least about
+  the matter under debate. Prepared material on the right subject. Use 0.3 when
+  there is a gesture at the debate, 0.1 when there is not.
 - 0.0 — Entirely unresponsive. The speech would be word-for-word identical
-  whoever had spoken before, and whatever they had said.
+  whoever had spoken before, and whatever they had said — and it could have been
+  delivered in a different debate on a different day.
 
 THE DECIDING TEST: if you deleted the preceding turn and substituted a different
 argument on the same topic, would this speech have to change? If yes, score high.
@@ -81,8 +86,14 @@ ALSO EMIT
   that this statement engages, and the name of the member who said it. If the
   statement engages nothing, write "nothing: <member> spoke about X and this
   statement does not take it up". This field is what makes a score auditable: a
-  reader must be able to see the thing being responded to, and if you cannot
-  point at it, the score is 0.0 by definition.
+  reader must be able to see the thing being responded to.
+
+  IF YOU CANNOT POINT AT IT, THE SCORE IS AT MOST 0.3. You cannot score
+  responsiveness you cannot point at, so an unpointable statement sits in the
+  0.0-0.3 band and is never a 0.5 — a "glance" that engages no part of the
+  argument is not a partial engagement, it is prepared material that happens to
+  be on topic. Within the band, 0.0 is for a speech that could have been given
+  in any debate at all.
 
 WORKED BOUNDARY EXAMPLES:
 - Previous turn (Hon A): "The regulatory impact statement puts the cost at $40
