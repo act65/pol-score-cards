@@ -29,6 +29,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import app as site_app                                        # noqa: E402
 import data_access_jsonl                                      # noqa: E402
+import notes                                                  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.environ.get("SITE_OUT", os.path.join(HERE, "_site"))
@@ -65,9 +66,13 @@ def _urls():
     """Every reachable page, in sitemap order. Built from the data rather than
     from the route table, because the parameterised routes are only as valid as
     the ids behind them."""
-    pages = ["/", "/party", "/data", "/about", "/rules"]
+    pages = ["/", "/party", "/data", "/about", "/rules", "/notes"]
     for attr in site_app.RUBRICS:
         pages.append(f"/rubric/{attr}")
+    # Notes are files in the repo, so this enumerates them the same way the page
+    # does. A draft is excluded from all_notes() and therefore never built.
+    for n in notes.all_notes():
+        pages.append(f"/notes/{n['slug']}")
 
     shown, _total = site_app._featured()
     for d in shown:

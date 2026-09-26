@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% set page_title = "Notes — NZ Politician Scorecards" %}
+    {% set page_desc = "Development notes: which attributes worked, which were withheld, and the numbers behind those decisions." %}
+    {% include '_head.html' %}
+</head>
+<body>
+    {% set nav_active = 'notes' %}
+    {% include '_header.html' %}
+
+    <main class="about notes-index">
+        <h2 style="margin-top:6px">Notes</h2>
+        <p>Working notes on building this. Mostly the things that did <em>not</em> work: an
+           attribute that only ever measured ministers, one whose signal was smaller than its own
+           error bars, a confidence label that got tighter the less we knew. Each one is written up
+           with the numbers, because the failures constrain what the scores can honestly claim —
+           and because a measurement nobody can check is just an assertion.</p>
+
+        {% if notes %}
+        <ul class="note-list">
+            {% for n in notes %}
+            <li>
+                <a class="note-link" href="{{ url_for('note', slug=n.slug) }}">{{ n.title }}</a>
+                <div class="note-meta">
+                    <time datetime="{{ n.date.isoformat() }}">{{ n.date_display }}</time>
+                    {% for t in n.tags %}<span class="note-tag">{{ t }}</span>{% endfor %}
+                </div>
+                <p class="note-summary">{{ n.summary }}</p>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="muted">No notes yet.</p>
+        {% endif %}
+    </main>
+
+    <footer class="site-footer">
+        <p><strong>Prototype.</strong> Scores are automated estimates from a sample of public
+           statements — not verified fact. <a href="{{ url_for('about') }}">About &amp; method →</a></p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% set page_title = note.title ~ " — NZ Politician Scorecards" %}
+    {% set page_desc = note.summary %}
+    {% include '_head.html' %}
+</head>
+<body>
+    {% set nav_active = 'notes' %}
+    {% include '_header.html' %}
+
+    <main class="about note">
+        <h2 style="margin-top:6px">{{ note.title }}</h2>
+        <div class="note-meta">
+            <time datetime="{{ note.date.isoformat() }}">{{ note.date_display }}</time>
+            {% for t in note.tags %}<span class="note-tag">{{ t }}</span>{% endfor %}
+        </div>
+
+        {# Trusted markdown from our own repo — see notes.py. Anything that ever
+           accepts a post from elsewhere must sanitise instead of this. #}
+        <div class="note-body">{{ note.html|safe }}</div>
+
+        <div class="back-link"><a href="{{ url_for('notes') }}">← All notes</a></div>
+    </main>
+
+    <footer class="site-footer">
+        <p><strong>Prototype.</strong> Scores are automated estimates from a sample of public
+           statements — not verified fact. <a href="{{ url_for('about') }}">About &amp; method →</a></p>
+    </footer>
+</body>
+</html>

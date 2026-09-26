@@ -7,6 +7,7 @@ import os
 import urllib.parse
 
 import data_access_jsonl
+import notes as notes_store
 # from game.routes import game_bp # Added import
 
 app = Flask(__name__)
@@ -598,6 +599,22 @@ def download(key):
     if not path or not os.path.exists(path):
         abort(404)
     return send_file(path, as_attachment=True, download_name=os.path.basename(path))
+
+
+@app.route('/notes')
+def notes():
+    """Development notes — what was tried, what failed, and the numbers."""
+    return render_template('notes.html', notes=notes_store.all_notes(),
+                           all_attributes=attribute_descriptions)
+
+
+@app.route('/notes/<slug>')
+def note(slug):
+    n = notes_store.get_note(slug)
+    if n is None:
+        return "Note not found", 404
+    return render_template('note.html', note=n,
+                           all_attributes=attribute_descriptions)
 
 
 @app.route('/about')
