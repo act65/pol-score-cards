@@ -19,8 +19,47 @@ ELIGIBLE only when ALL of these hold:
 
 If you cannot state that criterion, the claim is not checkable and YOU MUST EMIT
 NOTHING. Do not guess, do not hedge at 0.5, do not emit it with a vague
-criterion. Expect to emit far fewer veracity items than you would have before —
-that is the point, and it is what makes the resolver affordable.
+criterion.
+
+=== THE ABSTAIN RULE: CHECKABLE IS NOT THE SAME AS WORTH CHECKING ===
+
+The criterion gate above was supposed to keep this attribute small. It does not,
+because a criterion can be stated for almost any factual sentence — "the Budget
+was delivered in May" is perfectly checkable and perfectly pointless. Measured on
+the full term, Veracity fired on **42% of every statement extracted**, against a
+pre-registered target of 15%.
+
+That is not a tidy-up. Every claim you emit costs one web search by the resolver,
+and 25,486 of them is 50 nights of machine time — so at this rate Veracity is
+never resolved at all, and every score stays the model's unaided guess. Emitting
+a weak claim does not add a weak data point; it displaces a real one.
+
+So apply a SECOND gate after the criterion. A claim must be checkable AND worth
+checking. **SKIP IT** if any of these is true:
+
+- **Uncontested.** No informed person would dispute it. "This bill is before the
+  House", "there was an election last year", "the Minister made an announcement
+  yesterday."
+- **Load-free.** The argument does not depend on it. Scene-setting, preamble,
+  courtesies, a date given for orientation.
+- **Already on the record in front of the House.** "This bill amends the Resource
+  Management Act" — the reader can see that; checking it tells them nothing.
+- **About the speaker's own intentions or feelings.** "We are committed to..." is
+  a promise (Strength) or an opinion, not a checkable fact.
+- **A quantity with no stated figure or baseline.** "Record investment", "massive
+  cuts", "far more than ever before" with no number. There is nothing to check;
+  the vagueness is what Specificity measures.
+
+**EMIT** when the claim is at least one of:
+- **Contested** — the sort of assertion the other side would actually dispute.
+- **Load-bearing** — if it is false, the argument around it collapses.
+- **Specific and non-obvious** — a figure, date, comparison or attribution that a
+  well-informed reader could not confirm from memory.
+
+CALIBRATION: expect to emit a veracity item for roughly **one statement in seven
+or fewer**. If you find yourself emitting one for every second or third
+statement, you are extracting scene-setting, and the correct response is to skip
+most of it. Fewer, better claims is the whole design.
 
 WHAT TO EMIT
 - `statement` — the claim, quoted verbatim.
@@ -68,6 +107,17 @@ WORKED EXAMPLES:
   criterion: "the division record for the second reading of the named bill."
 - "This is the worst housing crisis in our history." → SKIP. No stateable
   criterion; "worst" is not operationalised.
+- "The Budget was delivered on 22 May." → SKIP under the abstain rule. Perfectly
+  checkable, and nobody disputes it. Checkable is not worth checking.
+- "This bill amends the Resource Management Act." → SKIP. On the record in front
+  of the House.
+- "We are absolutely committed to fixing this." → SKIP. The speaker's own
+  intention, not a fact about the world.
+- "This Government has made record investment in health." → SKIP. No figure and
+  no baseline, so there is nothing to settle. The vagueness is Specificity's to
+  score, not a claim to resolve.
+- "Health spending rose 4.1 percent in real terms this year." → EMIT. A figure,
+  contested, and load-bearing.
 - "I believe this policy is wrong." → SKIP. Opinion.
 - "Inflation will fall next year." → SKIP. Prediction — that is Divination.
 - "Fifty percent of Māori are in jails at the moment." → SKIP. In context this
