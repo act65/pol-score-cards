@@ -190,3 +190,8 @@ _site/
 # published instrument. The analysis and the prompt are tracked; the jsonl is not.
 attribute-extraction/pilot_acuity/*.jsonl
 attribute-extraction/pilot_acuity/*.log
+attribute-extraction/pilot_abstain/*.jsonl
+attribute-extraction/pilot_abstain/*.log
+attribute-extraction/pilot_full/*.jsonl
+attribute-extraction/pilot_full/*.log
+attribute-extraction/pilot_full/pid
