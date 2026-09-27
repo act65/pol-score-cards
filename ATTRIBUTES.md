@@ -649,3 +649,73 @@ and their 25 tests, `corpus/strength_ledger.jsonl`, the 212-item proposition
 vocabulary, and the `extract_hansard.py --attrs positions` path. Their prompts
 stay in `prompts/`. Nothing is deleted; the attributes are out of the active set
 in `attributes.py` via `DEFERRED`.
+
+---
+
+## Decision 2026-09-27 — the abstain rule needed a second gate, and Focus abstains on abuse
+
+Both of these are the contract catching up with a measurement. Two of the targets
+pre-registered in *How we will know this worked* were missed on the full term.
+
+### Veracity: checkable is not the same as worth checking
+
+| | target | measured (full term) |
+|---|---|---|
+| Veracity firing rate | < 15% | **42%** |
+
+The abstain rule as specified was the falsification-criterion gate alone: drop
+every claim for which no criterion can be stated. That gate does not bite,
+because a criterion is statable for very nearly any factual sentence. "The Budget
+was delivered in May" passes it and is worth nothing.
+
+The consequence is not cosmetic. Each emitted claim costs one resolver search, so
+25,486 outstanding veracity claims is **353 hours — 50 nights** at the measured
+73 verdicts/hour. At that rate Veracity is never resolved, and every Veracity
+score on every card stays `prior_score`: the model's unaided guess. The same
+defect shows up a second way in the scores themselves — 42% firing sweeps in
+mostly-uncontested claims, which is why Veracity has the narrowest spread of the
+six (17 points, true between-MP sd 3.7).
+
+So `prompts/veracity.txt` now applies a **materiality gate after the criterion
+gate**: skip the uncontested, the load-free, anything already on the record before
+the House, the speaker's own intentions, and quantities with no figure or
+baseline. Emit when a claim is contested, load-bearing, or specific and
+non-obvious. Calibration stated in the prompt: roughly one statement in seven or
+fewer.
+
+At the target rate the resolver queue falls to ~9,200 — 18 nights instead of 50,
+which is the difference between Veracity being resolvable before the election and
+not.
+
+### Focus: a personal attack is Civility's, and only Civility's
+
+| | target | measured (full term) |
+|---|---|---|
+| Focus / Civility r | < 0.65 | **0.659** |
+
+Marginal, but it is a pre-registered target we publish against, and the cause is
+structural rather than noise: personal abuse is *both* off-policy and uncivil, so
+Focus scored it 0.0 and Civility scored it low. One act, recorded as two
+independent failures, on a card whose entire premise is six independent readings.
+
+`prompts/focus.txt` now makes a statement whose primary content is an attack on a
+person **INELIGIBLE** — emit nothing, rather than 0.0. The test in the prompt:
+strip the abuse out; score whatever policy content remains, and abstain if
+nothing does.
+
+This does not touch the gap Focus was built for. Content-free *party* tribalism —
+"Labour are hopeless, they were hopeless in 2017" — insults no one, so Civility
+passes it at 1.0 and Focus still scores it 0.0. That case is why Focus exists and
+it is unaffected.
+
+### One target cannot be evaluated at all
+
+| | target | status |
+|---|---|---|
+| Veracity / Rigor r | < 0.55 | **not measurable** |
+
+Veracity emits `score=None` at extraction, so it never co-scores a statement with
+anything and `attribute_overlap.py` cannot compute the correlation. This is a
+blind spot in the audit, not a pass. Recorded here rather than quietly dropped;
+closing it would mean correlating the resolver's verdicts against Rigor on the
+same statements, which needs a materially larger resolved set than 878.

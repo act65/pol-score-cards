@@ -139,13 +139,22 @@ def _load_by_day(corpus, since, until=""):
 # Appending positions to the scores file would put permanently score-less rows
 # into the dataset the site aggregates, so they are run separately and land in
 # their own file.
-def _resolve_attrs(spec: str) -> list:
-    """Named set ('scores', 'positions') or an explicit comma-separated list."""
+def _resolve_attrs(spec) -> list:
+    """Named set ('scores', 'positions') or an explicit comma-separated list.
+
+    `spec` may arrive as a tuple: python-fire parses `--attrs veracity,focus`
+    into ("veracity", "focus") rather than a string, which used to raise
+    AttributeError 40 lines later. Accept both rather than making every caller
+    remember which one fire will hand over.
+    """
     named = {"scores": attributes.EXTRACTED_IN_WINDOWS,
              "positions": attributes.RECORD_IN_WINDOWS}
-    if spec in named:
-        return sorted(named[spec])
-    chosen = [a.strip() for a in spec.split(",") if a.strip()]
+    if isinstance(spec, (tuple, list)):
+        chosen = [str(a).strip() for a in spec if str(a).strip()]
+    else:
+        if spec in named:
+            return sorted(named[spec])
+        chosen = [a.strip() for a in str(spec).split(",") if a.strip()]
     unknown = [a for a in chosen if a not in attributes.BY_ID]
     if unknown:
         raise SystemExit(f"unknown attribute(s): {', '.join(unknown)}. "
