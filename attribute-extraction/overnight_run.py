@@ -48,6 +48,16 @@ POSITIONS = "positions_v3.jsonl"
 RESOLVED = "resolved_v3.jsonl"
 QA_SCORES = "forthrightness_scores_v3.jsonl"
 
+# Acuity lands in its OWN file, and must. Resume is by `window_id` read from
+# `--out` (extract_hansard._saved_ids), and SCORES already holds all 5,548 of
+# them from the six-attribute run — so pointing an acuity run at SCORES would
+# find every window "already done" and extract precisely nothing while
+# reporting success. A separate file also keeps the two instruments apart:
+# these rows carry one attribute scored against a 3,740-token system prompt,
+# not seven against 7,469, and `build_v2_dataset.py` should join them rather
+# than assume they were produced the same way.
+ACUITY = "acuity_scores_v3.jsonl"
+
 # Per-call token accounting (claude_cli._record_usage). The subscription cap is
 # what limits this project, and until now we only ever saw it indirectly — as
 # the point in the night where calls started failing. This records what each
@@ -189,8 +199,9 @@ def _plan_size(stage: str, model: str, backend: str) -> int:
         return 0
 
     pilot_scope = stage in ("pilot", "positions")
+    attrs = {"positions": "positions", "acuity": "acuity"}.get(stage, "scores")
     cmd = [PY, "extract_hansard.py", "--dry_run",
-           "--attrs", "positions" if stage == "positions" else "scores",
+           "--attrs", attrs,
            "--since", f"{PILOT_MONTH}-01" if pilot_scope else SINCE,
            "--until", PILOT_MONTH if pilot_scope else "",
            "--window_tokens", WINDOW_TOKENS, "--model", model,
@@ -251,6 +262,18 @@ def _pass(stage: str, timeout_s: float, model: str, backend: str) -> int:
         attr = stage.split("_", 1)[1]
         cmd = [PY, "resolve.py", "run", "--scores", SCORES,
                "--attrs", attr, "--workers", WORKERS, "--model", model]
+    elif stage == "acuity":
+        # The one attribute the six-attribute run never scored. Extracted
+        # ALONE, deliberately: per-attribute yield falls 26-58% as the system
+        # prompt grows (the example budget per window is fixed and divided), so
+        # a bundled run would measure a different instrument from the one the
+        # pilot validated. pilot_acuity/README.md records the exact command
+        # this reproduces over the full term.
+        cmd = [PY, "extract_hansard.py", "--attrs", "acuity",
+               "--since", SINCE, "--until", "",
+               "--window_tokens", WINDOW_TOKENS, "--workers", WORKERS,
+               "--timeout", CALL_TIMEOUT,
+               "--backend", backend, "--model", model, "--out", ACUITY]
     elif stage == "positions":
         # Record-tier extraction: a stated position and a commitment, no score.
         # Feeds data/authenticity_score.py and the Strength ledger join, and
@@ -303,6 +326,7 @@ def status() -> None:
     """Progress across all stages. Spends nothing."""
     print(f"windows scored:       {_count(SCORES):,}  ({SCORES})")
     print(f"Q/A pairs scored:     {_count(QA_SCORES):,}  ({QA_SCORES})")
+    print(f"acuity windows:       {_count(ACUITY):,}  ({ACUITY})")
     print(f"resolved claims:      {_count(RESOLVED):,}  ({RESOLVED})")
     for name in ("ATTRIBUTE_OVERLAP_v3.md", "QUOTE_AUDIT_v3.md"):
         p = os.path.join(HERE, name)
@@ -337,15 +361,16 @@ def run(hours: float = 10.0, stage: str = "pilot", model: str = MODEL,
               flush=True)
         run(hours=left, stage="windows", model=model, backend=backend)
         return
-    if stage not in ("pilot", "windows", "questions", "positions", "ab_prompt",
-                     "resolve_divination", "resolve_veracity"):
-        raise SystemExit("--stage must be pilot | windows | questions | "
-                         "positions | resolve_divination | resolve_veracity "
+    if stage not in ("pilot", "windows", "acuity", "questions", "positions",
+                     "ab_prompt", "resolve_divination", "resolve_veracity"):
+        raise SystemExit("--stage must be pilot | windows | acuity | questions "
+                         "| positions | resolve_divination | resolve_veracity "
                          "| all")
 
     out_file = {"questions": QA_SCORES,
                 "ab_prompt": "ab_prompt_B.jsonl",
                 "positions": POSITIONS,
+                "acuity": ACUITY,
                 "resolve_divination": RESOLVED,
                 "resolve_veracity": RESOLVED}.get(stage, SCORES)
     deadline = time.time() + hours * 3600
@@ -353,7 +378,7 @@ def run(hours: float = 10.0, stage: str = "pilot", model: str = MODEL,
     # written == windows scored). For `questions` the plan is in CALLS and for
     # the resolvers it is in ITEMS, neither of which is comparable to a row
     # count — so they get no target and stop when the runner says EX_DONE.
-    if stage in ("pilot", "windows"):
+    if stage in ("pilot", "windows", "acuity"):
         target = target or _plan_size(stage, model, backend)
     else:
         target = 0

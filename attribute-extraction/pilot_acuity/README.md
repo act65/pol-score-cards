@@ -116,3 +116,33 @@ rubric is in the system prompt.
 
 `WITHHELD` in the registry. It reaches a card only after a full-term run
 reproduces these numbers at ~103 examples per MP.
+
+## Full-term run, started 2026-10-02 (unattended)
+
+The pilot's four gates passed, so acuity is being extracted over the whole
+54th term: 5,548 windows, ~70 h at the 79 windows/h this pilot measured.
+`overnight_run.py --stage acuity` reproduces the command above with
+`--since 2023-10-06`, writing to `acuity_scores_v3.jsonl`.
+
+**The 260 pilot windows are NOT reused, and the file is not seeded with them.**
+The prompt changed after the pilot: the pilot run had no band for unpointable
+speeches, which is what made 101 rows look like prompt non-compliance when they
+were in fact the model placing them correctly (commit 6531ead, "The model was
+right about acuity's low band; the prompt was not"). Those rows were produced by
+a different instrument from the one now in `prompts/acuity.txt`, so 2025-10 is
+re-extracted rather than carried over. The cost is 3.3 h of the 70.
+
+**Still withheld.** `attributes.WITHHELD` keeps acuity off the cards. Extraction
+is not publication: the open question this run exists to answer is whether the
+pilot's numbers hold at full coverage — in particular the ~32 examples/MP figure
+(the README's earlier "103 per MP" extrapolated 2.4 examples/window across all
+133 MPs without accounting for how unevenly speaking time is distributed), and
+whether the −11 government/opposition bench gap still decomposes to government
+backbenchers at 37 against ministers 59 and opposition backbenchers 57.
+
+**Marginal cost is not zero.** Acuity is extracted ALONE, not bundled into a
+re-run of the other six. Per-attribute yield falls 26–58% as the system prompt
+grows, because the example budget per window is fixed and divided between
+attributes — measured on the 7-attribute control in `pilot_abstain/README.md`,
+where unchanged prompts moved 26–58%. Bundling would have produced a different
+instrument for every attribute at once.

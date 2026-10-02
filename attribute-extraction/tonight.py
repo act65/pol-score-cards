@@ -118,7 +118,52 @@ TURN_HOURS = 1.0
 # Both entry points read this one list. They used to differ — `run` carried a
 # two-stage PLAN from the era when `windows` owned the whole night — and on
 # 2026-09-06 that silently started a night with no window extraction in it.
-NIGHTLY_PLAN = ("resolve_divination",)
+# `acuity` added 2026-10-02 for an unsupervised multi-day run. It is the one
+# attribute the completed six-attribute pass never scored, it passed all four
+# gates on the 2025-10 pilot (pilot_acuity/README.md), and it is 5,548 windows
+# — about 70h at the pilot's measured 79 windows/h, which is the only stage big
+# enough to absorb several unattended days.
+#
+# Both stages stay in ONE rotation rather than running divination to completion
+# first. Rotation is what makes the run self-healing: if the resolver stalls for
+# any reason other than quota, acuity still advances, and vice versa. Divination
+# is listed FIRST so it takes the opening slice of every round, and it drops out
+# on EX_DONE after roughly 13h of slices — so "finish divination" and "get
+# through as much acuity as possible" are not in competition for more than the
+# first day.
+NIGHTLY_PLAN = ("resolve_divination", "acuity")
+
+# Checked against `--stages` at startup, so a typo in a unit file fails loudly
+# in the first second rather than being silently skipped all night. Mirrors
+# overnight_run.run's own whitelist; keep them together.
+KNOWN_STAGES = frozenset({"pilot", "windows", "acuity", "questions",
+                          "positions", "ab_prompt", "resolve_divination",
+                          "resolve_veracity"})
+
+
+def _plan(stages) -> tuple:
+    """The stage rotation from a `--stages` flag, or NIGHTLY_PLAN if empty.
+
+    `stages` may arrive as a TUPLE. python-fire parses `--stages a,b` into
+    ("a", "b") rather than the string "a,b", so `.split(",")` raised
+    AttributeError and the unit died one second after start — which is how the
+    first unattended launch failed on 2026-10-02. A single stage
+    (`--stages resolve_divination`) arrives as a string, which is why every
+    earlier unit worked and this was never hit.
+
+    Accept both, rather than making three entry points agree about which one
+    fire will hand over. Same fix, same reason, as
+    extract_hansard._resolve_attrs.
+    """
+    if isinstance(stages, (tuple, list)):
+        chosen = [str(x).strip() for x in stages if str(x).strip()]
+    else:
+        chosen = [x.strip() for x in str(stages).split(",") if x.strip()]
+    unknown = [x for x in chosen if x not in KNOWN_STAGES]
+    if unknown:
+        raise SystemExit(f"unknown stage(s): {', '.join(unknown)}. "
+                         f"Known: {', '.join(sorted(KNOWN_STAGES))}")
+    return tuple(chosen) or NIGHTLY_PLAN
 
 
 def _next(hhmm: str, after: dt.datetime | None = None) -> dt.datetime:
@@ -226,7 +271,7 @@ def _one_night(stop: dt.datetime, plan, model, done: set) -> set:
 def run(at: str = "23:00", until: str = "06:00", model: str | None = None,
         stages: str = "") -> None:
     """Wait until `at`, then work the plan until `until`. One night only."""
-    plan = tuple(s.strip() for s in stages.split(",") if s.strip()) or NIGHTLY_PLAN
+    plan = _plan(stages)
     start, stop = _window_now(at, until)
 
     print(f"scheduled: {start:%Y-%m-%d %H:%M} -> {stop:%H:%M}  "
@@ -249,7 +294,7 @@ def nightly(at: str = "00:00", until: str = "04:00", model: str | None = None,
 
     `--max_nights` caps the number of nights (0 = until finished).
     """
-    plan = tuple(s.strip() for s in stages.split(",") if s.strip()) or NIGHTLY_PLAN
+    plan = _plan(stages)
     done: set = set()
     night = 0
 
@@ -289,7 +334,7 @@ def burst(until: str, model: str | None = None, stages: str = "") -> None:
     This deliberately spends quota during the day, which the nightly schedule
     exists to avoid. Use it only when asked to.
     """
-    plan = tuple(x.strip() for x in stages.split(",") if x.strip()) or NIGHTLY_PLAN
+    plan = _plan(stages)
     stop = dt.datetime.fromisoformat(until)
     now = dt.datetime.now()
     if stop <= now:
@@ -306,6 +351,23 @@ def burst(until: str, model: str | None = None, stages: str = "") -> None:
     print(f"\n=== {dt.datetime.now():%H:%M} — burst finished "
           f"({len(done)}/{len(plan)} stages complete) ===", flush=True)
     subprocess.run([PY, "overnight_run.py", "status"], cwd=HERE)
+
+    # Tell the supervisor whether this was an ENDING or an INTERRUPTION.
+    #
+    # `_one_night` returns early on two paths that are not completion: every
+    # stage EX_FAILed, or no stage could make progress. Both exited 0, which
+    # under `Restart=on-failure` reads as "the job is done" — so a transient
+    # fault in both stages would have ended a multi-day unattended run at hour
+    # two and left the rest of the window unspent with nobody watching.
+    #
+    # Deliberately NOT a failure: the deadline arriving with work left. That is
+    # the budget doing its job, and restarting into it would be a hot loop.
+    unfinished = [s for s in plan if s not in done]
+    if unfinished and (stop - dt.datetime.now()).total_seconds() > 600:
+        print(f"ended {(stop - dt.datetime.now()).total_seconds() / 3600:.1f}h "
+              f"BEFORE the deadline with {', '.join(unfinished)} unfinished — "
+              f"exiting {EX_FAIL} so the supervisor retries", flush=True)
+        raise SystemExit(EX_FAIL)
 
 
 def status(at: str = "00:00") -> None:

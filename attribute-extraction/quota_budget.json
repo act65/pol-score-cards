@@ -3,13 +3,13 @@
     {
       "hours": 5,
       "max_cost_usd": 400.0,
-      "why": "No reserve (user, 2026-09-19, weekend). The busiest 5h ever recorded is $155.71, so this cannot throttle anything; it exists only to stop a loop."
+      "why": "Unchanged. The two stages now in the rotation burn $32/h (resolver, measured over the 11h Sep 27-28 burst) and ~$35/h (acuity, 79 windows/h x $0.442), so 5h of flat-out work is ~$175. This cannot throttle the run; it exists only to stop a loop."
     },
     {
       "hours": 168,
-      "max_cost_usd": 3000.0,
-      "why": "A 23h run adds ~$720 to the $864 already spent this week. The old $1,800 would have bound near the end. Runaway guard only."
+      "max_cost_usd": 4500.0,
+      "why": "Raised from $3,000 on 2026-10-02 for the unsupervised multi-day run, because at $3,000 it WOULD have bound mid-run and stopped with nobody there to raise it. The plan is 688 divination claims (229 calls x $1.793 = $411) plus 5,548 acuity windows; acuity's per-call cost is unmeasured, so the ceiling is sized on the measured six-attribute figure of $0.442/call = $2,452, an upper bound (the acuity system prompt is 3,740 tokens against 7,469, and the dry run estimates $0.111/call). Worst case $2,863, plus up to $642 of this week's spend still inside the rolling window = $3,505. $4,500 leaves headroom without being unbounded."
     }
   ],
-  "note": "NO RESERVE, set 2026-09-19. These are a runaway guard, not a throttle. If a daytime reserve is wanted again, the number that matters is the 5h cap \u2014 a full night's peak is ~$156."
+  "note": "NO RESERVE, set 2026-09-19; 168h ceiling raised 2026-10-02. These are a runaway guard, not a throttle -- the real limit is the subscription's rolling session cap, which is readable from nowhere and is handled by overnight_run's QuotaExhausted backoff. Dollar figures are list-price accounting of subscription usage, not billed amounts. If a daytime reserve is wanted again, the number that matters is the 5h cap."
 }
