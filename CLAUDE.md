@@ -115,13 +115,35 @@ python extract_hansard.py --dry_run                                      # 1127 
 python overnight_run.py run --hours 10 --stage pilot      # 2025-10 only — start here
 python overnight_run.py run --hours 10 --stage windows    # full term
 python overnight_run.py run --hours 6  --stage questions  # Forthrightness over Q/A pairs
+python overnight_run.py run --hours 10 --stage acuity      # Acuity, alone, own file
 python overnight_run.py status                            # progress, spends nothing
+
+# `acuity` is extracted ALONE and into its OWN file (acuity_scores_v3.jsonl),
+# and both are load-bearing. Resume reads window ids from --out, and
+# hansard_scores_v3.jsonl already holds all 5,548 of them, so pointing an
+# acuity run at the main scores file finds every window "already done" and
+# extracts nothing while reporting success. Alone, because per-attribute yield
+# falls 26-58% as the system prompt grows (fixed example budget per window,
+# divided), so a bundled run measures a different instrument from the one the
+# pilot validated. See pilot_acuity/README.md.
 
 # The scheduler runs under systemd so a crash or reboot cannot silently lose a
 # night (two were lost that way on 2026-09-04). Unit kept in the repo at
 # attribute-extraction/nz-scorecards-nightly.service.
 systemctl --user status nz-scorecards-nightly             # is tonight armed?
 systemctl --user disable --now nz-scorecards-nightly      # stop scheduling
+
+# nz-scorecards-away.service is the UNATTENDED variant (added 2026-10-02): the
+# same rotation run continuously rather than 23:00-06:00, enabled so it comes
+# back after a reboot, and Restart=on-failure so a fault does not end a
+# multi-day run. Only one of away/nightly should be enabled at a time. Restore
+# the normal schedule with:
+#   systemctl --user disable --now nz-scorecards-away
+#   systemctl --user enable  --now nz-scorecards-nightly
+# Supervision is systemd's, deliberately: a shell watcher that polls
+# `pgrep -f "extract_hansard.py ..."` matches its own command line and never
+# exits, and systemd's cgroup also reaps the child `claude -p` workers that a
+# hand-killed nohup run leaves spending quota under pid 1.
 
 # A ceiling we put on OURSELVES so the night cannot take the whole rolling
 # window — the real cap is readable from nowhere and is shared with daytime

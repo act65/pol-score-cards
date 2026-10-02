@@ -1,0 +1,69 @@
+[Unit]
+# Unattended multi-day run, 2026-10-02. The user is away for several days and
+# cannot resume anything, so this is built to need nobody: it survives reboot,
+# restarts itself after a fault, and ends on its own when the work is done.
+#
+# WORK, in one rotating plan (tonight.NIGHTLY_PLAN):
+#   resolve_divination  688 claims left of 1,881. ~229 calls, ~13h at the
+#                       measured 17.9 calls/h. Listed FIRST so it takes the
+#                       opening slice of every round and finishes first.
+#   acuity              5,548 windows, ~70h at the pilot's 79 windows/h. The
+#                       one attribute the finished six-attribute pass never
+#                       scored. Extracted ALONE (see overnight_run._pass) and
+#                       into its own file, because resume reads window ids from
+#                       --out and hansard_scores_v3.jsonl already holds all
+#                       5,548 of them.
+# Together ~83h, so the run is expected to end of its own accord around
+# 2026-10-06. The deadline below is a backstop, not the plan.
+#
+# WHY THIS IS NOT THE BURST UNIT. nz-scorecards-burst.service has no [Install]
+# section, so it is `static`: it cannot be enabled, and nothing starts it after
+# a reboot. That is exactly how the last run died — it worked 11h from 19:26 on
+# 2026-09-27, the machine was shut down at 06:33:37 the next morning (gnome
+# endSessionDialog in the journal), and nothing ran for the following four days
+# because no unit was armed to come back. This one is WantedBy=default.target
+# and enabled.
+#
+# WHY THERE IS NO WATCHER. The supervisor is systemd. A shell watcher polling
+# `pgrep -f "extract_hansard.py ..."` matches ITS OWN command line, so it never
+# sees the job end and never exits — that bug has cost this project a run
+# before. systemd also owns the cgroup, so a restart or stop kills the child
+# `claude -p` workers with the parent; killing the old nohup'd runner by hand
+# left four of them reparented to pid 1, still spending quota.
+#
+# Restore the normal schedule when back:
+#   systemctl --user disable --now nz-scorecards-away
+#   systemctl --user enable  --now nz-scorecards-nightly
+Description=NZ scorecards unattended — finish divination, then acuity
+After=network-online.target
+# Only one scheduler may hold the subscription. The nightly unit is DISABLED
+# for the duration rather than relying on this alone: both are
+# WantedBy=default.target, so with both enabled the boot order decides which
+# one wins and Conflicts= resolves it by killing whichever lost. This is the
+# backstop for a hand-started nightly, not the mechanism.
+Conflicts=nz-scorecards-nightly.service
+# No restart rate-limiting. The default (5 starts per 10s) is designed for a
+# service that flaps on startup; over several days of 5-minute retries it can
+# only produce a false "start request repeated too quickly" and a dead run.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+WorkingDirectory=/home/act65/Documents/repos/pol-score-cards/attribute-extraction
+Environment=PYTHONUNBUFFERED=1
+Environment=PATH=/home/act65/.local/bin:/home/act65/miniconda3/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/act65/miniconda3/bin/python tonight.py burst --until "2026-10-10 09:00" --stages resolve_divination,acuity
+Restart=on-failure
+RestartSec=300
+# Exit 1 means this invocation is malformed -- a deadline already in the past
+# is the one that matters here, since `burst` refuses it and would otherwise be
+# restarted into the same refusal every 5 minutes for as long as the machine is
+# up. Retrying cannot fix an argument. The failures worth restarting arrive as
+# EX_FAIL (70, burst ended early with work left -- see tonight.burst) or as a
+# signal (OOM, SIGKILL), and both still restart.
+RestartPreventExitStatus=1
+StandardOutput=append:/home/act65/Documents/repos/pol-score-cards/attribute-extraction/nightly.log
+StandardError=append:/home/act65/Documents/repos/pol-score-cards/attribute-extraction/nightly.log
+
+[Install]
+WantedBy=default.target
