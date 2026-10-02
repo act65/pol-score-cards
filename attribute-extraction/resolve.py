@@ -163,6 +163,43 @@ def load_pending(scores: str, attributes: tuple = ("veracity", "divination"),
     return out[:limit] if limit else out
 
 
+def stratify(items: list, per_mp: int) -> list:
+    """Cap items per politician, drawn EVENLY ACROSS TIME. Deterministic.
+
+    Why this exists. `load_pending` returns corpus order and `--limit` just
+    truncates it, so a capped run reads the earliest windows and stops. That is
+    how `resolve_veracity` was pulled on 2026-09-08: 371 of its 389 resolved
+    claims came from one month out of seven, which cannot be used to compare
+    MPs no matter how many more you add.
+
+    Two biases to kill, not one. Capping per politician fixes the roster, but
+    taking each MP's FIRST n claims re-introduces the time bias inside every
+    MP. So each MP's claims are sorted by date and sampled at an even stride.
+
+    No RNG: an evenly-spaced stride is reproducible, which matters because the
+    resolved file is append-only and a re-run must ask for the same items.
+
+    Measured on the full term (2026-10-02): the median MP has 160 veracity
+    claims and 113 of 138 have at least 56, so a cap of 20 draws 2,658 claims
+    (46 h of resolver) against 25,747 unstratified (444 h).
+    """
+    if per_mp <= 0:
+        return items
+    by_mp: dict = collections.defaultdict(list)
+    for it in items:
+        by_mp[it.get("politician") or "?"].append(it)
+    kept = []
+    for _mp, its in sorted(by_mp.items()):
+        its.sort(key=lambda x: (x.get("date") or "", x["item_id"]))
+        if len(its) <= per_mp:
+            kept.extend(its)
+            continue
+        stride = len(its) / per_mp
+        kept.extend(its[int(i * stride)] for i in range(per_mp))
+    kept.sort(key=lambda x: (x.get("date") or "", x["item_id"]))
+    return kept
+
+
 def _render(batch: list[dict]) -> str:
     parts = []
     for it in batch:
@@ -194,7 +231,8 @@ def _saved(path: str) -> set:
 def run(scores: str = "hansard_scores_v3.jsonl", out: str = DEFAULT_OUT,
         per_call: int = 3, workers: int = 3, limit: int = 0,
         model: str = "claude-opus-4-8", timeout: int = 600,
-        dry_run: bool = False, attrs: str = "veracity,divination") -> None:
+        dry_run: bool = False, attrs: str = "veracity,divination",
+        per_mp: int = 0) -> None:
     """Resolve pending veracity/divination items against searched sources.
 
     `--attrs divination` runs one attribute at a time. Divination is the one to
@@ -209,6 +247,13 @@ def run(scores: str = "hansard_scores_v3.jsonl", out: str = DEFAULT_OUT,
     out = out if os.path.isabs(out) else os.path.join(HERE, out)
 
     items = load_pending(scores, attributes=chosen, limit=limit)
+    # `per_mp` defaults to 0 = unchanged behaviour, deliberately: the divination
+    # run in progress calls this every slice and must not change under it.
+    if per_mp:
+        before = len(items)
+        items = stratify(items, per_mp)
+        print(f"stratified: {before:,} -> {len(items):,} items "
+              f"(<={per_mp} per politician, evenly spaced across the term)")
     done = _saved(out)
     todo = [it for it in items if it["item_id"] not in done]
     batches = [todo[i:i + per_call] for i in range(0, len(todo), per_call)]
@@ -219,6 +264,14 @@ def run(scores: str = "hansard_scores_v3.jsonl", out: str = DEFAULT_OUT,
               f"to do: {len(todo):,}   calls: {len(batches):,}")
         by_attr = collections.Counter(it["attribute"] for it in todo)
         print(f"by attribute: {dict(by_attr)}")
+        per = collections.Counter(it.get("politician") or "?" for it in todo)
+        if per:
+            counts = sorted(per.values())
+            print(f"politicians: {len(per)}   claims each: "
+                  f"min {counts[0]}, median {counts[len(counts) // 2]}, "
+                  f"max {counts[-1]}")
+            # 58 verdicts/h measured over the 2026-10-02 run.
+            print(f"at 58 verdicts/h that is {len(todo) / 58:,.0f} h of resolver")
         return
 
     if not batches:
