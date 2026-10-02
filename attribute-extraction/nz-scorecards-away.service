@@ -7,7 +7,10 @@
 #   resolve_divination  688 claims left of 1,881. ~229 calls, ~13h at the
 #                       measured 17.9 calls/h. Listed FIRST so it takes the
 #                       opening slice of every round and finishes first.
-#   acuity              5,548 windows, ~70h at the pilot's 79 windows/h. The
+#   acuity              5,548 windows. Planned at ~70h from the pilot's 79
+#                       windows/h; MEASURED at 195-320 windows/h on the
+#                       real run, so ~18-28h. An acuity-only call returns
+#                       in 28s against six attributes' ~150s. The
 #                       one attribute the finished six-attribute pass never
 #                       scored. Extracted ALONE (see overnight_run._pass) and
 #                       into its own file, because resume reads window ids from
@@ -23,6 +26,12 @@
 # endSessionDialog in the journal), and nothing ran for the following four days
 # because no unit was armed to come back. This one is WantedBy=default.target
 # and enabled.
+#
+# PROVEN, not just designed: the machine crashed at 19:32 on 2026-10-02,
+# 82 minutes into the run. It booted again at 21:22:11 and systemd started
+# this unit at 21:22:13 with no one present. Both stages resumed from their
+# own files -- divination from 1,535 verdicts, acuity from 147 windows --
+# so the only loss was the machine's downtime and the two in-flight calls.
 #
 # WHY THERE IS NO WATCHER. The supervisor is systemd. A shell watcher polling
 # `pgrep -f "extract_hansard.py ..."` matches ITS OWN command line, so it never
