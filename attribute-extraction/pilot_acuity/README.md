@@ -120,7 +120,15 @@ reproduces these numbers at ~103 examples per MP.
 ## Full-term run, started 2026-10-02 (unattended)
 
 The pilot's four gates passed, so acuity is being extracted over the whole
-54th term: 5,548 windows, ~70 h at the 79 windows/h this pilot measured.
+54th term: 5,548 windows.
+
+**Measured on the real run, 2026-10-02 (first 147 windows): ~195-320 windows/h
+at $0.295/call and 28 s mean latency, so ~18-28 h and ~$1,640 for the full
+term — not the ~70 h and $2,452 planned from this pilot's 79 windows/h.** An
+acuity-only call returns in 28 s against the six-attribute run's ~150 s,
+because one attribute at 1.5 examples/window is a fraction of the output. The
+pilot's 79 windows/h is not reproducible and should not be used for planning;
+it was measured on 2025-10, which also yields more per window.
 `overnight_run.py --stage acuity` reproduces the command above with
 `--since 2023-10-06`, writing to `acuity_scores_v3.jsonl`.
 
@@ -134,11 +142,37 @@ re-extracted rather than carried over. The cost is 3.3 h of the 70.
 
 **Still withheld.** `attributes.WITHHELD` keeps acuity off the cards. Extraction
 is not publication: the open question this run exists to answer is whether the
-pilot's numbers hold at full coverage — in particular the ~32 examples/MP figure
-(the README's earlier "103 per MP" extrapolated 2.4 examples/window across all
-133 MPs without accounting for how unevenly speaking time is distributed), and
-whether the −11 government/opposition bench gap still decomposes to government
-backbenchers at 37 against ministers 59 and opposition backbenchers 57.
+pilot's numbers hold at full coverage — the per-MP coverage figure (neither the
+README's original "103 per MP" nor the later ~32 is established; both
+extrapolate a per-window rate across 133 MPs without accounting for how
+unevenly speaking time is distributed), and whether the −11 government/opposition
+bench gap still decomposes to government backbenchers at 37 against ministers 59
+and opposition backbenchers 57.
+
+### Yield rises with the parliamentary calendar, and that is correct
+
+The first windows of the term look like a broken instrument and are not. Yield
+by sitting day over the first 147 windows:
+
+| date | windows | examples | per window |
+|---|---:|---:|---:|
+| 2023-12-05 | 5 | 0 | 0.00 |
+| 2023-12-06 | 35 | 13 | 0.37 |
+| 2023-12-07 | 16 | 24 | 1.50 |
+| 2023-12-12 | 91 | 137 | 1.51 |
+
+2023-12-05 is the Speech from the Throne and the swearing-in; 12-06 opens the
+Address in Reply. A speech with no preceding substantive turn by another member
+is INELIGIBLE by the prompt's own first gate, and maiden speeches and set-piece
+orations are exactly that. Once ordinary debate starts yield settles at ~1.5 per
+window against the pilot month's 2.4 — still a real gap, and 2023-12 is the most
+set-piece-heavy stretch of the term, so the term-wide figure should land between
+the two.
+
+The score distribution already matches the pilot (mean 55 / median 50 here
+against 56 / 60 there) and spans 0.1-1.0 rather than collapsing, and
+`responding_to` is populated on 174 of 174 examples. The instrument looks like
+the same instrument.
 
 **Marginal cost is not zero.** Acuity is extracted ALONE, not bundled into a
 re-run of the other six. Per-attribute yield falls 26–58% as the system prompt
