@@ -21,6 +21,7 @@ by a person: it has to distinguish "finished" from "stopped early".
 """
 
 import datetime as dt
+import inspect
 
 import overnight_run
 import tonight
@@ -95,10 +96,21 @@ def test_acuity_is_an_accepted_stage(monkeypatch):
         assert exc.code != 1 and "must be" not in str(exc.code or "")
 
 
-def test_acuity_is_in_the_rotation():
-    assert "acuity" in tonight.NIGHTLY_PLAN
-    assert tonight.NIGHTLY_PLAN[0] == "resolve_divination", \
-        "divination takes the opening slice of each round so it finishes first"
+def test_the_nightly_plan_is_runnable():
+    """A durable invariant, not tonight's contents.
+
+    This test used to assert `"acuity" in NIGHTLY_PLAN` and that
+    resolve_divination led it. Both were true for two days and then false: the
+    stages finished on 2026-10-04 and the plan moved to resolve_veracity, so the
+    test failed for the one reason a test should never fail -- the work
+    succeeded. What actually needs guarding is that whatever the plan holds can
+    be run, which is the failure that would otherwise surface at 3am.
+    """
+    assert tonight.NIGHTLY_PLAN, "an empty plan is a night that does nothing"
+    assert set(tonight.NIGHTLY_PLAN) <= tonight.KNOWN_STAGES
+    for stage in tonight.NIGHTLY_PLAN:
+        assert f'"{stage}"' in inspect.getsource(overnight_run.run), \
+            f"{stage} is scheduled but overnight_run.run rejects it"
 
 
 def _burst(monkeypatch, hours_ahead, finished):

@@ -206,22 +206,53 @@ ALL = tuple(a for a in _DEFINED if a.id not in DEFERRED)
 # is extracted. It stays extracted because it IS a good measure of the
 # executive, and an executive-accountability view is worth building later.
 #
-# Divination was withheld here on 2026-09-24 on a bad number: 29 MPs covered.
-# That was the RESOLVED-only count. With `--use_prior` it reaches 127 of 133
-# MPs (95%) at a median of 10 predictions each, its government/opposition gap
-# is -1, and its mean |r| against the other six is 0.17 — the most independent
-# attribute of the seven. It is published, carrying the same unverified mark as
-# Veracity until the resolver runs (~1.5 nights, 276 calls).
+# Divination — WITHHELD 2026-10-05, and Acuity released in its place.
 #
-# `acuity` is withheld for a different reason: it is new (2026-09-26) and
-# UNPROVEN, not structurally broken. It sits here so a pilot can extract and
-# measure it without it appearing on a single card, and it comes out of this
-# tuple only when it clears the gates in ATTRIBUTES.md -- coverage on both
-# benches, shrink > 0.5, spread > 20 points, max pairwise r < 0.65. Withholding
-# by default is the cheap direction to be wrong in: the failure we keep
-# repeating is publishing an attribute and discovering afterwards what it
-# measured.
-WITHHELD = ("forthrightness", "acuity")
+# The resolver finished the whole queue on 2026-10-04: 1,884 verdicts, 100% of
+# the 1,881 extracted claims, so this is the complete-data verdict rather than
+# another partial one. It settles the question against the attribute.
+#
+#   * It cannot rank MPs. Empirical-Bayes shrink is 0.03 at >=5 scorable claims
+#     per MP (82 MPs, median 9): true between-MP sd 2.6 against sampling noise
+#     13.5, so noise beats signal 5:1 and the posterior collapses onto the
+#     prior. Restricting to the 40 best-covered MPs (>=10 claims) only gets to
+#     shrink 0.38 -- still noise > signal, now on 40 of 133 cards.
+#   * 38% of resolved claims carry no score at all: 667 `not_yet_due` and 42
+#     `uncheckable`, which by design never become zeros. A prediction about 2030
+#     is not a failed prediction.
+#   * Resolving more cannot fix it. 878 verdicts gave shrink 0.09; 1,884 gave
+#     0.03. The precision improved and the signal did not appear.
+#
+# What it DID produce is a real finding, and it belongs on a notes page rather
+# than a card: NZ politicians' checkable predictions come true 72.1% of the
+# time (1,171 scorable claims; 69% -> 71.3% -> 72.1% as the sample grew, so the
+# figure is stable). An aggregate this good is worth publishing; thirteen
+# near-indistinguishable per-MP numbers are not.
+#
+# It stays extracted and stays resolved -- that is what WITHHELD means -- so the
+# aggregate keeps improving and an accountability view can be built later.
+#
+# Acuity — RELEASED 2026-10-05, replacing it, on the full-term run
+# (5,548/5,548 windows, 11,485 examples). All four gates in ATTRIBUTES.md pass,
+# every one of them by more than the pilot did:
+#
+#     gate                     pilot    full term
+#     both benches             46/44    65 govt / 58 opp  (126 MPs >=10 ex.)
+#     spread > 20 pts          60       61  (22-83)
+#     shrink > 0.5             0.67     0.94
+#     max pairwise |r| < 0.65  0.51     0.33
+#
+# True between-MP sd 13.9 against sampling noise 3.4 -- signal is 4x noise,
+# which is the exact thing Divination could never do. Coverage is a median of
+# 68 examples per MP (120 MPs at >=20), and `responding_to` is populated on
+# 11,485 of 11,485 rows.
+#
+# Two honest limits, recorded because they are easy to forget later. The
+# correlation is a cross-file text join and sees only ~6% of acuity's
+# statements (the same-prompt selection floor is Jaccard 0.38), so 0.33 is
+# measured on a thin, non-random slice; and Veracity/Divination cannot be
+# correlated against it at all, because they emit no score at extraction.
+WITHHELD = ("forthrightness", "divination")
 
 # What the cards and the site dataset show. Everything else — the extractor,
 # the audits, the eval harness — reads ALL, so a withheld attribute keeps being

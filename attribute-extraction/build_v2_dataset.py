@@ -70,6 +70,37 @@ ID2NAME = {a.id: a.name for a in attribute_registry.ALL}
 TERM_START = "2023-10-06"
 
 
+def _read_many(spec):
+    """Read one JSONL path, or several given as a comma-separated list/tuple.
+
+    Acuity lives in its OWN file (acuity_scores_v3.jsonl) because the extractor
+    resumes by reading window ids out of `--out`, and hansard_scores_v3.jsonl
+    already held all 5,548 of them -- so an acuity run pointed at the main file
+    would have found every window done and written nothing. The consequence
+    lands here: the published dataset is assembled from two window files, not
+    one.
+
+    They merge without collision even though both describe the same 5,548
+    windows: `per_pair` and `examples` are keyed by (politician, attribute), and
+    the resolver join is keyed by (window_id, attribute, index), so rows from
+    the two files only ever meet under different attribute names.
+
+    `spec` may arrive as a tuple -- python-fire parses `--scores a,b` into
+    ("a", "b") rather than the string "a,b". Same fix, same reason, as
+    extract_hansard._resolve_attrs and tonight._plan.
+    """
+    paths = ([str(x).strip() for x in spec if str(x).strip()]
+             if isinstance(spec, (tuple, list))
+             else [x.strip() for x in str(spec).split(",") if x.strip()])
+    rows = []
+    for p in paths:
+        n = len(rows)
+        rows.extend(_read(p))
+        if len(paths) > 1:
+            print(f"  {os.path.basename(p)}: {len(rows) - n:,} windows")
+    return rows
+
+
 def _read(path):
     rows = []
     with open(path, encoding="utf-8") as f:
@@ -398,7 +429,7 @@ def run(scores="hansard_scores_full.jsonl", out="site_data_v2",
 
     # Hansard: URL from the sitting date. Pressers/releases: each record carries its
     # own URL. All three blend into the same per-(mp, attribute) score pool.
-    hansard_rows = _read(scores)
+    hansard_rows = _read_many(scores)
     presser_rows = _read(presser_scores) if presser_scores else []
     release_rows = _read(release_scores) if release_scores else []
 

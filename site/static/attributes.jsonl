@@ -1,6 +1,6 @@
 {"id": "Veracity", "name": "Veracity", "definition": "How accurate and non-misleading the politician's factual claims are, checked against sources."}
-{"id": "Divination", "name": "Divination", "definition": "Whether the politician's predictions actually came true, checked against what happened."}
 {"id": "Focus", "name": "Focus", "definition": "Whether the politician engages the policy question or simply attacks the other party."}
 {"id": "Civility", "name": "Civility", "definition": "Commitment to constructive dialogue over personal attacks. Criticising a policy hard is civil; turning on the person is not."}
 {"id": "Rigor", "name": "Rigor", "definition": "Whether conclusions follow logically from their assumptions. Not a fact-check \u2014 the accuracy of the assumptions is Veracity."}
 {"id": "Specificity", "name": "Specificity", "definition": "The meaningfulness of the politician's statements (vague platitudes score low)."}
+{"id": "Acuity", "name": "Acuity", "definition": "Whether the politician takes up the argument in front of them, or delivers a speech that would be identical whoever spoke before."}

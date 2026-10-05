@@ -131,7 +131,13 @@ TURN_HOURS = 1.0
 # on EX_DONE after roughly 13h of slices — so "finish divination" and "get
 # through as much acuity as possible" are not in competition for more than the
 # first day.
-NIGHTLY_PLAN = ("resolve_divination", "acuity")
+# 2026-10-05: both previous stages are DONE. Divination is 100% resolved
+# (1,884 verdicts) and acuity is 5,548/5,548 with all four gates passed. The
+# work now is veracity, resolved from a stratified sample of 30 claims per
+# politician -- 3,924 claims, ~68h -- rather than the 25,747-claim pool, which
+# is 444h and cannot be worked front-to-back without rebuilding the calendar
+# bias that pulled this stage in September. See overnight_run.VERACITY_PER_MP.
+NIGHTLY_PLAN = ("resolve_veracity",)
 
 # Checked against `--stages` at startup, so a typo in a unit file fails loudly
 # in the first second rather than being silently skipped all night. Mirrors

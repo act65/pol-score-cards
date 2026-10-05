@@ -87,6 +87,9 @@ SYSTEM_PROMPT_FLAG = "1"
 # exactly the way a real quota block stops it, and the message says which.
 BUDGET_CONFIG = os.path.join(HERE, "quota_budget.json")
 
+# Claims per politician for the veracity resolver. See the comment in `_pass`.
+VERACITY_PER_MP = 30
+
 SINCE = "2023-10-06"
 PILOT_MONTH = "2025-10"
 
@@ -262,6 +265,23 @@ def _pass(stage: str, timeout_s: float, model: str, backend: str) -> int:
         attr = stage.split("_", 1)[1]
         cmd = [PY, "resolve.py", "run", "--scores", SCORES,
                "--attrs", attr, "--workers", WORKERS, "--model", model]
+        if attr == "veracity":
+            # Veracity is resolved from a STRATIFIED sample, not front-to-back.
+            # 25,747 claims is 444h at the measured 58 verdicts/h, and a
+            # chronological pass is also unusable for comparing MPs: that is
+            # what pulled this stage on 2026-09-08, when 371 of 389 resolved
+            # claims came from one month out of seven. `--per_mp` caps each
+            # politician and draws at an even stride through the term, which
+            # fixes the roster and the calendar together (resolve.stratify).
+            #
+            # 30 was chosen on measurement, not taste: the median MP has 160
+            # claims and 110 of 138 have at least 30, so the cap costs almost
+            # no one coverage, and 3,924 claims is ~68h -- about three days of
+            # this unit, against 444h for the whole pool. Narrowing the PROMPT
+            # was the alternative and was rejected: 97% of already-resolved
+            # veracity claims came back usable, so there is no chaff for a
+            # checkability gate to remove (ATTRIBUTES.md, 2026-10-02).
+            cmd += ["--per_mp", str(VERACITY_PER_MP)]
     elif stage == "acuity":
         # The one attribute the six-attribute run never scored. Extracted
         # ALONE, deliberately: per-attribute yield falls 26-58% as the system

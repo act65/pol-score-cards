@@ -4,20 +4,17 @@
 # restarts itself after a fault, and ends on its own when the work is done.
 #
 # WORK, in one rotating plan (tonight.NIGHTLY_PLAN):
-#   resolve_divination  688 claims left of 1,881. ~229 calls, ~13h at the
-#                       measured 17.9 calls/h. Listed FIRST so it takes the
-#                       opening slice of every round and finishes first.
-#   acuity              5,548 windows. Planned at ~70h from the pilot's 79
-#                       windows/h; MEASURED at 195-320 windows/h on the
-#                       real run, so ~18-28h. An acuity-only call returns
-#                       in 28s against six attributes' ~150s. The
-#                       one attribute the finished six-attribute pass never
-#                       scored. Extracted ALONE (see overnight_run._pass) and
-#                       into its own file, because resume reads window ids from
-#                       --out and hansard_scores_v3.jsonl already holds all
-#                       5,548 of them.
-# Together ~83h, so the run is expected to end of its own accord around
-# 2026-10-06. The deadline below is a backstop, not the plan.
+#   resolve_veracity    3,895 claims of a STRATIFIED 3,924 (30 per politician,
+#                       even stride through the term -- resolve.stratify). 1,299
+#                       calls, ~67h at the measured 58 verdicts/h. The whole
+#                       25,747-claim pool would be 444h, and working it
+#                       front-to-back is what pulled this stage on 2026-09-08
+#                       (371 of 389 verdicts from one month out of seven).
+# DONE on 2026-10-04 12:58, unattended, in 39.6h for $2,264: divination 100%
+# resolved (1,884 verdicts, 72.1% accuracy) and acuity 5,548/5,548 (11,485
+# examples), passing all four gates -- shrink 0.94, true between-MP sd 13.9
+# against sampling noise 3.4. The deadline below is a backstop, not the plan;
+# the stage exits EX_DONE as soon as its queue is empty.
 #
 # WHY THIS IS NOT THE BURST UNIT. nz-scorecards-burst.service has no [Install]
 # section, so it is `static`: it cannot be enabled, and nothing starts it after
@@ -43,7 +40,7 @@
 # Restore the normal schedule when back:
 #   systemctl --user disable --now nz-scorecards-away
 #   systemctl --user enable  --now nz-scorecards-nightly
-Description=NZ scorecards unattended — finish divination, then acuity
+Description=NZ scorecards unattended — stratified veracity resolution
 After=network-online.target
 # Only one scheduler may hold the subscription. The nightly unit is DISABLED
 # for the duration rather than relying on this alone: both are
@@ -61,7 +58,7 @@ Type=simple
 WorkingDirectory=/home/act65/Documents/repos/pol-score-cards/attribute-extraction
 Environment=PYTHONUNBUFFERED=1
 Environment=PATH=/home/act65/.local/bin:/home/act65/miniconda3/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/home/act65/miniconda3/bin/python tonight.py burst --until "2026-10-10 09:00" --stages resolve_divination,acuity
+ExecStart=/home/act65/miniconda3/bin/python tonight.py burst --until "2026-10-12 09:00" --stages resolve_veracity
 Restart=on-failure
 RestartSec=300
 # Exit 1 means this invocation is malformed -- a deadline already in the past
