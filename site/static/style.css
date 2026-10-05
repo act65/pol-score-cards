@@ -686,7 +686,7 @@ a.dl-btn:hover { border-color: #3b82f6; background: #f0f6ff; color: #1e40af; }
 .attribute-detail-container h2 a:hover { border-bottom-color: #64748b; }
 
 /* --- What a claim was checked against --------------------------------------
-   Veracity and Divination are settled by search (resolve.py), and the verdict
+   Veracity is settled by search (resolve.py), and the verdict
    carries the source URLs it was decided on. Rendering them is the difference
    between asking a reader to trust the number and letting them check it.
 

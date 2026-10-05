@@ -161,10 +161,11 @@ def _score_cards(items):
 # mention) are still in the data and reachable by URL, just not on the grid.
 #
 # Derived from the dataset, not hard-coded. It was a literal 6, which meant 6
-# of 9 on v2.0 but 6 of 7 on v3.0 — and since v3.0's Divination reaches only
+# of 9 on v2.0 but 6 of 7 on v3.0 — and since v3.0's Divination reached only
 # some MPs, that silently cut the grid from 126 cards to 54. Two thirds keeps
 # the v2.0 behaviour exactly (6 of 9) and follows the attribute set when it
-# changes.
+# changes. (Divination was withheld on 2026-10-05 and replaced by Acuity, which
+# reaches 131 of 133 MPs, so the threshold is no longer under any strain.)
 MIN_ATTRIBUTES = max(3, round(len(ATTR_NAMES) * 2 / 3))
 
 

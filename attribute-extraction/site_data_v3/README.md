@@ -1,15 +1,21 @@
 # site_data_v3 — the v3.0 site dataset
 
-**Six published attributes:** Veracity, Divination, Focus, Civility, Rigor,
-Specificity. Charisma is RETIRED, Strength and Authenticity DEFERRED to v4, and
-**Forthrightness is WITHHELD** — still extracted and measured, but not shown on
-a card (see `attributes.WITHHELD`, and the section below).
+**Six published attributes:** Veracity, Focus, Civility, Rigor, Specificity,
+Acuity. Charisma is RETIRED, Strength and Authenticity DEFERRED to v4, and
+**Forthrightness and Divination are WITHHELD** — still extracted and measured,
+but not shown on a card (see `attributes.WITHHELD`, and the section below).
+
+**Acuity replaced Divination on 2026-10-05.** Two window files are now joined,
+because acuity was extracted alone into its own file — the extractor resumes by
+reading window ids from `--out`, and `hansard_scores_v3.jsonl` already held all
+5,548 of them. They merge without collision: everything downstream is keyed by
+(politician, attribute).
 
 Built with:
 
     cd attribute-extraction
     python build_v2_dataset.py \
-        --scores hansard_scores_v3.jsonl \
+        --scores hansard_scores_v3.jsonl,acuity_scores_v3.jsonl \
         --qa_scores forthrightness_scores_v3.jsonl \
         --resolved resolved_v3.jsonl \
         --use_prior True \
@@ -26,18 +32,22 @@ Preview it without touching the published v2.0 data in `site/static/`:
 
 ## Coverage as built (5,548 of 5,548 windows — the term is complete)
 
-| attribute | MPs | | distinct | unverified |
-|---|---:|---|---:|---:|
-| Veracity | 133 | 100% | 16 | 133 |
-| Divination | 130 | 98% | 15 | 130 |
-| Focus | 132 | 99% | 47 | 0 |
-| Rigor | 132 | 99% | 30 | 0 |
-| Specificity | 132 | 99% | 33 | 0 |
-| Civility | 132 | 99% | 36 | 0 |
+| attribute | MPs | | mean | unverified | govt-opp gap |
+|---|---:|---|---:|---:|---:|
+| Veracity | 133 | 100% | 71 | 133 | +0.9 |
+| Focus | 132 | 99% | 70 | 0 | -15.7 |
+| Civility | 132 | 99% | 64 | 0 | -1.0 |
+| Rigor | 132 | 99% | 45 | 0 | -6.3 |
+| Specificity | 132 | 99% | 63 | 0 | -10.5 |
+| **Acuity** | **131** | **98%** | **53** | **0** | **-3.0** |
 
-132 of 133 MPs reach the grid (the grid needs 4 of the 6; 130 carry all six).
-No attribute's government/opposition gap exceeds 16 points — the widest are
-Focus (-15.7) and Specificity (-10.5), and three of the six are within 6.
+132 of 133 MPs reach the grid (the grid needs 4 of the 6). No attribute's
+government/opposition gap exceeds 16 points — the widest are Focus (-15.7) and
+Specificity (-10.5), and Acuity is -3.0, so it is not the government-bench
+artefact the pilot's -11 suggested it might become.
+
+Veracity's 133 "unverified" shrinks as the resolver works a stratified sample
+of 30 claims per politician (3,924 of 25,747 — see `resolve.stratify`).
 
 `unverified` counts scores still shown from `prior_score`: Veracity and
 Divination are the two search-tier attributes, and the resolver has returned

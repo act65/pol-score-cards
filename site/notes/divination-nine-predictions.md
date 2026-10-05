@@ -1,7 +1,7 @@
 ---
 title: A real signal, smaller than its own error bars
 date: 2026-09-26
-summary: MPs' checkable predictions come true about 69% of the time. Some MPs are genuinely better at it than others. With nine predictions each we cannot tell you which — and the arithmetic says we would need fifty-six.
+summary: MPs' checkable predictions come true 72% of the time. Some MPs are genuinely better at it than others. With nine predictions each we cannot tell you which — and resolving every last prediction did not change that, so the attribute came off the card.
 tags: attributes, statistics, withheld
 ---
 
@@ -131,3 +131,40 @@ This version measures something real.
 It is that **this instrument can measure the House but not the MP.** The 69% is solid. The
 ranking is not. So the verdicts stay published as evidence on each MP's page, with their
 sources; the number comes off the card.
+
+## Epilogue, 5 October 2026: we resolved all of them
+
+This post was written on 878 verdicts and ended on a prediction of its own — that the
+ranking would not survive. On 4 October the resolver finished the **entire queue**: 1,884
+verdicts against 1,881 extracted claims. So this is no longer an argument from a sample.
+
+**The aggregate got better.** 72.1% of checkable predictions came true, across 1,171 scorable
+claims. It has barely moved as the sample grew — 69%, then 71.3%, then 72.1% — which is what
+a real population number looks like. That figure is the most interesting thing this attribute
+produced and it is worth knowing: when a New Zealand politician makes a prediction specific
+enough to check, it comes true about seven times in ten.
+
+**The ranking got worse.** Not noisier — *worse*, because precision improved and the signal
+still did not appear:
+
+| verdicts | shrink | true between-MP sd | sampling noise |
+|---:|---:|---:|---:|
+| 878 | 0.09 | 5.5–6.2 | 12.8–14.0 |
+| **1,884** | **0.03** | **2.6** | **13.5** |
+
+At five or more scorable predictions per MP — 82 MPs, a median of nine each — the posterior is
+**97% population mean and 3% that MP**. Restricting to the 40 best-covered MPs only reaches
+shrink 0.38, and noise still exceeds signal, now while publishing 40 cards out of 133.
+
+A third of the problem is structural and will not improve: **38% of resolved predictions carry
+no score at all** — 667 "too early to tell" and 42 unfindable. A prediction about 2030 is not
+a failed prediction, so it gets no number, which is right and also means a long-horizon
+predictor accumulates evidence very slowly.
+
+So the post's last line has been carried out. The verdicts stay on each MP's page as evidence,
+with the sources they were decided on. The number is off the card.
+
+**What took its place.** [Acuity](/rubric/Acuity) — does this speech engage with what was
+actually just said. On the same full-term corpus it has a true between-MP sd of **13.9 against
+sampling noise of 3.4**: signal four times noise, where Divination's noise was five times its
+signal. That contrast is the whole lesson of this post, and it took measuring both to see it.
