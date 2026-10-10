@@ -78,6 +78,9 @@ class Example(BaseModel):
     # engages, plus who said it. It is what makes the score auditable: a reader
     # has to be able to see the thing being responded to.
     responding_to: Optional[str] = Field(default=None)
+    # Calibration extracts the epistemic class it assigned plus the confidence
+    # words it read, so a reader can check the judgement rather than take it.
+    claim_class: Optional[str] = Field(default=None)
     # Set by the quote gate: verbatim | spliced | missing. Rows that fail the
     # gate are dropped, so anything written out is `verbatim` — the field is
     # kept so the audit can be re-run on the output without the corpus.
@@ -214,6 +217,16 @@ class _AttrScore(BaseModel):
                      "statement does not take it up' — and then the score is "
                      "0.0. If you cannot point at what is being responded to, "
                      "there is no responsiveness to score."))
+    claim_class: Optional[str] = Field(
+        default=None,
+        description=("REQUIRED for calibration. One of 'value', "
+                     "'settled_fact', 'contested_empirical', 'forecast', then "
+                     "a semicolon and the confidence markers the speaker "
+                     "actually used, quoted — e.g. \"forecast; 'will "
+                     "inevitably lead to'\" or \"value; 'I believe'\" or "
+                     "\"contested_empirical; no qualification\". Decide the "
+                     "class BEFORE looking at the confidence. If you cannot "
+                     "name the class, emit nothing for calibration."))
 
 
 class _MultiExample(BaseModel):
@@ -529,6 +542,7 @@ def _accept(attr: str, politician: str, statement: str, sc, source_norm: str,
                 if get("stance") is not None else None),
         commitment=get("commitment"),
         responding_to=get("responding_to"),
+        claim_class=get("claim_class"),
         quote_check=verdict,
     )
 

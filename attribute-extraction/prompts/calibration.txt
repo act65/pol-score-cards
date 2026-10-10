@@ -1,0 +1,147 @@
+THE ONE QUESTION: Is the speaker as certain as this kind of claim allows?
+
+Calibration is new and PILOT ONLY. It exists because of a failure mode the other
+six attributes all miss: a member can be truthful, precise, logical, responsive,
+civil and on-topic while asserting, flatly and without qualification, something
+nobody could possibly know.
+
+Nobody understands the long-run behaviour of an economy. Nobody knows what the
+labour market looks like in 2040, what a tax change does to productivity over a
+decade, or how a regulation's costs land across a complex system. Competent,
+honest people disagree about these things. A member who says "this will destroy
+New Zealand's economy" is not lying — there is no fact of the matter yet — and
+that is exactly the problem. The claim is unavailable at the confidence used.
+
+The second half is the same vice in a different costume: presenting a PREFERENCE
+as though it were a FINDING. "It is simply a fact that this is the wrong
+priority" is a value judgement wearing the clothes of evidence. Members are
+entitled to hold values with total conviction. They are not entitled to
+smuggle them past the listener as settled matters.
+
+So this attribute scores the match between TWO things, both visible in the text:
+
+  (a) WHAT KIND of claim is being made, once you strip the hedges away; and
+  (b) HOW MUCH CERTAINTY the speaker attached to it.
+
+High score = those two fit. Low score = the certainty outruns the claim.
+
+ELIGIBLE only when the statement makes an assertion, a forecast, or a stance —
+something with a truth-claim or a position in it. EMIT NOTHING for procedure,
+ceremony, motions, points of order, or a bare question. A statement with nothing
+asserted has no posture to score.
+
+A clearly-marked opinion IS eligible and usually scores HIGH. Do not exclude the
+good behaviour this instrument exists to find.
+
+CLAIM CLASSES — decide this FIRST, before looking at the confidence:
+- `value` — a judgement about what matters, what is right, what should be
+  prioritised. Not settleable by evidence. Confidence is fully legitimate here
+  PROVIDED it is marked as the speaker's own position.
+- `settled_fact` — a matter of record, checkable now, not seriously in dispute:
+  what a bill says, what a figure was last year, what someone did. Plain
+  assertion is correct here; hedging it is not a virtue.
+- `contested_empirical` — a factual question where the evidence is mixed,
+  partial, or genuinely disputed by competent people. Needs qualification.
+- `forecast` — a claim about the future, especially multi-year, economy-wide, or
+  about human behaviour at scale. Needs the most qualification of all.
+
+SCORING
+- 1.0 — The posture fits the claim. A settled fact stated plainly. A forecast
+  given with its range, its source, or its conditions ("on Treasury's central
+  projection", "if uptake matches Australia's"). A value stated as the speaker's
+  own ("I believe", "in my view", "this Government's priority is"). Firm and
+  honest at the same time.
+- ~0.5 — Partially marked. Some qualification is present but the claim still
+  outruns it; or the class is left ambiguous while the confidence stays high; or
+  a forecast is attributed to a source but stated as though the source settled
+  it.
+- 0.1 to 0.3 — The certainty is not available for this claim. A forecast or a
+  contested empirical claim asserted flatly as fact, with no range, no source
+  and no condition. Absolutes about complex systems: "every New Zealander will
+  be worse off", "this will never work".
+- 0.0 — A value judgement asserted AS a finding ("it is simply a fact that this
+  is the wrong priority", "no reasonable person could think otherwise"), or a
+  categorical claim about the unknowable long run. The category error, not just
+  overconfidence.
+
+THE DECIDING TEST: strip every hedge and stance-marker from the statement. What
+is left — a matter of record, a contested empirical question, a forecast, or a
+preference? Now ask: is the certainty the speaker ACTUALLY used available for
+that kind of claim? If a well-informed, honest person could not have been that
+sure, the posture is unwarranted.
+
+CRITICAL — DO NOT REWARD VAGUENESS. This is not an instrument for timidity.
+"There may possibly be some effects in certain areas" is not well-calibrated, it
+is empty, and it should score around 0.3, not 1.0. A precise claim carrying an
+honest range beats a vague claim every single time. Calibration means SAYING HOW
+SURE YOU ARE, not saying less.
+
+CRITICAL — A STRONG OPINION, CLEARLY MARKED, IS A 1.0. "I believe this bill is
+the wrong priority for New Zealand and I will vote against it" is maximally
+confident and perfectly calibrated: it is a preference and it says so. Never
+take points off for conviction about values. The vice is disguise, not strength.
+
+CRITICAL — DO NOT PENALISE EITHER BENCH FOR ITS ROLE. Both benches overclaim,
+symmetrically: government forecasts benefits with certainty, opposition forecasts
+catastrophe with certainty. "This will fix the housing crisis" and "this will
+make the housing crisis worse" are the same failure. Apply the identical test.
+
+CRITICAL — THE SUBJECT IS NOT THE SCORE. A statement about the economy is not
+automatically low, and one about a bill's wording is not automatically high.
+Judge the posture, never the topic.
+
+THIS IS *NOT* CALIBRATION — do not let these move the score:
+- Whether the claim is TRUE → Veracity. An overconfident claim can be perfectly
+  correct, and a beautifully hedged one can be false. Veracity goes and checks
+  the world; Calibration reads the text in front of you. **This is the most
+  likely confusion: do not reach for whether you think the claim is right.**
+- Whether there is anything to CHECK → Specificity. The separating case:
+  "GDP will be 2.4% higher by 2035" is HIGH Specificity and LOW Calibration —
+  precise, checkable, and far more certain than any forecast can be. Meanwhile
+  "this will be a disaster" is low on both, for two different reasons.
+- Whether the conclusion FOLLOWS → Rigor. Rigor needs an inference to judge.
+  Calibration applies to a bare assertion with no argument at all, and a
+  perfectly valid argument can still end in an overclaimed conclusion.
+- Whether the prediction CAME TRUE → Divination. That is settled later, by
+  search. Calibration is judged at the moment of speaking.
+- Whether it is about the policy or the other team → Focus.
+- Whether it is POLITE → Civility. Hedged contempt is low Civility and may be
+  high Calibration.
+
+ALSO EMIT
+- `claim_class` — REQUIRED. One of `value`, `settled_fact`,
+  `contested_empirical`, `forecast`, followed by the confidence markers the
+  speaker actually used, quoted. For example: "forecast; 'will inevitably lead
+  to'" or "value; 'I believe'" or "contested_empirical; no qualification".
+  This field is what makes the score auditable: a reader must be able to see
+  which class you assigned and which words you read as the confidence. If you
+  cannot name the class, do not emit the row.
+
+WORKED BOUNDARY EXAMPLES:
+- "Treasury's central projection has the deficit closing in 2029, though it
+  flags migration as the main uncertainty." → 1.0. `forecast`; source and the
+  uncertainty named.
+- "I believe this is the wrong priority for New Zealand, and I will vote against
+  it." → 1.0. `value`, marked as the speaker's own. Total conviction, correctly
+  placed.
+- "Clause 5 shifts the consenting cost onto councils." → 1.0. `settled_fact`
+  about what a bill says; plain assertion is right and hedging would be worse.
+- "This bill will destroy New Zealand's economy." → 0.1. `forecast` asserted as
+  certainty, no range, no source, no condition, about the least predictable
+  system there is.
+- "GDP will be 2.4% higher by 2035 under this policy." → 0.2. HIGH Specificity,
+  LOW Calibration — the precision makes the overconfidence worse, not better.
+  Do not let the figure impress you.
+- "It is simply a fact that cutting this programme is the wrong choice for
+  working New Zealanders." → 0.0. A `value` asserted as a finding. The category
+  error.
+- "There may possibly be some impacts on some communities in some areas." →
+  0.3. Not calibration, just mush. `contested_empirical` with no content.
+- "Every single New Zealander will be worse off under this Government." → 0.1.
+  `forecast`; the absolute is unavailable to anyone.
+- "The member says costs will rise. On the regulatory impact statement they
+  rise for councils and fall for consent applicants, and the net is within the
+  margin of the modelling." → 1.0. `contested_empirical`, qualified exactly as
+  far as the evidence allows.
+- "I move that the bill be read a second time." → EMIT NOTHING. Nothing
+  asserted.

@@ -147,6 +147,35 @@ _DEFINED = (
         "delivers a speech that would be identical whoever spoke before.",
         requires=("responding_to",),
     ),
+    # Added 2026-10-10, PILOT ONLY -- not in PUBLISHED until it passes the gates
+    # in ATTRIBUTES.md (coverage on both benches, shrink > 0.5, spread > 20pts,
+    # max pairwise r < 0.65).
+    #
+    # The gap it fills: a member can score well on all six published attributes
+    # while asserting, flatly, something nobody could know. Nobody understands
+    # the long-run behaviour of an economy, so "this will destroy New Zealand's
+    # economy" is not a lie -- there is no fact of the matter yet -- and Veracity
+    # therefore cannot catch it. Rigor needs an inference to judge and this is
+    # often a bare assertion. Specificity scores it HIGHER when the overclaim is
+    # precise ("GDP will be 2.4% higher by 2035").
+    #
+    # It also covers the category error of presenting a PREFERENCE as a FINDING.
+    # Those are one attribute, not two, because both are a mismatch between the
+    # certainty used and the kind of claim made -- which is why `claim_class` is
+    # required: the score is only auditable if the reader can see which class was
+    # assigned and which words were read as confidence.
+    #
+    # Related evidence already in hand: 158 of 657 resolved veracity claims (24%)
+    # came back `partly_true`, defined as "the substance holds but is materially
+    # overstated". That vice currently scores 50 inside Veracity, where it is
+    # indistinguishable from "half right".
+    Attribute(
+        "calibration", "Calibration", "text",
+        "Is the speaker as certain as this kind of claim allows?",
+        "Whether the politician's confidence matches what can actually be "
+        "known, and whether opinion is offered as opinion rather than fact.",
+        requires=("claim_class",),
+    ),
 )
 
 # Deferred to v4 on 2026-08-15. Their definitions stay here so existing output
@@ -252,7 +281,7 @@ ALL = tuple(a for a in _DEFINED if a.id not in DEFERRED)
 # statements (the same-prompt selection floor is Jaccard 0.38), so 0.33 is
 # measured on a thin, non-random slice; and Veracity/Divination cannot be
 # correlated against it at all, because they emit no score at extraction.
-WITHHELD = ("forthrightness", "divination")
+WITHHELD = ("forthrightness", "divination", "calibration")
 
 # What the cards and the site dataset show. Everything else — the extractor,
 # the audits, the eval harness — reads ALL, so a withheld attribute keeps being

@@ -195,3 +195,6 @@ attribute-extraction/pilot_abstain/*.log
 attribute-extraction/pilot_full/*.jsonl
 attribute-extraction/pilot_full/*.log
 attribute-extraction/pilot_full/pid
+
+# Pilot raw output: an experiment, regenerable, not the published instrument.
+attribute-extraction/pilot_calibration/*.jsonl
