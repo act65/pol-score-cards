@@ -719,3 +719,90 @@ anything and `attribute_overlap.py` cannot compute the correlation. This is a
 blind spot in the audit, not a pass. Recorded here rather than quietly dropped;
 closing it would mean correlating the resolver's verdicts against Rigor on the
 same statements, which needs a materially larger resolved set than 878.
+
+## Decision: Calibration passes its pilot (10 October 2026)
+
+The question the user put was *how do we define this* — the objection being that
+MPs assert certainty where certainty is not available: *"noone understands long
+term impacts, the true complexity of the economy"* — and that an MP's **opinion**
+should be separated from their **claims and predictions**, with full conviction
+allowed on the first.
+
+The instrument makes the measurement **relative to the claim, not to the
+confidence**. `prompts/calibration.txt` asks one question — *is the speaker as
+certain as this kind of claim allows?* — and the model assigns an epistemic class
+**before** it looks at posture. Available certainty differs by class, so the same
+flat assertion is 1.0 on one and 0.1 on another.
+
+### The pilot (2025-10, 260 windows, 2,517 examples)
+
+The prompt's own logic came back out of the data:
+
+| `claim_class` | n | mean | posture that scores well |
+|---|---|---|---|
+| `settled_fact` | 620 | **87.8** | plain assertion; hedging would be worse |
+| `value` | 508 | **70.5** | full conviction, if marked as the speaker's own |
+| `contested_empirical` | 797 | 45.4 | certainty not available |
+| `forecast` | 493 | 46.3 | certainty least available |
+
+That ordering is the user's two requirements, measured: the two classes an MP
+*may* be certain about score high, the two they may not score low.
+
+### Gates — all four pass
+
+| | pilot | gate |
+|---|---|---|
+| Bench coverage | govt 53 / opp 45 | both benches ✓ |
+| Spread | 58 pts (30–88) | > 20 ✓ |
+| Shrink | 0.60 (true sd 9.3, noise 7.5) | > 0.5 ✓ |
+| Max pairwise r | 0.54 (Focus) | < 0.65 ✓ |
+| Bench gap | −1 | not reading role ✓ |
+
+Shrink 0.60 is a **small-sample floor, not a ceiling**: at 16 examples/MP the
+sampling noise is 7.5. The full term is 21× the windows, so ~341 examples/MP,
+noise ~1.8, shrink ~0.97. Compare Divination, which went the other way — more
+data made its shrink *worse* (0.09 → 0.03), because there was no between-MP
+signal to find.
+
+### The two failure modes that would have been our bug, not the MPs'
+
+1. **Not a vagueness detector.** The bottom of the scale is overclaim, not mush:
+   *"We had strong growth in Q4 and Q1. We're growing again now. Growth is
+   coming. Don't worry"* (0.1), *"They have lost control of this economy, and we
+   all know that"* (0.1).
+2. **Not a conviction penalty.** `value` sits at 70.5, and the 1.0s include
+   maximally firm statements — *"It is the belief of the Labour Party that this
+   Government lacks that"* (1.0) — alongside flat unhedged fact: *"Families that
+   are below $66,000 will be exempted from this scheme"* (1.0).
+
+### The defect the pilot found, and the fix
+
+3.9% of rows (99/2,517) fused two classes — `settled_fact plus value`, `value
+dressed as settled_fact` — when one sentence did two jobs. Those rows score
+sensibly, but the whole measurement is per-class, so a class that cannot be
+grouped cannot be audited. `claim_class` is now a **closed `Literal`** in
+`extract.py` (`CLAIM_CLASS`), the confidence markers moved to their own
+`confidence_markers` field, and the prompt carries the tie-break: pick the class
+of the assertion the speaker would have to **defend** if challenged.
+`tests/test_claim_class.py` holds the line, including that the pilot's old
+semicolon-joined rows still parse.
+
+### What to watch, and the cost
+
+**r = 0.54 with Focus** is the closest any number comes to a gate. The mechanism
+is in the behaviour rather than the instrument: statements naming the other side
+score **56 against 64**, because partisan attack is both off-policy *and*
+typically overclaimed. Re-check at full coverage.
+
+**Density is the constraint.** 9.68 examples/window against Acuity's 1.75 —
+Calibration has no scarce precondition, since every assertion carries a posture.
+Measured $0.443/call and 95 windows/h, so the full term is **~58 h and ~$2,458**
+(Acuity: 18–28 h, ~$1,640). Like Acuity it must therefore be extracted **alone
+and into its own file**; a bundled run would both measure a different instrument
+and crowd out the other five.
+
+**Not yet published.** Calibration is in `attributes.WITHHELD` and stays there
+until it has full-term coverage and the gates are re-checked on it. Whether it
+then *replaces* Veracity on the card is the open question the user raised —
+Veracity is the attribute about the *what* of the debate rather than the *how*,
+and it is also the one costing $3.72 a verdict.

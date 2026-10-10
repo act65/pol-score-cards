@@ -48,6 +48,14 @@ _SCORE_GUIDANCE = (
 )
 
 
+# The four epistemic classes Calibration sorts a claim into before it looks at
+# how confidently the claim was made. Closed, because the whole measurement is
+# "is this posture available to THIS kind of claim" — an unbucketable class
+# makes the score unauditable. See prompts/calibration.txt.
+CLAIM_CLASS = Literal["value", "settled_fact", "contested_empirical",
+                      "forecast"]
+
+
 class Example(BaseModel):
     """One extracted statement, scored or awaiting resolution."""
 
@@ -80,7 +88,12 @@ class Example(BaseModel):
     responding_to: Optional[str] = Field(default=None)
     # Calibration extracts the epistemic class it assigned plus the confidence
     # words it read, so a reader can check the judgement rather than take it.
+    # The class is a closed set so it can be grouped; the markers are free text
+    # because they are a quote from the speech. These were one semicolon-joined
+    # field in the pilot, where 4% of rows fused two classes ("settled_fact
+    # plus value") and so could not be bucketed at all.
     claim_class: Optional[str] = Field(default=None)
+    confidence_markers: Optional[str] = Field(default=None)
     # Set by the quote gate: verbatim | spliced | missing. Rows that fail the
     # gate are dropped, so anything written out is `verbatim` — the field is
     # kept so the audit can be re-run on the output without the corpus.
@@ -217,16 +230,22 @@ class _AttrScore(BaseModel):
                      "statement does not take it up' — and then the score is "
                      "0.0. If you cannot point at what is being responded to, "
                      "there is no responsiveness to score."))
-    claim_class: Optional[str] = Field(
+    claim_class: Optional[CLAIM_CLASS] = Field(
         default=None,
-        description=("REQUIRED for calibration. One of 'value', "
-                     "'settled_fact', 'contested_empirical', 'forecast', then "
-                     "a semicolon and the confidence markers the speaker "
-                     "actually used, quoted — e.g. \"forecast; 'will "
-                     "inevitably lead to'\" or \"value; 'I believe'\" or "
-                     "\"contested_empirical; no qualification\". Decide the "
-                     "class BEFORE looking at the confidence. If you cannot "
-                     "name the class, emit nothing for calibration."))
+        description=("REQUIRED for calibration. Exactly one of 'value', "
+                     "'settled_fact', 'contested_empirical', 'forecast' and "
+                     "nothing else. Decide it BEFORE looking at the "
+                     "confidence. If a sentence fuses two classes, pick the "
+                     "one carrying the assertion the speaker would have to "
+                     "defend. If you cannot name the class, emit nothing for "
+                     "calibration."))
+    confidence_markers: Optional[str] = Field(
+        default=None,
+        description=("REQUIRED for calibration. The confidence words the "
+                     "speaker actually used, quoted — e.g. \"'will inevitably "
+                     "lead to'\", \"'I believe'\", \"no qualification\". "
+                     "This is what makes the score auditable: a reader has to "
+                     "be able to see which words you read as the posture."))
 
 
 class _MultiExample(BaseModel):
@@ -543,6 +562,7 @@ def _accept(attr: str, politician: str, statement: str, sc, source_norm: str,
         commitment=get("commitment"),
         responding_to=get("responding_to"),
         claim_class=get("claim_class"),
+        confidence_markers=get("confidence_markers"),
         quote_check=verdict,
     )
 

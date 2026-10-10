@@ -109,13 +109,19 @@ THIS IS *NOT* CALIBRATION — do not let these move the score:
   high Calibration.
 
 ALSO EMIT
-- `claim_class` — REQUIRED. One of `value`, `settled_fact`,
-  `contested_empirical`, `forecast`, followed by the confidence markers the
-  speaker actually used, quoted. For example: "forecast; 'will inevitably lead
-  to'" or "value; 'I believe'" or "contested_empirical; no qualification".
-  This field is what makes the score auditable: a reader must be able to see
-  which class you assigned and which words you read as the confidence. If you
-  cannot name the class, do not emit the row.
+- `claim_class` — REQUIRED. EXACTLY one of `value`, `settled_fact`,
+  `contested_empirical`, `forecast`, and nothing else in the field. If a
+  sentence does two jobs at once — a figure plus a judgement on it, a fact
+  plus the forecast it is used to support — pick the class of the assertion
+  the speaker would have to DEFEND if challenged, and say so in the
+  explanation. Do not write "settled_fact plus value": a class that cannot be
+  grouped cannot be audited.
+- `confidence_markers` — REQUIRED. The confidence words the speaker actually
+  used, quoted. For example: "'will inevitably lead to'", "'I believe'", "no
+  qualification". Together with the class this is what makes the score
+  auditable: a reader must be able to see which class you assigned and which
+  words you read as the posture. If you cannot name the class, do not emit the
+  row.
 
 WORKED BOUNDARY EXAMPLES:
 - "Treasury's central projection has the deficit closing in 2029, though it

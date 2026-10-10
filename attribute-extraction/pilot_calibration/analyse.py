@@ -51,6 +51,24 @@ def _pearson(xs, ys):
     return num / (dx * dy) if dx and dy else float("nan")
 
 
+CLEAN = ("value", "settled_fact", "contested_empirical", "forecast")
+
+
+def _cls(e: dict) -> str:
+    """The epistemic class, as a member of CLEAN or a fused label.
+
+    The pilot ran before `confidence_markers` was split out, so its rows carry
+    "settled_fact; 'I believe'" in one field. Split on the semicolon so both
+    shapes read the same and the pilot stays comparable with later runs.
+    """
+    return (e.get("claim_class") or "").split(";")[0].strip().lower()
+
+
+def _fused(ex: list) -> list:
+    """Rows whose class is not one of the four — the thing the enum now blocks."""
+    return [e for e in ex if _cls(e) and _cls(e) not in CLEAN]
+
+
 def main():
     if not os.path.exists(PILOT):
         raise SystemExit(f"no pilot output at {PILOT}")
@@ -78,14 +96,20 @@ def main():
           f"({have / len(ex) * 100:.0f}%)   REQUIRED by the prompt")
     cls = collections.Counter()
     for e in ex:
-        c = (e.get("claim_class") or "").split(";")[0].strip().lower()
-        cls[c or "(missing)"] += 1
-    print("  classes:", dict(cls.most_common()))
+        cls[_cls(e) or "(missing)"] += 1
+    fused = _fused(ex)
+    print("  classes:", dict((k, v) for k, v in cls.most_common()
+                             if k in CLEAN or k == "(missing)"))
+    print(f"  fused/unbucketable labels: {len(fused)}/{len(ex)} = "
+          f"{len(fused) / len(ex) * 100:.1f}%   (the enum blocks these; "
+          f"3.9% in the 2025-10 pilot, which predates it)")
 
     print("\n  mean score BY CLASS — the prompt's own logic, tested:")
     by = collections.defaultdict(list)
     for e in scored:
-        c = (e.get("claim_class") or "").split(";")[0].strip().lower()
+        c = _cls(e)
+        if c and c not in CLEAN:
+            c = "(fused — see above)"
         by[c or "(missing)"].append(e["score"] * 100)
     for c, v in sorted(by.items(), key=lambda kv: -len(kv[1])):
         print(f"    {c:22s} n={len(v):4d}  mean {statistics.mean(v):5.1f}")
