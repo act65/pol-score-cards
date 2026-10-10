@@ -236,6 +236,13 @@ EX_DONE = 64
 # cap recovers in ~2-3h and the stage should still be there when it does.
 QUOTA_STRIKES = 5
 
+# How many consecutive passes may write nothing before the stage is treated as
+# WEDGED rather than blocked. At BACKOFF=20min this is ~2h of silence, which is
+# longer than the rolling usage window takes to recover (~2-3h is the cap's own
+# recovery, and a blocked stage that comes back writes on its next pass) and far
+# shorter than the four days lost on 2026-10-06. See the escalation in `run`.
+IDLE_STRIKES = 6
+
 # "This stage is broken." Distinct from EX_QUOTA (blocked, worth waiting for)
 # and EX_DONE (finished, drop it for good). The scheduler drops a broken stage
 # for the rest of the night so it stops blocking stages that still work.
@@ -411,6 +418,7 @@ def run(hours: float = 10.0, stage: str = "pilot", model: str = MODEL,
           f"starting at {label} ===", flush=True)
 
     quota_strikes = 0
+    idle_passes = 0
     stage_complete = False
     while (not target or done() < target) and time.time() < deadline:
         before = done()
@@ -460,12 +468,45 @@ def run(hours: float = 10.0, stage: str = "pilot", model: str = MODEL,
         if after == before:
             # No progress: almost always the subscription session cap. Back off,
             # but never past the deadline the user set.
+            idle_passes += 1
+            if idle_passes >= IDLE_STRIKES:
+                # ESCALATE. A pass that writes nothing and exits 0 used to nap
+                # and retry forever, which reads as "quota blocked, be patient".
+                # That is right for an hour and wrong for four days -- and on
+                # 2026-10-06 it was wrong for four days: the subscription limit
+                # was reached at 05:31, every `claude -p` came back instantly
+                # with stop_reason "stop_sequence", 0 input tokens and
+                # total_cost_usd 0, resolve.py logged "failed after 3 attempts"
+                # and exited 0 having written nothing, and this branch napped
+                # 20 minutes and tried again ~300 times. The limit reset and the
+                # run did NOT recover, because the wedged process was never
+                # replaced. 3,526 of 3,895 claims were still unresolved.
+                #
+                # Nothing detected it. QUOTA_STRIKES only counts EX_QUOTA, which
+                # is OUR budget guard (quota_budget.json) and never fires for the
+                # real subscription cap -- that one is readable from nowhere and
+                # arrives as ordinary call failures.
+                #
+                # So: exit EX_FAIL instead. tonight.py drops the stage, burst
+                # sees every stage broken and exits EX_FAIL, and systemd (with
+                # Restart=on-failure) starts a FRESH process five minutes later.
+                # A restart is free -- every stage is resumable and idempotent --
+                # and it is the only thing that fixes a wedged worker.
+                print(f"\n=== {stage}: {idle_passes} passes in a row wrote "
+                      f"nothing (~{idle_passes * BACKOFF / 3600:.1f}h). Treating "
+                      f"this as wedged rather than blocked: exiting so the "
+                      f"supervisor replaces the process. Resumable. ===",
+                      flush=True)
+                _audit(stage)
+                raise SystemExit(EX_FAIL)
             nap = min(BACKOFF, max(0, deadline - time.time()))
             if nap <= 0:
                 break
-            print(f"  no progress — backing off {nap / 60:.0f} min", flush=True)
+            print(f"  no progress ({idle_passes}/{IDLE_STRIKES}) — backing off "
+                  f"{nap / 60:.0f} min", flush=True)
             time.sleep(nap)
         else:
+            idle_passes = 0          # progress clears the strike count
             time.sleep(min(SHORT_SLEEP, max(0, deadline - time.time())))
 
     _audit(stage)

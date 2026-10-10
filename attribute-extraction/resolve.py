@@ -33,6 +33,7 @@ import collections
 import json
 import math
 import os
+import random
 import statistics
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -163,6 +164,12 @@ def load_pending(scores: str, attributes: tuple = ("veracity", "divination"),
     return out[:limit] if limit else out
 
 
+# Fixed so a partial run is reproducible. Changing it re-orders the queue and
+# makes an interrupted run's remaining items different -- harmless (dedupe is by
+# item_id) but it forfeits comparability between two partial runs.
+_SHUFFLE_SEED = 20261002
+
+
 def stratify(items: list, per_mp: int) -> list:
     """Cap items per politician, drawn EVENLY ACROSS TIME. Deterministic.
 
@@ -176,8 +183,18 @@ def stratify(items: list, per_mp: int) -> list:
     taking each MP's FIRST n claims re-introduces the time bias inside every
     MP. So each MP's claims are sorted by date and sampled at an even stride.
 
-    No RNG: an evenly-spaced stride is reproducible, which matters because the
-    resolved file is append-only and a re-run must ask for the same items.
+    The SELECTION uses no RNG -- an evenly-spaced stride is reproducible, which
+    matters because the resolved file is append-only and a re-run must ask for
+    the same items. The ORDER is then shuffled with a fixed seed, which is a
+    separate decision and is about interruption:
+
+    this function used to return items sorted by date, so the resolver worked
+    the sample chronologically and ANY PARTIAL RUN covered every MP but only
+    their earliest claims. That is the calendar bias again, one level up, and it
+    is not hypothetical -- the run was interrupted at 369 of 3,895 claims on
+    2026-10-06 when the subscription limit was reached. A fixed-seed shuffle
+    makes every prefix an unbiased subsample of the stratified set, so a run
+    that stops early is still usable instead of being early-term only.
 
     Measured on the full term (2026-10-02): the median MP has 160 veracity
     claims and 113 of 138 have at least 56, so a cap of 20 draws 2,658 claims
@@ -196,7 +213,10 @@ def stratify(items: list, per_mp: int) -> list:
             continue
         stride = len(its) / per_mp
         kept.extend(its[int(i * stride)] for i in range(per_mp))
-    kept.sort(key=lambda x: (x.get("date") or "", x["item_id"]))
+    # Deterministic: same seed, same order, every run. Sorting first makes the
+    # shuffle independent of dict/corpus iteration order.
+    kept.sort(key=lambda x: x["item_id"])
+    random.Random(_SHUFFLE_SEED).shuffle(kept)
     return kept
 
 

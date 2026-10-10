@@ -10,6 +10,11 @@
 #                       25,747-claim pool would be 444h, and working it
 #                       front-to-back is what pulled this stage on 2026-09-08
 #                       (371 of 389 verdicts from one month out of seven).
+#                       MEASURED 2026-10-05/06: $3.72/call and ~41
+#                       verdicts/h, not the $2.19 and 58/h divination
+#                       gave -- veracity claims need more searching. So
+#                       the full cap-30 sample is ~86h and ~$4,400, well
+#                       over the 67h/$1,600 first projected.
 # DONE on 2026-10-04 12:58, unattended, in 39.6h for $2,264: divination 100%
 # resolved (1,884 verdicts, 72.1% accuracy) and acuity 5,548/5,548 (11,485
 # examples), passing all four gates -- shrink 0.94, true between-MP sd 13.9
@@ -58,7 +63,7 @@ Type=simple
 WorkingDirectory=/home/act65/Documents/repos/pol-score-cards/attribute-extraction
 Environment=PYTHONUNBUFFERED=1
 Environment=PATH=/home/act65/.local/bin:/home/act65/miniconda3/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/home/act65/miniconda3/bin/python tonight.py burst --until "2026-10-12 09:00" --stages resolve_veracity
+ExecStart=/home/act65/miniconda3/bin/python tonight.py burst --until "2026-10-20 09:00" --stages resolve_veracity
 Restart=on-failure
 RestartSec=300
 # Exit 1 means this invocation is malformed -- a deadline already in the past

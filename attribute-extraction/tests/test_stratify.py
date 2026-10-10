@@ -73,10 +73,23 @@ def test_is_deterministic():
     assert a == b, "selection must not depend on input order"
 
 
-def test_output_stays_in_date_order():
-    items = _items({"A": ["2024-03-01", "2025-01-01"], "B": ["2024-01-01"]})
-    kept = resolve.stratify(items, 2)
-    assert [i["date"] for i in kept] == sorted(i["date"] for i in kept)
+def test_any_prefix_is_spread_across_the_term():
+    """Because the run keeps getting interrupted.
+
+    This used to assert date ORDER, which was the wrong property: working the
+    sample chronologically means a partial run covers every MP but only their
+    earliest claims -- the calendar bias one level up. The run really was cut
+    off at 369 of 3,895 claims on 2026-10-06, so a prefix has to be usable.
+    """
+    dates = [f"{y}-{m:02d}-01" for y in (2024, 2025) for m in range(1, 13)]
+    items = _items({chr(65 + i): dates for i in range(8)})
+    kept = resolve.stratify(items, 12)
+    prefix = kept[:len(kept) // 4]
+    years = {i["date"][:4] for i in prefix}
+    assert years == {"2024", "2025"}, f"prefix covers only {years}"
+    late = sum(1 for i in prefix if i["date"] >= "2025-01")
+    assert 0.25 < late / len(prefix) < 0.75, (
+        f"prefix is {late}/{len(prefix)} late-term — not spread")
 
 
 def test_unnamed_politicians_are_not_merged_with_a_real_one():
