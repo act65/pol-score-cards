@@ -63,7 +63,7 @@ Type=simple
 WorkingDirectory=/home/act65/Documents/repos/pol-score-cards/attribute-extraction
 Environment=PYTHONUNBUFFERED=1
 Environment=PATH=/home/act65/.local/bin:/home/act65/miniconda3/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/home/act65/miniconda3/bin/python tonight.py burst --until "2026-10-20 09:00" --stages resolve_veracity
+ExecStart=/home/act65/miniconda3/bin/python tonight.py burst --until "2026-10-16 09:00" --stages calibration
 Restart=on-failure
 RestartSec=300
 # Exit 1 means this invocation is malformed -- a deadline already in the past
@@ -78,3 +78,22 @@ StandardError=append:/home/act65/Documents/repos/pol-score-cards/attribute-extra
 
 [Install]
 WantedBy=default.target
+
+# --- 2026-10-10: switched from resolve_veracity to calibration ---------------
+# Veracity verification is PAUSED at the user's instruction (657 of a cap-30
+# stratified 3,924, ~$3.72/verdict). Calibration full term was chosen over
+# finishing it: cheaper (~$2,458 vs ~$4,400), and it measures the thing the
+# veracity cost question was really about -- unwarranted certainty rather than
+# claim-by-claim truth.
+#
+# Sizing from pilot_calibration/README.md, measured not guessed: $0.443/call,
+# 95 windows/h, 5,548 windows => ~58h, ~$2,458. The deadline above is 2026-10-16 09:00,
+# which is ~5.8 days -- deliberately more than 58h, because the subscription
+# cap will almost certainly interrupt this at least once and the run has to be
+# able to sit out a reset and resume. Resume is by window_id read from
+# --out (calibration_scores_v3.jsonl), so an interruption costs nothing.
+#
+# IDLE_STRIKES in overnight_run.py is what makes that safe now: the 2026-10-06
+# veracity run hit the subscription limit and napped ~300 times against a
+# wedged process, losing four days. Six no-progress passes now exit EX_FAIL so
+# this unit replaces the process instead.

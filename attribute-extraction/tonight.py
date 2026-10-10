@@ -142,9 +142,9 @@ NIGHTLY_PLAN = ("resolve_veracity",)
 # Checked against `--stages` at startup, so a typo in a unit file fails loudly
 # in the first second rather than being silently skipped all night. Mirrors
 # overnight_run.run's own whitelist; keep them together.
-KNOWN_STAGES = frozenset({"pilot", "windows", "acuity", "questions",
-                          "positions", "ab_prompt", "resolve_divination",
-                          "resolve_veracity"})
+KNOWN_STAGES = frozenset({"pilot", "windows", "acuity", "calibration",
+                          "questions", "positions", "ab_prompt",
+                          "resolve_divination", "resolve_veracity"})
 
 
 def _plan(stages) -> tuple:

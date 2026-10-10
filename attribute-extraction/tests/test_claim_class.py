@@ -8,6 +8,7 @@ to THIS kind of claim" — so an unbucketable class makes the score unauditable.
 """
 import json
 import pathlib
+import re
 
 import pytest
 from pydantic import ValidationError
@@ -95,3 +96,76 @@ def test_the_pilot_data_still_reads_under_the_old_shape():
     clean = [e for e in ex if mod._cls(e) in CLASSES]
     # the semicolon split must recover the class for the overwhelming majority
     assert len(clean) / len(ex) > 0.95
+
+
+# --- settled_fact is ineligible (2026-10-10) ---------------------------------
+# The class ran mean 88 / sd 14 in the pilot against sd 24-31 for the other
+# three, and per-MP share of it varied 0-45% and correlated +0.39 with the
+# score. So it was measuring which subjects an MP talks about, not how well
+# they calibrate. It stays in the enum because the prompt still asks the model
+# to CLASSIFY it (deciding the class first is the instrument's whole design);
+# it is emission that is blocked, which also lets us audit leakage.
+
+def test_settled_fact_is_still_a_classifiable_class():
+    assert "settled_fact" in extract.CLAIM_CLASS.__args__
+    assert _score(claim_class="settled_fact").claim_class == "settled_fact"
+
+
+def test_the_prompt_makes_settled_fact_ineligible():
+    txt = (HERE / "prompts" / "calibration.txt").read_text()
+    assert "INELIGIBLE — EMIT NOTHING" in txt
+    assert "A claim whose class is `settled_fact`" in txt
+    assert "Still classify it, then emit nothing" in txt, \
+        "classify-then-drop, not skip-before-classifying"
+
+
+def test_the_prompt_keeps_the_two_cases_the_filter_must_not_eat():
+    """Dropping settled_fact must not drop asserting a contested claim as fact,
+    nor dressing an opinion as a finding — those are the whole point."""
+    txt = (HERE / "prompts" / "calibration.txt").read_text()
+    assert "a contested claim ASSERTED as settled fact" in txt
+    assert "is `contested_empirical`" in txt
+    assert "an opinion dressed as a finding is `value`" in txt
+
+
+def test_the_prompt_drops_the_class_whole_not_just_its_high_scores():
+    """Keeping only low-scoring settled_fact rows would make the score depend
+    on which MPs we happened to catch erring on a published statistic."""
+    txt = (HERE / "prompts" / "calibration.txt").read_text()
+    assert "we do not keep the half of it that happens to score" in txt
+
+
+def _bullets(txt: str) -> list:
+    """The worked examples, each rejoined from the lines it wraps across."""
+    out, cur = [], None
+    for line in txt.splitlines():
+        if line.startswith("- "):
+            if cur:
+                out.append(" ".join(cur))
+            cur = [line[2:].strip()]
+        elif cur is not None and line.startswith("  "):
+            cur.append(line.strip())
+        elif cur:
+            out.append(" ".join(cur))
+            cur = None
+    if cur:
+        out.append(" ".join(cur))
+    return out
+
+
+def test_no_worked_example_still_scores_a_settled_fact():
+    """A prompt that forbids the class but shows it earning 1.0 is a bug."""
+    txt = (HERE / "prompts" / "calibration.txt").read_text()
+    scored = re.compile(r"\u2192\s*\d?\.?\d")
+    offenders = [b for b in _bullets(txt)
+                 if "`settled_fact`" in b and scored.search(b)]
+    assert not offenders, \
+        "worked example gives a settled_fact a score: " + offenders[0][:120]
+
+
+def test_the_ineligible_settled_fact_examples_are_still_shown():
+    """Keep them as examples — the model has to recognise the class to drop
+    it, and both the right and the wrong posture on it must be demonstrated."""
+    bl = _bullets((HERE / "prompts" / "calibration.txt").read_text())
+    shown = [b for b in bl if "`settled_fact`" in b and "INELIGIBLE" in b]
+    assert len(shown) >= 2, "show both the plain assertion and the hedged one"

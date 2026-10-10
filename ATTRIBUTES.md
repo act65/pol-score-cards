@@ -806,3 +806,79 @@ until it has full-term coverage and the gates are re-checked on it. Whether it
 then *replaces* Veracity on the card is the open question the user raised —
 Veracity is the attribute about the *what* of the debate rather than the *how*,
 and it is also the one costing $3.72 a verdict.
+
+## Decision: `settled_fact` is ineligible for Calibration (10 October 2026)
+
+Asked whether anything beyond the existing eligibility rules could be filtered
+on, since Calibration's 9.68 examples/window is 5.5× Acuity's. Every other
+prompt has such a rule and they share a principle — skip where the behaviour
+**cannot occur**, never where it is merely dull: Specificity skips pleasantries,
+Rigor where there is no inference, Focus procedural and personal attacks,
+Civility ceremonial speech, Acuity a first speaker. Calibration had none.
+
+Measured on the pilot's 2,517 examples, one class stood out:
+
+| class | n | mean | sd | share |
+|---|---|---|---|---|
+| `value` | 508 | 70.5 | 30.5 | 20.2% |
+| `settled_fact` | 620 | **87.8** | **13.7** | 24.6% |
+| `contested_empirical` | 797 | 45.4 | 23.7 | 31.7% |
+| `forecast` | 493 | 46.3 | 27.0 | 19.6% |
+
+`settled_fact` is near-ceiling and nearly flat, because plain assertion is the
+*correct* posture for a checkable fact — so almost everyone does it right and
+the class cannot separate MPs. Worse, it was an active **composition
+confound**: per-MP share of the class ran 0–45% and correlated **+0.39** with
+the MP's own score, so ~15% of the between-MP variance was which subjects an MP
+chose to talk about rather than how well they calibrated. Dropping it moved the
+ranking a median of 6 places (max 29).
+
+### What was compared
+
+| option | shrink | spread | density |
+|---|---|---|---|
+| all rows, plain mean (as piloted) | 0.66 | 58 | 9.68/w |
+| **`settled_fact` ineligible** | **0.71** | **61** | **7.30/w** |
+| all rows, class-balanced mean | 0.61 | 52 | 9.68/w |
+| both | 0.72 | 50 | 7.30/w |
+
+Class-balancing — scoring each class and averaging the means, which removes the
+composition confound without discarding anything — is **worse**, because it
+gives a class an MP has one or two rows of the same weight as one they have
+forty of, and buys noise. Ineligibility wins on every gate at once, which is
+rare and is why it was taken.
+
+These shrink figures come from a quick estimator written for the comparison, not
+from `analyse.py` (which reports 0.60 for the first row). The *contrast between
+rows* is the result; the absolute level is `analyse.py`'s to state.
+
+### Why this is not just trimming the top
+
+Dropping every row scoring ≥0.9 instead makes the instrument markedly **worse**
+(shrink 0.51, spread 44). The gain is specific to this class, which is what a
+confound looks like and what a trimmed ceiling does not.
+
+### What the filter deliberately does not eat
+
+The class is what the claim **is**, not what the speaker calls it. So a
+contested claim asserted as settled fact is `contested_empirical` and still
+scores low; an opinion dressed as a finding is `value` and still scores 0.0–0.1.
+Both of the user's stated concerns — certainty where none is available, and
+opinion not marked as opinion — are untouched. What leaves is correctly-asserted
+checkable fact (no signal) and the rare hedging of a known one.
+
+The class is dropped **whole**, not just its high scores: keeping only the
+failures would make the score depend on which MPs we happened to catch erring on
+a published statistic. `settled_fact` therefore stays in the `CLAIM_CLASS` enum
+and the prompt still asks the model to classify it before discarding it — the
+classify-first step is the instrument's design, and keeping it lets leakage be
+audited.
+
+### Caveat on the cost saving
+
+The 7.30/w figure is a **post-hoc filter** of the pilot. Making the class
+ineligible changes what the model proposes, and per-attribute yield reallocates
+as the prompt changes, so the real density may land higher than 7.30. The
+confound removal holds either way — it is about which rows reach the score. The
+density is being measured against the old prompt on identical windows during the
+full-term run.

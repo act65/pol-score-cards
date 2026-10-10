@@ -108,6 +108,24 @@ THIS IS *NOT* CALIBRATION — do not let these move the score:
 - Whether it is POLITE → Civility. Hedged contempt is low Civility and may be
   high Calibration.
 
+INELIGIBLE — EMIT NOTHING
+- A claim whose class is `settled_fact`. Still classify it, then emit nothing
+  for it. Plain assertion is the correct posture for a checkable fact, so
+  almost every MP scores near the ceiling here and the class carries no
+  information about how well anyone calibrates — in the 2025-10 pilot it ran
+  mean 88 with sd 14, against sd 24-31 for the other three. Worse, MPs differ
+  in HOW MUCH they talk about checkable facts (0-45% of their rows), and that
+  share correlated +0.39 with their score: including the class rewarded the
+  subject an MP chose rather than the posture they took. Dropping it moved the
+  ranking a median of 6 places.
+  NOTE WHAT THIS DOES NOT EXCLUDE: a contested claim ASSERTED as settled fact
+  is `contested_empirical` — the class is what the claim IS, not what the
+  speaker calls it — and an opinion dressed as a finding is `value`. Both are
+  still emitted and both still score low. Only correctly-asserted checkable
+  facts leave, plus the rare hedging of a known one.
+- Anything with no assertion in it: a question, a point of order, a
+  pleasantry. There is no posture without a claim.
+
 ALSO EMIT
 - `claim_class` — REQUIRED. EXACTLY one of `value`, `settled_fact`,
   `contested_empirical`, `forecast`, and nothing else in the field. If a
@@ -130,8 +148,15 @@ WORKED BOUNDARY EXAMPLES:
 - "I believe this is the wrong priority for New Zealand, and I will vote against
   it." → 1.0. `value`, marked as the speaker's own. Total conviction, correctly
   placed.
-- "Clause 5 shifts the consenting cost onto councils." → 1.0. `settled_fact`
-  about what a bill says; plain assertion is right and hedging would be worse.
+- "Clause 5 shifts the consenting cost onto councils." → `settled_fact` about
+  what a bill says. INELIGIBLE: plain assertion is right here and hedging would
+  be worse, so there is nothing to separate one MP from another. Classify it,
+  emit nothing.
+- "I think unemployment is maybe around the 5 percent mark, or something." →
+  also `settled_fact`, also INELIGIBLE, even though the hedging is wrong. The
+  class leaves as a whole; we do not keep the half of it that happens to score
+  low. Keeping only the failures would make the score depend on which MPs we
+  caught erring on a published statistic.
 - "This bill will destroy New Zealand's economy." → 0.1. `forecast` asserted as
   certainty, no range, no source, no condition, about the least predictable
   system there is.

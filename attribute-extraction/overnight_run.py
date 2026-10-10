@@ -58,6 +58,13 @@ QA_SCORES = "forthrightness_scores_v3.jsonl"
 # than assume they were produced the same way.
 ACUITY = "acuity_scores_v3.jsonl"
 
+# Calibration lands in its own file for both of the reasons above, and a
+# third: density. The 2025-10 pilot yielded 9.68 examples/window against
+# acuity's 1.75, because every assertion carries a posture while acuity
+# needs a scarce precondition. Bundling it would crowd the other five out
+# of their own example budget. See pilot_calibration/README.md.
+CALIBRATION = "calibration_scores_v3.jsonl"
+
 # Per-call token accounting (claude_cli._record_usage). The subscription cap is
 # what limits this project, and until now we only ever saw it indirectly — as
 # the point in the night where calls started failing. This records what each
@@ -202,7 +209,8 @@ def _plan_size(stage: str, model: str, backend: str) -> int:
         return 0
 
     pilot_scope = stage in ("pilot", "positions")
-    attrs = {"positions": "positions", "acuity": "acuity"}.get(stage, "scores")
+    attrs = {"positions": "positions", "acuity": "acuity",
+         "calibration": "calibration"}.get(stage, "scores")
     cmd = [PY, "extract_hansard.py", "--dry_run",
            "--attrs", attrs,
            "--since", f"{PILOT_MONTH}-01" if pilot_scope else SINCE,
@@ -301,6 +309,15 @@ def _pass(stage: str, timeout_s: float, model: str, backend: str) -> int:
                "--window_tokens", WINDOW_TOKENS, "--workers", WORKERS,
                "--timeout", CALL_TIMEOUT,
                "--backend", backend, "--model", model, "--out", ACUITY]
+    elif stage == "calibration":
+        # Alone and into its own file, for the same reason as acuity plus its
+        # own density (see CALIBRATION above). Measured over the pilot:
+        # $0.443/call, 95 windows/h, so the full term is ~58h / ~$2,458.
+        cmd = [PY, "extract_hansard.py", "--attrs", "calibration",
+               "--since", SINCE, "--until", "",
+               "--window_tokens", WINDOW_TOKENS, "--workers", WORKERS,
+               "--timeout", CALL_TIMEOUT,
+               "--backend", backend, "--model", model, "--out", CALIBRATION]
     elif stage == "positions":
         # Record-tier extraction: a stated position and a commitment, no score.
         # Feeds data/authenticity_score.py and the Strength ledger join, and
@@ -354,6 +371,7 @@ def status() -> None:
     print(f"windows scored:       {_count(SCORES):,}  ({SCORES})")
     print(f"Q/A pairs scored:     {_count(QA_SCORES):,}  ({QA_SCORES})")
     print(f"acuity windows:       {_count(ACUITY):,}  ({ACUITY})")
+    print(f"calibration windows:  {_count(CALIBRATION):,}  ({CALIBRATION})")
     print(f"resolved claims:      {_count(RESOLVED):,}  ({RESOLVED})")
     for name in ("ATTRIBUTE_OVERLAP_v3.md", "QUOTE_AUDIT_v3.md"):
         p = os.path.join(HERE, name)
@@ -388,16 +406,18 @@ def run(hours: float = 10.0, stage: str = "pilot", model: str = MODEL,
               flush=True)
         run(hours=left, stage="windows", model=model, backend=backend)
         return
-    if stage not in ("pilot", "windows", "acuity", "questions", "positions",
-                     "ab_prompt", "resolve_divination", "resolve_veracity"):
-        raise SystemExit("--stage must be pilot | windows | acuity | questions "
-                         "| positions | resolve_divination | resolve_veracity "
-                         "| all")
+    if stage not in ("pilot", "windows", "acuity", "calibration",
+                     "questions", "positions", "ab_prompt",
+                     "resolve_divination", "resolve_veracity"):
+        raise SystemExit("--stage must be pilot | windows | acuity | "
+                         "calibration | questions | positions | "
+                         "resolve_divination | resolve_veracity | all")
 
     out_file = {"questions": QA_SCORES,
                 "ab_prompt": "ab_prompt_B.jsonl",
                 "positions": POSITIONS,
                 "acuity": ACUITY,
+                "calibration": CALIBRATION,
                 "resolve_divination": RESOLVED,
                 "resolve_veracity": RESOLVED}.get(stage, SCORES)
     deadline = time.time() + hours * 3600
@@ -405,7 +425,7 @@ def run(hours: float = 10.0, stage: str = "pilot", model: str = MODEL,
     # written == windows scored). For `questions` the plan is in CALLS and for
     # the resolvers it is in ITEMS, neither of which is comparable to a row
     # count — so they get no target and stop when the runner says EX_DONE.
-    if stage in ("pilot", "windows", "acuity"):
+    if stage in ("pilot", "windows", "acuity", "calibration"):
         target = target or _plan_size(stage, model, backend)
     else:
         target = 0
