@@ -63,7 +63,7 @@ Type=simple
 WorkingDirectory=/home/act65/Documents/repos/pol-score-cards/attribute-extraction
 Environment=PYTHONUNBUFFERED=1
 Environment=PATH=/home/act65/.local/bin:/home/act65/miniconda3/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/home/act65/miniconda3/bin/python tonight.py burst --until "2026-10-16 09:00" --stages calibration
+ExecStart=/home/act65/miniconda3/bin/python tonight.py burst --until "2026-10-26 09:00" --stages calibration
 Restart=on-failure
 RestartSec=300
 # Exit 1 means this invocation is malformed -- a deadline already in the past
@@ -97,3 +97,25 @@ WantedBy=default.target
 # veracity run hit the subscription limit and napped ~300 times against a
 # wedged process, losing four days. Six no-progress passes now exit EX_FAIL so
 # this unit replaces the process instead.
+
+# --- 2026-10-12 08:57: PAUSED at 3,905/5,548 (70.4%) --------------------------
+# Paused at the user's request to keep the rest of the week's subscription
+# window for interactive use -- they were near 80% for the week. Not a fault:
+# 41.2h unbroken, 95 calls/h, $1,511 of list-price usage, no subscription
+# interruption at all.
+#
+# The deadline above was moved 16 Oct -> 26 Oct for exactly one reason: a
+# deadline in the past makes `burst` exit EX_FAIL the instant it starts, and
+# RestartPreventExitStatus=1 then (correctly) refuses to retry. So resuming
+# after a multi-day pause needs the deadline ahead of today or nothing runs.
+#
+# RESUME -- one command, nothing else to set up:
+#   systemctl --user enable --now nz-scorecards-away
+# Resume is by window_id read from calibration_scores_v3.jsonl
+# (extract_hansard._saved_ids), verified at the pause: all 3,905 completed
+# windows are skipped. ~1,643 windows remain = ~17h, ~$636.
+#
+# The corpus is covered in date order, so the pause leaves 2025-08-14 onward
+# unscored -- i.e. the LAST ~15 months of the term. Do not compute per-MP
+# aggregates from the partial file: coverage is complete for every MP up to
+# Aug 2025 and absent after it, which is a period bias, not a sample.

@@ -69,3 +69,61 @@ different instrument from the one this pilot validated.
 This pilot predates the `claim_class` / `confidence_markers` split, so its rows
 carry `"settled_fact; 'I believe'"` in one field. `analyse.py::_cls` splits on
 the semicolon so the pilot stays comparable with later runs.
+
+## Full-term run, paused at 70.4% (12 October 2026)
+
+Paused at the user's request to leave the rest of the week's subscription window
+for interactive use. Not a fault: 41.2 h unbroken, 95 calls/h, no subscription
+interruption at any point.
+
+| | at the pause |
+|---|---|
+| Windows | **3,905 / 5,548 (70.4%)** |
+| Examples | 30,280 at **7.75/window** |
+| Usage | $1,511 list-price at $0.386/call |
+| Corpus reached | 2023-12-05 → **2025-08-14** |
+| Remaining | 1,643 windows ≈ 17 h, ~$636 |
+
+### Resume
+
+```bash
+systemctl --user enable --now nz-scorecards-away
+```
+
+Nothing else to set up. Resume is by `window_id` read from
+`calibration_scores_v3.jsonl`, verified at the pause — all 3,905 completed
+windows are skipped. The unit's deadline was moved to 2026-10-26 when pausing,
+because a deadline in the past makes `burst` exit `EX_FAIL` immediately and
+`RestartPreventExitStatus=1` then refuses to retry.
+
+### Do not aggregate the partial file
+
+The corpus is processed in **date order**, so the pause leaves everything from
+2025-08-14 onward unscored — the last ~15 months of the term. Coverage is
+complete for every MP up to that date and absent after it, which is a **period
+bias, not a sample**: it would score each MP only on the term's first 20 months
+and silently omit the election run-up. This is the same trap `stratify()` was
+built to avoid for the veracity resolver, where a fixed-seed shuffle makes every
+prefix unbiased. The window extractor has no such shuffle, by design — resume
+and audit both want date order — so the rule is simply that the file is not
+publishable until it is complete.
+
+### The instrument at 3,905 windows
+
+| gate | pilot (260 w) | 2,610 w | **3,905 w** | threshold |
+|---|---|---|---|---|
+| MPs (≥20 ex) | 99 @ 16 ex | 124 @ 142 | **128 @ 196** | both benches ✓ |
+| Shrink | 0.60 | 0.88 | **0.91** | > 0.5 ✓ |
+| Spread | 58 | 34 | **43** | > 20 ✓ |
+| Bench gap | −1 | −2.5 | **−3.1** | small ✓ |
+| `settled_fact` leakage | n/a | 0 | **0 of 30,280** | 0 |
+| Fused class labels | 3.9% | 0 | **0 of 30,280** | 0 |
+
+Shrink rose 0.60 → 0.91 exactly as the small-sample argument predicted (noise
+7.5 → 2.2), which is the opposite of Divination, where more data drove shrink
+*down* (0.09 → 0.03). Spread fell from the pilot's 58 and is now recovering
+(34 → 43) as every MP accumulates enough examples for their mean to settle;
+the pilot's extremes were MPs with a dozen rows each.
+
+Both filters added on 2026-10-10 are perfectly compliant at 116× the pilot's
+volume: zero `settled_fact` rows and zero fused class labels in 30,280 examples.
