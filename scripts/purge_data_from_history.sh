@@ -67,9 +67,19 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 
 echo "=== Step 1: mirror backup ==="
-echo "  -> $BACKUP"
-git clone --mirror . "$BACKUP"
-echo "  done. To undo everything, including a force-push:"
+# Reuse an existing one rather than writing a second 624 MB copy. Pass
+# BACKUP=... to force a specific path, or delete the old one to take a fresh
+# snapshot.
+EXISTING="$(ls -1d "$HOME"/pol-score-cards-prepurge-*.git 2>/dev/null | tail -1 || true)"
+if [ -n "$EXISTING" ] && [ -z "${BACKUP_FORCE:-}" ]; then
+  echo "  reusing existing backup: $EXISTING"
+  echo "  (set BACKUP_FORCE=1 to take a fresh one)"
+  BACKUP="$EXISTING"
+else
+  echo "  -> $BACKUP"
+  git clone --mirror . "$BACKUP"
+fi
+echo "  To undo everything, including a force-push:"
 echo "    git -C $BACKUP push --mirror git@github.com:act65/pol-score-cards.git"
 echo
 
