@@ -128,7 +128,8 @@ _DEFINED = (
         "rigor", "Rigor", "text",
         "Does the conclusion follow from the premises?",
         "Whether conclusions follow logically from their assumptions. Not a "
-        "fact-check — the accuracy of the assumptions is Veracity.",
+        "fact-check — whether the assumptions are TRUE is a separate question, "
+        "and one these cards no longer score.",
     ),
     Attribute(
         "specificity", "Specificity", "text",

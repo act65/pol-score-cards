@@ -59,9 +59,9 @@
     },
     "site/attributes.jsonl": {
       "source": "site/static/attributes.jsonl",
-      "bytes": 1015,
+      "bytes": 1064,
       "lines": 6,
-      "sha256": "d6189e0969fdd2983e8548e05e6066465e1cee3de89b5ffe9f3915d5107b3f4d"
+      "sha256": "866d869387ca2e7697d3173ccbaaf59353bd8128b11dcedc3891650b40c385a9"
     },
     "site/examples.jsonl": {
       "source": "site/static/examples.jsonl",

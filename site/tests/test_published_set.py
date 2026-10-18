@@ -99,3 +99,30 @@ def test_the_withdrawn_attributes_serve_no_rubric():
     c = app.app.test_client()
     for gone in ("Veracity", "Divination", "Charisma", "Forthrightness"):
         assert c.get(f"/rubric/{gone}").status_code == 404, gone
+
+
+def test_no_card_definition_points_at_an_attribute_the_reader_cannot_find():
+    """Found live on 2026-10-18: Rigor's card definition still read "the
+    accuracy of the assumptions is Veracity", on all 132 card pages, after
+    /rubric/Veracity started returning 404. Card-facing prose is part of the
+    attribute set and goes stale with it."""
+    gone = {registry.BY_ID[a].name for a in registry.WITHHELD
+            if a in registry.BY_ID} | {"Charisma"}
+    offenders = []
+    for a in registry.PUBLISHED:
+        for text in (a.question, a.definition):
+            for name in gone:
+                if name in (text or ""):
+                    offenders.append((a.name, name, text))
+    assert not offenders, offenders
+
+
+def test_the_dataset_copy_of_the_definitions_is_current():
+    """app.attribute_descriptions comes from the BUILT dataset, so a fix in
+    attributes.py does not reach a card until the dataset is rebuilt."""
+    live = {d["name"]: d.get("definition", "")
+            for d in app.attribute_descriptions}
+    for a in registry.PUBLISHED:
+        assert live.get(a.name) == a.definition, (
+            f"{a.name}: dataset definition differs from the registry — "
+            f"rebuild with build_v2_dataset.py")
