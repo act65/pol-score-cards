@@ -12,7 +12,7 @@
     {# Each attribute's role in battle, keyed by its id. One mechanic each, and
        no attribute doing two jobs. #}
     {% set roles = {
-        'Veracity':    'Health — a card\'s hit points are 10 + Veracity. Credibility is the thing you have to lose, and you lose it a claim at a time.',
+        'Calibration': 'Health — a card\'s hit points are 10 + Calibration. Credibility is the thing you have to lose, and you spend it every time you claim more certainty than you had.',
         'Rigor':       'Damage — a landed attack deals Rigor. A well-argued case hits harder.',
         'Civility':    'Armour — reduce incoming damage by half the defender\'s Civility (round down). Arguing about the policy instead of the person gives an opponent nothing to grab.',
         'Specificity': 'Accuracy — to hit, roll a d10; roll above the attacker\'s Specificity and the attack was too vague to land.',
@@ -40,7 +40,7 @@
 
         <h2>Reading a card</h2>
         <p>Every attribute is printed 0–100. In play, round each to the nearest ten and read the
-           tens digit as a <strong>rating from 0 to 10</strong> — so Veracity 78 is a rating of 8,
+           tens digit as a <strong>rating from 0 to 10</strong> — so Calibration 78 is a rating of 8,
            Civility 31 is a rating of 3. All the rules below use these 0–10 ratings.</p>
 
         <h2>What each attribute does</h2>
@@ -58,8 +58,8 @@
             <li>Shuffle the deck. Deal each player <strong>4 cards</strong> as their hand.</li>
             <li>Each player secretly chooses <strong>3</strong> to bring to the table, then reveals
                 them together. These are your <em>bench</em>; the 4th stays in hand.</li>
-            <li>Set each card's <strong>Health to 10 + its Veracity rating</strong> and track it with
-                counters.</li>
+            <li>Set each card's <strong>Health to 10 + its Calibration rating</strong> and track it
+                with counters.</li>
         </ol>
 
         <h2>Playing a round</h2>
@@ -95,9 +95,9 @@
 
         <h2>Why the scores matter</h2>
         <p>Strong cards aren't the loudest politicians — they're the ones who score well across the
-           board: credible (Veracity), well-armoured (Civility), precise (Specificity), disciplined
-           (Focus). A serial over-claimer folds in two hits because credibility <em>is</em> the health
-           bar; a bully has no armour and takes every blow at full force; a vague one misses
+           board: measured (Calibration), well-armoured (Civility), precise (Specificity), disciplined
+           (Focus). A serial over-claimer folds in two hits because the health bar <em>is</em> how much
+           certainty you were entitled to; a bully has no armour and takes every blow at full force; a vague one misses
            constantly; one who only ever swings at the other party never builds Concentration and
            spends the whole game hitting for chip damage. Holding a bad card and thinking
            <em>"how is this person an MP?"</em> is the game working as intended — and every number

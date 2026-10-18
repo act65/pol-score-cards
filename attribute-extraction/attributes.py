@@ -7,13 +7,19 @@ needs to say: **not every attribute is scored the same way.**
 
     from attributes import ATTRIBUTES, SCORED_IN_WINDOWS, tier_of
 
-**Seven active attributes** as of 2026-08-15, of which **six are PUBLISHED** as
-of 2026-09-24. Charisma was RETIRED (r=0.96 with Civility); Strength and
-Authenticity are DEFERRED to v4; Forthrightness is WITHHELD — still extracted
-and measured, but not shown on a card, because only ministers answer oral
-questions and it therefore scores the government benches and almost no one
-else. See the
+**Eight active attributes**, of which **six are PUBLISHED** as of 2026-10-18:
+Focus, Civility, Rigor, Specificity, Acuity and Calibration. Charisma was
+RETIRED (r=0.96 with Civility); Strength and Authenticity are DEFERRED to v4.
+Three are WITHHELD — still extracted and measured, but not shown on a card:
+Forthrightness (only ministers answer oral questions, so it scores the
+government benches and almost no one else), Divination (shrink 0.03 on the
+resolved set — it can measure the House but not the MP) and Veracity (its card
+number was always the model's unaided guess; 2.6% of claims resolved). See the
 note above each tuple for why. All stay defined so older output still reads.
+
+Every PUBLISHED attribute is now scored from evidence at extraction time. The
+`search` tier is entirely withheld as of 2026-10-18, so no card shows a
+`prior_score`.
 
 Three tiers, defined in `ATTRIBUTES.md` (which is the contract — if this file
 disagrees with it, this file is the bug):
@@ -281,7 +287,51 @@ ALL = tuple(a for a in _DEFINED if a.id not in DEFERRED)
 # statements (the same-prompt selection floor is Jaccard 0.38), so 0.33 is
 # measured on a thin, non-random slice; and Veracity/Divination cannot be
 # correlated against it at all, because they emit no score at extraction.
-WITHHELD = ("forthrightness", "divination", "calibration")
+# Calibration — RELEASED 2026-10-18, and VERACITY WITHHELD in its place, on
+# the full-term run (5,548/5,548 windows, 43,285 examples, $2,142). All four
+# gates pass, and two of them improved on the pilot rather than decaying:
+#
+#     gate                     pilot    full term
+#     both benches             53/45    67 govt / 64 opp  (137 MPs >=5 ex.)
+#     spread > 20 pts          58       58  (17-75)
+#     shrink > 0.5             0.60     0.92
+#     max pairwise |r| < 0.65  0.54     0.47  (Rigor; Focus fell 0.54 -> 0.44)
+#
+# True between-MP sd 7.4 against sampling noise 2.1, on a median of 251
+# examples per MP. The shrink rise from 0.60 is the small-sample argument
+# vindicated and the exact inverse of Divination, which fell 0.09 -> 0.03 as
+# its sample grew. Specificity correlates at only +0.13, which is the
+# load-bearing check: a confidently-asserted bogus figure still scores low, so
+# the instrument is not rewarding precision.
+#
+# Class means, full term: value 65.8 (n=12,052), forecast 45.2 (n=11,522),
+# contested_empirical 43.4 (n=19,711). MPs are well calibrated when stating a
+# preference and poorly calibrated on contested claims and forecasts, which is
+# the failure the attribute was built to catch.
+#
+# Veracity — WITHHELD, not retired, and this is the honest reason: it is the
+# only published attribute whose number was never measured. `prior_score` (the
+# model's unaided guess) was on 133 of 133 cards, with 657 of 25,747 claims
+# resolved (2.6%). Finishing the stratified sample costs ~$4,400 at $3.72 a
+# verdict, which is twice what the whole of Calibration cost. So the card slot
+# goes to the attribute that has evidence behind it.
+#
+# This is a deliberate narrowing of what the cards claim. Veracity asked "is
+# this true", which is the question a reader most wants answered, and
+# Calibration does not answer it -- it asks whether the speaker's certainty was
+# available to them. What the cards no longer assert is any per-MP claim about
+# truthfulness. That is a loss, and it is recorded as one.
+#
+# What Veracity DID produce is a real finding and belongs on a notes page, the
+# same disposition as Divination: of 657 resolved claims, 24% came back
+# `partly_true` -- "the substance holds but is materially overstated". See
+# site/notes/veracity-what-657-checks-found.md.
+#
+# Veracity and Divination both stay extracted and stay resolvable -- that is
+# what WITHHELD means. The user's decision on 2026-10-18 was explicitly to
+# "return to veracity and divination in our next version", so the pending rows,
+# the falsification criteria and the resolver are all kept intact.
+WITHHELD = ("forthrightness", "divination", "veracity")
 
 # What the cards and the site dataset show. Everything else — the extractor,
 # the audits, the eval harness — reads ALL, so a withheld attribute keeps being

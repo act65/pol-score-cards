@@ -9,11 +9,37 @@ the wrong claim.
 
 Found on 2026-09-25: 14 of 389 verdicts were stale. One pointed past the end of
 its list and dropped harmlessly; the other 13 landed on quotes that had moved.
+
+DORMANT SINCE 2026-10-18, AND DELIBERATELY STILL TESTED. The join only ever
+fires for an attribute that emits `score=None` at extraction — the `search`
+tier, i.e. Veracity and Divination — and both are now WITHHELD, so no PUBLISHED
+attribute reaches this path. `build_v2_dataset._ingest` drops withheld
+attributes at ingest, which is correct for the cards and would otherwise make
+every test below vacuously pass by filtering its fixture away.
+
+So these tests put Veracity back into `PUBLISHED_IDS` for their duration. That
+is not a workaround: the user's decision was explicitly to "return to veracity
+and divination in our next version", so the path is live code on a shelf, and a
+silent regression in it would only surface in v4 with the stale-join bug
+already shipped.
 """
 
 import collections
 
+import pytest
+
+import attributes as attribute_registry
 import build_v2_dataset as b
+
+
+@pytest.fixture(autouse=True)
+def _veracity_published(monkeypatch):
+    """Exercise the join as v4 will, with a search-tier attribute published."""
+    monkeypatch.setattr(b, "PUBLISHED_IDS",
+                        set(b.PUBLISHED_IDS) | {"veracity"})
+    assert "veracity" in attribute_registry.WITHHELD, (
+        "this fixture exists because veracity is withheld; if it has been "
+        "published again, delete the fixture rather than keeping it")
 
 
 def _one_window(statements, window_id="2026-01-01#1"):

@@ -147,8 +147,13 @@
                                 <strong>{{ 'The claim:' if not example.resolved else 'Analysis:' }}</strong>
                                 {{ example.explanation }}</div>
                         {% endif %}
-                        {# What the claim was CHECKED against. Veracity is
-                           scored by searching for evidence
+                        {# What the claim was CHECKED against. DORMANT since
+                           2026-10-18: this renders only for a search-tier
+                           attribute, and both Veracity and Divination are now
+                           withheld, so nothing published reaches it. Kept
+                           because both return in the next version.
+
+                           Veracity was scored by searching for evidence
                            (resolve.py), and the verdict carries the source URLs
                            it was decided on. A reader can follow them and
                            disagree with us, which is the only reason any of

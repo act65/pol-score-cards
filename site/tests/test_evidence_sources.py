@@ -11,8 +11,35 @@ import collections
 import re
 from html import unescape
 
+import pytest
+
 import app
 import data_access_jsonl
+
+# --- DORMANT SINCE 2026-10-18 ------------------------------------------------
+# Everything below describes how the site presents a SEARCH-tier score: the
+# source links behind a checked verdict, the unverified mark, and a pending row
+# that carries no number. Veracity and Divination are the only search-tier
+# attributes and both are now WITHHELD, so the published dataset contains no
+# such rows and every assertion here would fail on an empty premise rather
+# than on a defect.
+#
+# These tests are NOT deleted, because the user's decision was to "return to
+# veracity and divination in our next version" and the bugs they pin are ones
+# we actually shipped -- a pending row published as 50, and source URLs
+# collected for weeks that no template rendered. They skip while the dataset
+# has nothing of the kind and come back by themselves the moment it does.
+#
+# `test_no_published_attribute_is_scored_by_search` below asserts the reason
+# they are skipping, so the skip can never quietly mean "the feature broke".
+_SEARCH_ROWS = [e for e in data_access_jsonl.get_all_examples()
+                if (e.get("verdict") or e.get("evidence_urls")
+                    or e.get("pending"))]
+
+pytestmark = pytest.mark.skipif(
+    not _SEARCH_ROWS,
+    reason="no search-tier attribute is published; see the note above "
+           "(attributes.WITHHELD now holds veracity and divination)")
 
 
 def _pairs_with_sources():

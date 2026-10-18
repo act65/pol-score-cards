@@ -882,3 +882,88 @@ as the prompt changes, so the real density may land higher than 7.30. The
 confound removal holds either way — it is about which rows reach the score. The
 density is being measured against the old prompt on identical windows during the
 full-term run.
+
+## Decision: Calibration replaces Veracity on the card (18 October 2026)
+
+Veracity is **WITHHELD**; Calibration is **PUBLISHED**. The six are now Focus,
+Civility, Rigor, Specificity, Acuity and Calibration. The user's instruction was
+explicit that this is not a retirement: *"We can return to veracity and
+divination in our next version."*
+
+### Why
+
+Calibration passed all four gates on the full term (5,548 windows, 43,285
+examples, $2,142), and two of them improved on the pilot rather than decaying:
+
+| gate | pilot (260 w) | full term | threshold |
+|---|---|---|---|
+| Coverage | 99 MPs @ 16 ex | **137 MPs @ 251 ex**, govt 67 / opp 64 | both benches |
+| Spread | 58 | 58 (17–75) | > 20 |
+| Shrink | 0.60 | **0.92** | > 0.5 |
+| Max pairwise r | 0.54 (Focus) | **0.47** (Rigor) | < 0.65 |
+| Bench gap | −1 | −3.1 | small |
+
+The Focus correlation flagged at the pilot as the one to watch **fell** (0.54 →
+0.44) at full coverage. Specificity at **+0.13** is the load-bearing check: a
+confidently-asserted bogus figure still scores low, so the instrument is not
+rewarding precision.
+
+Veracity, by contrast, is the only attribute ever published whose card number
+was never measured. `prior_score` — the model's unaided guess — was shown on
+133 of 133 cards, with **657 of 25,747 claims resolved (2.6%)**. Finishing the
+stratified sample costs ~$4,400 at $3.72/verdict, twice what all of Calibration
+cost.
+
+### The counter-evidence, recorded because it is real
+
+The guess was not noise. Ordered by what the search later found: mean prior 79.6
+for `true`, 60.4 for `partly_true`, 31.8 for `false` — correct order, real
+separation. Two reasons it is still not enough. Ordering three verdict *classes*
+on average is far weaker than ranking 133 *people* on a median of four claims
+each. And `uncheckable` claims drew a mean guess of **66.0**: the model was
+confident about statements no source can settle. A guess that cannot separate
+"true" from "unknowable" is not a measurement.
+
+### What the cards no longer claim
+
+Nothing about whether an individual MP tells the truth. That is a deliberate
+narrowing and a real loss — "is it true" is the question a reader most wants
+answered, and Calibration does not answer it; it asks whether the certainty used
+was available. Recorded as a loss, not spun as a gain.
+
+What the 657 checks found is published as a House-level finding instead, the
+same disposition as Divination: 64.5% `true`, **24.0% `partly_true`** ("the
+substance holds but is materially overstated"), 8.4% `false`, 3.0%
+`uncheckable`. See `site/notes/veracity-what-657-checks-found.md`. The 24% is
+the direct argument for the replacement: a quarter of checked claims fail by
+overstatement rather than by falsity, which is Calibration's subject.
+
+### Consequences found while doing it
+
+* **One card disappeared.** `barbara-kuriger` had exactly two Veracity examples
+  and nothing else — a card built from two guesses. 132 MPs now, not 133.
+* **The whole `search` tier is now withheld, so no published attribute emits
+  `score=None`.** Three code paths became unreachable and were kept, documented
+  and deliberately tested rather than deleted, because both attributes return in
+  v4: the resolver join in `build_v2_dataset._ingest`, the evidence/pending UI in
+  `attribute_detail.html`, and `tests/test_resolver_join.py` (which now
+  republishes veracity for its own duration). `tests/test_published_set.py`
+  asserts *why* the two skipped site modules skip, so a skip can never quietly
+  mean the feature broke.
+* **`prior_score` now appears on no published row at all**, which
+  `test_published_set.py` pins. `--use_prior` is no longer passed at build time.
+* **Calibration is 50% of all statement-attribute scores** (42,641 of 108,344)
+  because of its density. It dominates the dataset by volume without dominating
+  any correlation.
+* **`index.html`'s page description still named "veracity and foresight"** —
+  Divination had been withheld on 5 October and the description was never
+  updated. Fixed while here.
+* One roster miss in 109,743 examples: a statement attributed to "Chris Newman",
+  who is not an MP. Correctly excluded rather than misattributed.
+
+### Audits re-run
+
+Quote gate **100% verbatim** on 2,000 sampled calibration statements (0 spliced,
+0 not-found, 0 mid-sentence). No attribute pair correlates at or above 0.85;
+`focus / civility` at 0.66 remains the worst pair and is unchanged by this
+decision. Site freezes 939/939 pages with no 500.

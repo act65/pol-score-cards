@@ -153,6 +153,14 @@ def _ingest(rows, label, source, url_fn, R, per_pair, examples, unresolved, date
         for attr, exs in rec.get("examples_by_attribute", {}).items():
             if attr not in PUBLISHED_IDS:
                 continue
+            # NB the `resolved`/`use_prior` branch below is DORMANT as of
+            # 2026-10-18 and kept on purpose. It fires only for an attribute
+            # that emits score=None at extraction -- the `search` tier -- and
+            # both Veracity and Divination are now WITHHELD, so this filter
+            # drops every row that could reach it. It stays because the user's
+            # decision was to return to both in the next version;
+            # tests/test_resolver_join.py republishes veracity to keep the
+            # stale-index regression covered meanwhile.
             for i, e in enumerate(exs):
                 sc = e.get("score")
                 is_resolved = True

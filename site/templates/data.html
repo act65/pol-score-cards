@@ -111,10 +111,13 @@
 
         {% if ins.resolver %}
         <h4>Does searching beat guessing?</h4>
-        <p class="muted">Veracity is shown from the model's unaided estimate until the
-           resolver has searched for evidence. This is how far apart those two turn out to be, on the
+        <p class="muted">This is why no card carries a guess any more. Veracity was scored from the
+           model's unaided estimate while it was published, and the resolver went and checked a sample
+           of the same claims against sources. This is how far apart the two turned out to be, on the
            {{ ins.resolver.paired }} claims that have both. The estimate was written at extraction time,
-           before any lookup, and was withheld from the resolver, so the two are independent.</p>
+           before any lookup, and was withheld from the resolver, so the two are independent.
+           <a href="{{ url_for('note', slug='veracity-what-657-checks-found') }}">The full
+           finding →</a></p>
         <table class="data-table">
             <thead><tr><th>On {{ '{:,}'.format(ins.resolver.verdicts) }} resolved claims</th><th class="num">Result</th></tr></thead>
             <tbody>
@@ -129,10 +132,12 @@
         <p class="muted"><sup>*</sup> Not yet due, or not checkable from any source. Those produce no
            score at all — absence of evidence is not evidence of falsity, and scoring them zero would
            mark every hard-to-check claim as a lie.</p>
-        <p class="muted">So searching is worth doing: the guess tracks the verdict only loosely, and is
-           badly wrong often enough to matter. Until the resolver has run over the whole corpus, every
-           Veracity score on a card is marked <strong>?</strong> and should be read as an
-           estimate.</p>
+        <p class="muted">So searching is worth doing, and guessing is not good enough to publish: the
+           guess tracks the verdict only loosely and is badly wrong often enough to matter. Rather than
+           keep a column of estimates on 133 cards, <strong>Veracity was withdrawn in October 2026</strong>
+           and Calibration — which is scored from the text, like the other five — took the slot. The
+           claims already checked are kept, and the resolver still runs; it is the card that no longer
+           shows an unverified number.</p>
         {% endif %}
 
         <h4>What is not checked</h4>
