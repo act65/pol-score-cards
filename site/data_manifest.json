@@ -1,0 +1,85 @@
+{
+  "dataset": "nz-pol-scorecards-v3",
+  "repo": "act65/nz-pol-scorecards",
+  "generated": "2026-10-18",
+  "build_inputs": [
+    "site/politicians.jsonl",
+    "site/attributes.jsonl",
+    "site/scores.jsonl",
+    "site/examples.jsonl"
+  ],
+  "files": {
+    "legacy/hansard_scores_full.jsonl": {
+      "source": "attribute-extraction/hansard_scores_full.jsonl",
+      "bytes": 27397263,
+      "lines": 744,
+      "sha256": "2af7e26bd7474d1d82ca8d59e2eb030cbdf190756f7c7e185e3f50d4f50e1eec"
+    },
+    "legacy/presser_scores.jsonl": {
+      "source": "attribute-extraction/presser_scores.jsonl",
+      "bytes": 2258114,
+      "lines": 112,
+      "sha256": "dd8365e7bab53edddaff3031e025f88c316e8825287e8fe86f29d3c0945259b7"
+    },
+    "legacy/release_scores.jsonl": {
+      "source": "attribute-extraction/release_scores.jsonl",
+      "bytes": 9747047,
+      "lines": 2976,
+      "sha256": "b4752f762ab16458ca6df200827a3976562cdc52d5187d15a6393787748eaa68"
+    },
+    "raw/acuity_scores_v3.jsonl": {
+      "source": "attribute-extraction/acuity_scores_v3.jsonl",
+      "bytes": 15140329,
+      "lines": 5548,
+      "sha256": "819777d751720a09f6cc9d25d1d56a5e6ba6e2dcf071e597445722070bbb253c"
+    },
+    "raw/calibration_scores_v3.jsonl": {
+      "source": "attribute-extraction/calibration_scores_v3.jsonl",
+      "bytes": 45281154,
+      "lines": 5548,
+      "sha256": "bfbe23f5a9fd66a3e92ba3f48559d515d2cbc075a27ccd8f9323addd12aeba92"
+    },
+    "raw/forthrightness_scores_v3.jsonl": {
+      "source": "attribute-extraction/forthrightness_scores_v3.jsonl",
+      "bytes": 12489534,
+      "lines": 11016,
+      "sha256": "d9b737b569542117dc56d7186a048fb47b5f28b51808d06666c7291b60201fce"
+    },
+    "raw/hansard_scores_v3.jsonl": {
+      "source": "attribute-extraction/hansard_scores_v3.jsonl",
+      "bytes": 66739555,
+      "lines": 5548,
+      "sha256": "031b7a4ea173218654bd9e6d6e25bb5e9aafa0efe8efa65c5ec1b5dfccb08090"
+    },
+    "raw/resolved_v3.jsonl": {
+      "source": "attribute-extraction/resolved_v3.jsonl",
+      "bytes": 5756019,
+      "lines": 2541,
+      "sha256": "3590ac453c70a7db8a0094ebeba8717dfbf6ed77a0b4e50828bb55e5883c862d"
+    },
+    "site/attributes.jsonl": {
+      "source": "site/static/attributes.jsonl",
+      "bytes": 1015,
+      "lines": 6,
+      "sha256": "d6189e0969fdd2983e8548e05e6066465e1cee3de89b5ffe9f3915d5107b3f4d"
+    },
+    "site/examples.jsonl": {
+      "source": "site/static/examples.jsonl",
+      "bytes": 91970849,
+      "lines": 109743,
+      "sha256": "6a0059dc64570f413d1957e66551cdca7e17e9941af61ba6c6eafe984ccf9f79"
+    },
+    "site/politicians.jsonl": {
+      "source": "site/static/politicians.jsonl",
+      "bytes": 12991,
+      "lines": 132,
+      "sha256": "e6214892876e6134487a60a5ddc6567ab80c2cee29ed03155dd6b2858de40556"
+    },
+    "site/scores.jsonl": {
+      "source": "site/static/scores.jsonl",
+      "bytes": 85070,
+      "lines": 132,
+      "sha256": "dae25f5b636e9e11bce11ea7da259de0420657c12408da71e0d29311ff8f8e01"
+    }
+  }
+}

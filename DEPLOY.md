@@ -81,3 +81,82 @@ under `/download/`.
 `site/make_og.py` generates `static/img/og.png` (1200×630, with the live House
 means on it) and `static/favicon.svg`. Re-run it if the site's name, palette or
 headline numbers change.
+
+## The dataset is hosted, not committed (18 October 2026)
+
+`site/static/*.jsonl` are **build inputs fetched at build time**, not files in
+the repository.
+
+### Why
+
+They are generated — every one is reproduced by an extraction run or by
+`build_v2_dataset.py` — and they had taken over the repository:
+
+| path | total across git history |
+|---|---|
+| `attribute-extraction/hansard_scores_v3.jsonl` | ~1,088 MB (18 revisions) |
+| `site/static/examples.jsonl` | ~601 MB |
+| `attribute-extraction/site_data_full/examples.jsonl` | ~119 MB |
+| others | ~350 MB |
+
+`.git` was **624 MB**, so every clone paid for 2 GB of superseded copies of
+files nobody reads. And `examples.jsonl` had reached **92 MB** against GitHub's
+**100 MB hard push limit** — the next extraction pass would simply have been
+rejected.
+
+Git LFS was considered and rejected: it does not shrink existing history, and
+its 1 GB/month free bandwidth is a tighter ceiling than the problem being
+solved. A requester-pays bucket was rejected too — requester-pays bills the
+*downloader*, who must therefore be an authenticated cloud principal, which
+breaks both CI-without-secrets and the public download links on `/data`, since
+an anonymous visitor has no account to bill.
+
+### How a build gets its data
+
+```
+site/data_manifest.json   committed, small, one sha256 per file
+        │
+        ├── site/fetch_data.py            downloads + VERIFIES against it
+        └── .github/workflows/pages.yml   cache → fetch → freeze
+```
+
+The manifest being committed is the point: a truncated download, a stale cache
+or a dataset repo that has moved on all fail loudly in `fetch_data.py` rather
+than producing a website quietly built from the wrong numbers. CI caches on
+`hashFiles('site/data_manifest.json')`, so a push that only touches a template
+restores 92 MB from cache instead of re-downloading it.
+
+```bash
+cd site && python fetch_data.py          # fetch what is missing or stale
+cd site && python fetch_data.py --check  # verify only, download nothing
+cd site && python fetch_data.py --force  # re-fetch everything
+```
+
+`fetch_data.py` needs no credentials and no `huggingface_hub` — it uses the
+library when present (caching, resume) and falls back to a plain HTTPS GET of
+the same public URL.
+
+### Publishing a new dataset
+
+After any extraction run or dataset rebuild:
+
+```bash
+cd attribute-extraction
+python publish_scores.py package                  # stage + manifest + card
+python publish_scores.py package --push --repo act65/nz-pol-scorecards
+git add site/data_manifest.json && git commit      # the new hashes
+```
+
+The commit of `data_manifest.json` is what makes the new data live: CI keys its
+cache on that file and `fetch_data.py` verifies against it. Publishing without
+committing the manifest leaves CI building the previous dataset;
+`site/tests/test_data_hosting.py::test_the_working_copy_matches_the_manifest`
+catches the reverse mistake (regenerating locally and forgetting to publish).
+
+### `/data` downloads point off-site
+
+The download buttons link to HuggingFace rather than to `/download/<key>`.
+Serving them locally meant `freeze.py` copied a 92 MB `examples.jsonl` into the
+Pages artifact on every build — paid for in artifact size and CDN bandwidth, to
+hand over a file the dataset host serves better and with versioning. The
+artifact went from 323 MB to 231 MB.

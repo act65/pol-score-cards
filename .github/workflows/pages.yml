@@ -33,8 +33,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        # Default fetch-depth is 1. That matters here: the full history carries
-        # ~28 revisions of a 62 MB scores file, and we need none of them.
+        # Default fetch-depth is 1, and it stays that way: nothing in the
+        # history is needed to build, and the history used to carry gigabytes
+        # of regenerated score files (purged 2026-10-18 -- see DEPLOY.md).
         with:
           fetch-depth: 1
 
@@ -45,6 +46,25 @@ jobs:
 
       - name: Install
         run: pip install -r site/requirements.txt
+
+      # The dataset the site renders is hosted on HuggingFace, not committed:
+      # `examples.jsonl` alone is 92 MB and is regenerated wholesale on every
+      # extraction pass. `site/data_manifest.json` IS committed and carries a
+      # sha256 per file, so `fetch_data.py` fails the build on a truncated or
+      # mismatched download rather than publishing a site built from the wrong
+      # numbers. The dataset is public, so no secret is needed.
+      - name: Cache dataset
+        uses: actions/cache@v4
+        with:
+          path: site/static/*.jsonl
+          # Keyed on the manifest: a new dataset means a new key means a real
+          # download. Unchanged data is restored from cache instead of pulling
+          # 92 MB on every push to a template.
+          key: dataset-${{ hashFiles('site/data_manifest.json') }}
+
+      - name: Fetch dataset
+        working-directory: site
+        run: python fetch_data.py
 
       - name: Freeze
         working-directory: site

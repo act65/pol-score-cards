@@ -198,3 +198,35 @@ attribute-extraction/pilot_full/pid
 
 # Pilot raw output: an experiment, regenerable, not the published instrument.
 attribute-extraction/pilot_calibration/*.jsonl
+
+# ---------------------------------------------------------------------------
+# Generated data, hosted on HuggingFace rather than committed (2026-10-18).
+#
+# These files dominated the repository: across history hansard_scores_v3.jsonl
+# accounted for ~1,088 MB and site/static/examples.jsonl for ~601 MB, in a
+# 624 MB .git -- and examples.jsonl had reached 92 MB against GitHub's 100 MB
+# hard push limit, so the next extraction pass would have been unpushable.
+#
+# Every one of them is regenerated wholesale by an extraction run or by
+# build_v2_dataset.py, which is what makes them build artifacts rather than
+# source. What IS committed is site/data_manifest.json: small, and carrying a
+# sha256 per file so a fetch can be verified.
+#
+#   get them:  cd site && python fetch_data.py
+#   publish:   cd attribute-extraction && python publish_scores.py package --push
+#
+# See attribute-extraction/publish_scores.py for the hosting decision and
+# DEPLOY.md for how CI gets them.
+site/static/examples.jsonl
+site/static/scores.jsonl
+site/static/politicians.jsonl
+site/static/attributes.jsonl
+attribute-extraction/hansard_scores_v3.jsonl
+attribute-extraction/acuity_scores_v3.jsonl
+attribute-extraction/calibration_scores_v3.jsonl
+attribute-extraction/forthrightness_scores_v3.jsonl
+attribute-extraction/resolved_v3.jsonl
+attribute-extraction/hansard_scores_full.jsonl
+attribute-extraction/release_scores.jsonl
+attribute-extraction/presser_scores.jsonl
+attribute-extraction/hf_release/

@@ -1088,13 +1088,17 @@
         "acuity": {
           "n": 11346,
           "mean": 0.5711
+        },
+        "calibration": {
+          "n": 42641,
+          "mean": 0.5014
         }
       },
       "pairs": [
         {
           "a": "focus",
           "b": "civility",
-          "r": 0.6592368675007229,
+          "r": 0.6592368675007224,
           "n_both": 2294,
           "share_a": 0.15862259715115476,
           "share_b": 0.2550872901145335,
@@ -1103,7 +1107,7 @@
         {
           "a": "focus",
           "b": "rigor",
-          "r": 0.5802298027508961,
+          "r": 0.5802298027508956,
           "n_both": 2418,
           "share_a": 0.1671967915917577,
           "share_b": 0.1848341232227488,
@@ -1112,7 +1116,7 @@
         {
           "a": "focus",
           "b": "specificity",
-          "r": 0.6054904812282891,
+          "r": 0.605490481228294,
           "n_both": 3289,
           "share_a": 0.22742359286405753,
           "share_b": 0.1845679012345679,
@@ -1121,16 +1125,25 @@
         {
           "a": "focus",
           "b": "acuity",
-          "r": 0.3263968832322636,
+          "r": 0.3263968832322637,
           "n_both": 854,
           "share_a": 0.0590513068731849,
           "share_b": 0.07526881720430108,
           "jaccard": 0.03422297026528813
         },
         {
+          "a": "focus",
+          "b": "calibration",
+          "r": 0.4369224210303285,
+          "n_both": 3535,
+          "share_a": 0.24443368828654405,
+          "share_b": 0.08290143289322482,
+          "jaccard": 0.06599089008363201
+        },
+        {
           "a": "civility",
           "b": "rigor",
-          "r": 0.4931935545854706,
+          "r": 0.4931935545854702,
           "n_both": 796,
           "share_a": 0.08851328811297676,
           "share_b": 0.060846965295826325,
@@ -1148,16 +1161,25 @@
         {
           "a": "civility",
           "b": "acuity",
-          "r": 0.2932987282011414,
+          "r": 0.29329872820114156,
           "n_both": 513,
           "share_a": 0.05704436784165462,
           "share_b": 0.0452141723955579,
           "jaccard": 0.025875113487339858
         },
         {
+          "a": "civility",
+          "b": "calibration",
+          "r": 0.3930386733168688,
+          "n_both": 2063,
+          "share_a": 0.22940064494606915,
+          "share_b": 0.04838066649468821,
+          "jaccard": 0.04161707449920316
+        },
+        {
           "a": "rigor",
           "b": "specificity",
-          "r": 0.5960135872559397,
+          "r": 0.5960135872559392,
           "n_both": 1055,
           "share_a": 0.08064516129032258,
           "share_b": 0.05920314253647587,
@@ -1166,20 +1188,47 @@
         {
           "a": "rigor",
           "b": "acuity",
-          "r": 0.32330602155057125,
+          "r": 0.3233060215505703,
           "n_both": 628,
           "share_a": 0.04800489221831524,
           "share_b": 0.05534990304953288,
           "jaccard": 0.02638655462184874
         },
         {
+          "a": "rigor",
+          "b": "calibration",
+          "r": 0.46847194397059033,
+          "n_both": 4880,
+          "share_a": 0.3730316465372267,
+          "share_b": 0.11444384512558337,
+          "jaccard": 0.09598174773321795
+        },
+        {
           "a": "specificity",
           "b": "acuity",
-          "r": 0.3112359102483628,
+          "r": 0.3112359102483631,
           "n_both": 707,
           "share_a": 0.039674523007856344,
           "share_b": 0.0623127093248722,
           "jaccard": 0.02484275624582733
+        },
+        {
+          "a": "specificity",
+          "b": "calibration",
+          "r": 0.12706970055502015,
+          "n_both": 3085,
+          "share_a": 0.17312008978675644,
+          "share_b": 0.07234820946975916,
+          "jaccard": 0.05376812604573341
+        },
+        {
+          "a": "acuity",
+          "b": "calibration",
+          "r": 0.21408196650250796,
+          "n_both": 929,
+          "share_a": 0.08187907632645866,
+          "share_b": 0.021786543467554702,
+          "jaccard": 0.017509140940103283
         }
       ],
       "min_n": 30,
@@ -1187,7 +1236,7 @@
         {
           "a": "focus",
           "b": "civility",
-          "r": 0.6592368675007229,
+          "r": 0.6592368675007224,
           "n_both": 2294,
           "share_a": 0.15862259715115476,
           "share_b": 0.2550872901145335,
@@ -1196,7 +1245,7 @@
         {
           "a": "focus",
           "b": "specificity",
-          "r": 0.6054904812282891,
+          "r": 0.605490481228294,
           "n_both": 3289,
           "share_a": 0.22742359286405753,
           "share_b": 0.1845679012345679,
@@ -1205,7 +1254,7 @@
         {
           "a": "rigor",
           "b": "specificity",
-          "r": 0.5960135872559397,
+          "r": 0.5960135872559392,
           "n_both": 1055,
           "share_a": 0.08064516129032258,
           "share_b": 0.05920314253647587,
@@ -1214,7 +1263,7 @@
         {
           "a": "focus",
           "b": "rigor",
-          "r": 0.5802298027508961,
+          "r": 0.5802298027508956,
           "n_both": 2418,
           "share_a": 0.1671967915917577,
           "share_b": 0.1848341232227488,
@@ -1223,20 +1272,20 @@
         {
           "a": "civility",
           "b": "rigor",
-          "r": 0.4931935545854706,
+          "r": 0.4931935545854702,
           "n_both": 796,
           "share_a": 0.08851328811297676,
           "share_b": 0.060846965295826325,
           "jaccard": 0.03740777292165985
         },
         {
-          "a": "focus",
-          "b": "acuity",
-          "r": 0.3263968832322636,
-          "n_both": 854,
-          "share_a": 0.0590513068731849,
-          "share_b": 0.07526881720430108,
-          "jaccard": 0.03422297026528813
+          "a": "rigor",
+          "b": "calibration",
+          "r": 0.46847194397059033,
+          "n_both": 4880,
+          "share_a": 0.3730316465372267,
+          "share_b": 0.11444384512558337,
+          "jaccard": 0.09598174773321795
         }
       ],
       "redundant": []
@@ -1290,13 +1339,23 @@
   "downloads": [
     {
       "label": "Attribute scores + evidence (JSONL)",
-      "key": "examples",
-      "note": "109,743 scored, sourced statements"
+      "url": "https://huggingface.co/datasets/act65/nz-pol-scorecards/resolve/main/site/examples.jsonl?download=true",
+      "note": "109,743 scored, sourced statements \u00b7 92 MB"
     },
     {
       "label": "Per-MP scores (JSONL)",
-      "key": "scores",
+      "url": "https://huggingface.co/datasets/act65/nz-pol-scorecards/resolve/main/site/scores.jsonl?download=true",
       "note": "bias-adjusted score per attribute"
+    },
+    {
+      "label": "Per-statement scores, all attributes (JSONL)",
+      "url": "https://huggingface.co/datasets/act65/nz-pol-scorecards/tree/main/raw",
+      "note": "the extraction output, including the withheld attributes"
+    },
+    {
+      "label": "Browse the whole dataset",
+      "url": "https://huggingface.co/datasets/act65/nz-pol-scorecards",
+      "note": "versioned, with a per-file viewer"
     }
   ]
 }

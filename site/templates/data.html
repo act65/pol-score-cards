@@ -156,10 +156,13 @@
            named people, and that the instrument has not yet been measured against human labels —
            is in the
            <a href="https://github.com/act65/pol-score-cards/blob/main/DATA_LICENCE.md">data licence</a>.
-           A versioned HuggingFace release is planned; these are the live files behind the site:</p>
+           The dataset is hosted on <strong>HuggingFace</strong> — versioned, with a per-file
+           viewer, and the same files the site itself is built from:</p>
         <div class="downloads">
             {% for d in stats.downloads %}
-            {% if d.key %}
+            {% if d.url %}
+            <a class="dl-btn" href="{{ d.url }}" rel="noopener">{{ d.label }} <em>· {{ d.note }}</em></a>
+            {% elif d.key %}
             <a class="dl-btn" href="{{ url_for('download', key=d.key) }}" download>{{ d.label }} <em>· {{ d.note }}</em></a>
             {% else %}
             <span class="dl-btn disabled">{{ d.label }} <em>· {{ d.note }}</em> <span class="soon">coming soon</span></span>

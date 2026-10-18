@@ -233,6 +233,43 @@ def _release_corpus_stats():
     }
 
 
+
+def _hosted_downloads(total_statements):
+    """Download links, pointed at the dataset host named in the manifest.
+
+    Returns "coming soon" placeholders if the manifest is absent, so a clone
+    without it still builds instead of raising at stats time.
+    """
+    man = os.path.join(os.path.dirname(STATIC), "data_manifest.json")
+    if not os.path.exists(man):
+        return [{"label": "Attribute scores + evidence (JSONL)", "key": None,
+                 "note": "dataset manifest not present"}]
+    with open(man, encoding="utf-8") as f:
+        manifest = json.load(f)
+    repo = manifest["repo"]
+    base = f"https://huggingface.co/datasets/{repo}"
+
+    def _mb(published):
+        rec = manifest["files"].get(published)
+        return f"{rec['bytes'] / 1e6:.0f} MB" if rec else ""
+
+    return [
+        {"label": "Attribute scores + evidence (JSONL)",
+         "url": f"{base}/resolve/main/site/examples.jsonl?download=true",
+         "note": f"{total_statements:,} scored, sourced statements · "
+                 f"{_mb('site/examples.jsonl')}"},
+        {"label": "Per-MP scores (JSONL)",
+         "url": f"{base}/resolve/main/site/scores.jsonl?download=true",
+         "note": "bias-adjusted score per attribute"},
+        {"label": "Per-statement scores, all attributes (JSONL)",
+         "url": f"{base}/tree/main/raw",
+         "note": "the extraction output, including the withheld attributes"},
+        {"label": "Browse the whole dataset",
+         "url": base,
+         "note": "versioned, with a per-file viewer"},
+    ]
+
+
 def main():
     politicians = _jsonl("politicians.jsonl")
     attributes = _jsonl("attributes.jsonl")
@@ -334,19 +371,16 @@ def main():
         "corpus": _corpus_stats(),
         "presser_corpus": _presser_corpus_stats(),
         "release_corpus": _release_corpus_stats(),
-        # `key` indexes app._DOWNLOADS; the template builds the href with
-        # url_for so it survives being served under a path prefix (a GitHub
-        # project page lives at /<repo>/, where a literal "/download/..." 404s).
-        "downloads": [
-            {"label": "Attribute scores + evidence (JSONL)", "key": "examples",
-             "note": f"{total_statements:,} scored, sourced statements"},
-            {"label": "Per-MP scores (JSONL)", "key": "scores",
-             "note": "bias-adjusted score per attribute"},
-            # The raw Hansard corpus is deliberately NOT here. It is 44 MB and
-            # gitignored, so it is absent from every deploy and the button was a
-            # 404 on the live site. It belongs on a dataset host (publish_corpus.py)
-            # and gets linked back once it is there.
-        ],
+        # Downloads point OFF-SITE, at the HuggingFace dataset, and the repo
+        # is read from the committed manifest rather than hardcoded here.
+        #
+        # They used to be served from site/static via url_for('download'),
+        # which meant freeze.py copied a 92 MB examples.jsonl into the Pages
+        # artifact on every build -- paid for in artifact size and CDN
+        # bandwidth to hand over a file the dataset host serves better, with
+        # versioning and a per-file viewer. An entry with no `key` and no
+        # `url` still renders as "coming soon".
+        "downloads": _hosted_downloads(total_statements),
     }
     out = os.path.join(STATIC, "dataset_stats.json")
     with open(out, "w", encoding="utf-8") as f:
